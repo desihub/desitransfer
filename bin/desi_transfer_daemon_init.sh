@@ -7,7 +7,7 @@
 # Moved this to crontab
 # source /global/common/software/desi/desi_environment.sh ${DESIMODULES_VERSION}
 # Program or script you want to run
-PROGRAM=${DESISPEC}/bin/desi_dts.sh
+PROGRAM=${DESITRANSFER}/bin/desi_transfer_daemon.sh
 # Command line options for PRGFILE
 PRGOPTS=""
 NICE="nice -n 19"
@@ -21,7 +21,7 @@ PRGFILE=$(basename $PROGRAM)
 THISHOST=$(hostname -s)
 
 # The existence of this file will shut down data transfers.
-kill_switch=${HOME}/stop_dts
+kill_switch=${HOME}/stop_desi_transfer
 
 start() {
 

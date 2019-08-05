@@ -1,8 +1,8 @@
 #!/bin/bash
 #
 # This script is for transferring data that are *not* critical for
-# DESI pipeline operations from KPNO to NERSC.  We reserve the term "dts"
-# for the script(s) that *do* transfer the critical pipeline data.
+# DESI pipeline operations from KPNO to NERSC.  The "daemon" scripts handle
+# the critical pipeline data transfers.
 #
 # Configuration
 #
@@ -14,7 +14,7 @@ destination_directories=($(/bin/realpath ${DESI_ROOT}/engineering/spectrograph/s
                          $(/bin/realpath ${DESI_ROOT}/engineering/fvc/images))
 n_source=${#source_directories[@]}
 # The existence of this file will shut down data transfers.
-kill_switch=${HOME}/stop_dts
+kill_switch=${HOME}/stop_desi_transfer
 #
 # Functions
 #

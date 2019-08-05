@@ -3,14 +3,14 @@
 # Configuration
 #
 # Logging.
-log=${DESI_ROOT}/spectro/staging/logs/desi_dts.log
+log=${DESI_ROOT}/spectro/staging/logs/desi_transfer_daemon.log
 # Enable activation of the DESI pipeline.  If this is /bin/false, only
 # transfer files.
 run_pipeline=/bin/false
 # Run the pipeline on this host.
 pipeline_host=cori
 # The existence of this file will shut down data transfers.
-kill_switch=${HOME}/stop_dts
+kill_switch=${HOME}/stop_desi_transfer
 # Call this executable on the pipeline host.
 # Make sure the real path is actually valid on the pipeline host.
 desi_night=$(/bin/realpath ${DESISPEC}/bin/wrap_desi_night.sh)
@@ -154,13 +154,13 @@ while /bin/true; do
                                     --night ${night} \
                                     --nersc ${pipeline_host} --nersc_queue realtime \
                                     --nersc_maxnodes 25
-                                sprun desi_dts_status --directory ${status_dir} --last flats ${night} ${exposure}
+                                sprun desi_transfer_status --directory ${status_dir} --last flats ${night} ${exposure}
                             elif [[ -f ${dest}/${night}/${exposure}/arcs-${night}-${exposure}.done ]]; then
                                 sprun ${ssh} ${desi_night} arcs \
                                     --night ${night} \
                                     --nersc ${pipeline_host} --nersc_queue realtime \
                                     --nersc_maxnodes 25
-                                sprun desi_dts_status --directory ${status_dir} --last arcs ${night} ${exposure}
+                                sprun desi_transfer_status --directory ${status_dir} --last arcs ${night} ${exposure}
                             #
                             # if night done run redshifts
                             #
@@ -169,16 +169,16 @@ while /bin/true; do
                                     --night ${night} \
                                     --nersc ${pipeline_host} --nersc_queue realtime \
                                     --nersc_maxnodes 25
-                                sprun desi_dts_status --directory ${status_dir} --last science ${night} ${exposure}
+                                sprun desi_transfer_status --directory ${status_dir} --last science ${night} ${exposure}
                             else
-                                sprun desi_dts_status --directory ${status_dir} ${night} ${exposure}
+                                sprun desi_transfer_status --directory ${status_dir} ${night} ${exposure}
                             fi
                         else
                             info "${night}/${exposure} appears to be test data.  Skipping pipeline activation."
                         fi
                     else
                         error "Checksum problem detected for ${night}/${exposure}!"
-                        ${run_pipeline} && sprun desi_dts_status --directory ${status_dir} --failure ${night} ${exposure}
+                        ${run_pipeline} && sprun desi_transfer_status --directory ${status_dir} --failure ${night} ${exposure}
                     fi
                 elif [[ "${status}" == "done" ]]; then
                     #
@@ -187,7 +187,7 @@ while /bin/true; do
                     :
                 else
                     error "rsync problem detected for ${night}/${exposure}!"
-                    ${run_pipeline} && sprun desi_dts_status --directory ${status_dir} --failure ${night} ${exposure}
+                    ${run_pipeline} && sprun desi_transfer_status --directory ${status_dir} --failure ${night} ${exposure}
                 fi
             done
         else
