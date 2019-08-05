@@ -1,2 +1,5 @@
-# desitransfer
-DESI data transfer infrastructure
+============
+desitransfer
+============
+
+DESI data transfer infrastructure.
