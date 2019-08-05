@@ -1,54 +1,12 @@
-============
-desiutil API
-============
+================
+desitransfer API
+================
 
-.. automodule:: desiutil
+.. automodule:: desitransfer
     :members:
 
-.. automodule:: desiutil.bitmask
+.. automodule:: desitransfer.daemon
     :members:
 
-.. automodule:: desiutil.brick
-    :members:
-
-.. automodule:: desiutil.census
-    :members:
-
-.. automodule:: desiutil.depend
-    :members:
-
-.. automodule:: desiutil.dust
-    :members:
-
-.. automodule:: desiutil.funcfits
-    :members:
-
-.. automodule:: desiutil.git
-    :members:
-
-.. automodule:: desiutil.install
-    :members:
-
-.. automodule:: desiutil.io
-    :members:
-
-.. automodule:: desiutil.log
-    :members:
-
-.. automodule:: desiutil.modules
-    :members:
-
-.. automodule:: desiutil.plots
-    :members:
-
-.. automodule:: desiutil.setup
-    :members:
-
-.. automodule:: desiutil.sklearn
-    :members:
-
-.. automodule:: desiutil.stats
-    :members:
-
-.. automodule:: desiutil.svn
+.. automodule:: desitransfer.status
     :members:

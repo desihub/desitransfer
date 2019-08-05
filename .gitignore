@@ -5,7 +5,7 @@ __pycache__
 # Other generated files
 htmlcov
 .coverage
-py/desitemplate/.cache
+py/desitransfer/.cache
 
 # Sphinx
 doc/api

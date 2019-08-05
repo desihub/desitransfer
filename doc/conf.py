@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 #
-# desiutil documentation build configuration file, created by
+# desitransfer documentation build configuration file, created by
 # sphinx-quickstart on Tue Dec  9 10:43:33 2014.
 #
 # This file is execfile()d with the current directory set to its
@@ -61,8 +61,8 @@ source_suffix = '.rst'
 master_doc = 'index'
 
 # General information about the project.
-project = u'desiutil'
-copyright = u'2014-2018, DESI Collaboration'
+project = u'desitransfer'
+copyright = u'2019, DESI Collaboration'
 
 # The version info for the project you're documenting, acts as replacement for
 # |version| and |release|, also used in various other places throughout the
@@ -121,11 +121,11 @@ napoleon_include_private_with_doc = True
 # some external dependencies are not met at build time and break the
 # building process.
 autodoc_mock_imports = []
-for missing in ('numpy', 'astropy'):
-    try:
-        foo = import_module(missing)
-    except ImportError:
-        autodoc_mock_imports.append(missing)
+# for missing in ('numpy', 'astropy'):
+#     try:
+#         foo = import_module(missing)
+#     except ImportError:
+#         autodoc_mock_imports.append(missing)
 
 # -- Options for HTML output ----------------------------------------------
 
@@ -216,7 +216,7 @@ except ImportError:
 #html_file_suffix = None
 
 # Output file base name for HTML help builder.
-htmlhelp_basename = 'desiutildoc'
+htmlhelp_basename = 'desitransferdoc'
 
 
 # -- Options for LaTeX output ---------------------------------------------
@@ -236,7 +236,7 @@ latex_elements = {
 # (source start file, target name, title,
 #  author, documentclass [howto, manual, or own class]).
 latex_documents = [
-  ('index', 'desiutil.tex', u'desiutil Documentation',
+  ('index', 'desitransfer.tex', u'desitransfer Documentation',
    u'DESI', 'manual'),
 ]
 
@@ -266,7 +266,7 @@ latex_documents = [
 # One entry per manual page. List of tuples
 # (source start file, name, description, authors, manual section).
 man_pages = [
-    ('index', 'desiutil', u'desiutil Documentation',
+    ('index', 'desitransfer', u'desitransfer Documentation',
      [u'DESI'], 1)
 ]
 
@@ -280,8 +280,8 @@ man_pages = [
 # (source start file, target name, title, author,
 #  dir menu entry, description, category)
 texinfo_documents = [
-  ('index', 'desiutil', u'desiutil Documentation',
-   u'DESI', 'desiutil', 'One line description of project.',
+  ('index', 'desitransfer', u'desitransfer Documentation',
+   u'DESI', 'desitransfer', 'One line description of project.',
    'Miscellaneous'),
 ]
 
