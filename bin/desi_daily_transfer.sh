@@ -9,8 +9,10 @@
 # Source and destination should be in 1-1 correspondence.
 #
 source_directories=(/exposures/desi/sps \
+                    /data/dts/exposures/lost+found \
                     /data/fvc/data)
 destination_directories=($(/bin/realpath ${DESI_ROOT}/engineering/spectrograph/sps) \
+                         $(/bin/realpath ${DESI_ROOT}/spectro/staging/lost+found) \
                          $(/bin/realpath ${DESI_ROOT}/engineering/fvc/images))
 n_source=${#source_directories[@]}
 # The existence of this file will shut down data transfers.
