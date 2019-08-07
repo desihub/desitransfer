@@ -26,23 +26,23 @@ kill_switch=${HOME}/stop_desi_transfer
 #
 #
 start() {
-    if [ -f ${kill_switch} ]; then
+    if [[ -f ${kill_switch} ]]; then
         echo "${kill_switch} detected, will not attempt to start ${PRGFILE}."
         return 0
     fi
-    if [ "$(pgrep ${PRGFILE} 2> /dev/null)" ]; then
+    if [[ -n "$(pgrep --full ${PRGFILE} 2> /dev/null)" ]]; then
         echo "${THISHOST} ${PRGFILE} is already started."
         return 1
     fi
     #
     # Daemonize: You must disconnect stdin, stdout, and stderr, and make it ignore the hangup signal (SIGHUP).
     #
-    nohup ${NICE} ${PROGRAM} ${PROGOPTS}  &>/dev/null &
+    nohup ${NICE} ${PROGRAM} ${PRGOPTS}  &>/dev/null &
     #
     # Alternatively, use double background
     #
     # (/bin/bash -c "echo $$ >${PIDFILE} && exec ${NICE} ${PROGRAM} ${PRGOPTS}" &) &
-    if [ $? -eq 0 ]; then
+    if [[ $? == 0 ]]; then
         echo "${PRGFILE} started."
         return 0
     else
@@ -56,13 +56,13 @@ start() {
 kill_it() {
     local PRGFILE=$(basename $1)
     local SIGNAL="SIGTERM"
-    local PPLIST=$(pgrep -x ${PRGFILE} -d' ')
+    local PPLIST=$(pgrep --full ${PRGFILE} --delimiter ' ')
     for PID in ${PPLIST}; do
-        local CHILDPIDS=$(pgrep -P ${PID} -d' ')
+        local CHILDPIDS=$(pgrep --parent ${PID} --delimiter ' ')
         echo killing ${PRGFILE} ${PID} child processes: ${CHILDPIDS}
         while true; do
             kill -s SIGTERM ${PID} ${CHILDPIDS} >& /dev/null
-            if [ $? -ne 0 ]; then
+            if [[ $? != 0 ]]; then
                 break
             fi
             sleep 2
@@ -72,19 +72,19 @@ kill_it() {
     #
     # Save the big hammer for last.
     #
-    pkill -9 $PRGFILE
+    pkill --full --signal 9 ${PRGFILE}
 }
 #
 #
 #
 stop() {
-    if [ ! $(pgrep ${PRGFILE} 2> /dev/null) ]; then
+    if [[ -z $(pgrep --full ${PRGFILE} 2> /dev/null) ]]; then
         echo "${THISHOST} ${PRGFILE} is not running."
         return 1
     fi
     echo -n "Stopping ${PRGFILE}..."
     kill_it ${PRGFILE} #>& /dev/null
-    # if [ $? -ne 0 ]; then
+    # if [[ $? != 0 ]]; then
     #     echo "Operation not permitted."
     #     return 1
     # fi
@@ -96,7 +96,7 @@ stop() {
 #
 #
 status() {
-    if [ $(pgrep ${PRGFILE} 2> /dev/null) ]; then
+    if [[ -n $(pgrep --full ${PRGFILE} 2> /dev/null) ]]; then
         echo "${THISHOST} ${PRGFILE} is running."
         return 0
     else
