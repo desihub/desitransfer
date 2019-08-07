@@ -26,11 +26,11 @@ kill_switch=${HOME}/stop_desi_transfer
 #
 #
 start() {
-    if [[ -f ${kill_switch} ]]; then
+    if [ -f ${kill_switch} ]; then
         echo "${kill_switch} detected, will not attempt to start ${PRGFILE}."
         return 0
     fi
-    if [[ "$(pgrep ${PRGFILE} 2> /dev/null)" ]]; then
+    if [ "$(pgrep ${PRGFILE} 2> /dev/null)" ]; then
         echo "${THISHOST} ${PRGFILE} is already started."
         return 1
     fi
