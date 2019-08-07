@@ -9,7 +9,7 @@ Entry point for :command:`desi_daily_transfer`.
 
 
 def main():
-    """Entry point for :command:`desi_transfer_daemon`.
+    """Entry point for :command:`desi_daily_transfer`.
 
     Returns
     -------
