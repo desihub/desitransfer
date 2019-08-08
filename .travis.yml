@@ -12,9 +12,7 @@ os:
     - linux
     # - osx
 
-# As of early 2017, the default Linux environment is Ubuntu 12.04 (precise).
-# This will soon change to 14.04 (trusty). To prepare, set it explicitly.
-dist: trusty
+dist: xenial
 # Setting sudo to false opts in to Travis-CI container-based builds.
 sudo: false
 
@@ -84,7 +82,7 @@ install:
     - if [[ $MAIN_CMD == 'pycodestyle' ]]; then pip install pycodestyle; fi
     - if [[ $SETUP_CMD == build_sphinx* ]]; then pip install Sphinx; fi
     - if [[ $MAIN_CMD == 'coverage' ]]; then pip install coverage coveralls; fi
-    - if [[ $SETUP_CMD == 'test' || $MAIN_CMD == 'coverage' ]]; then pip install -r requirements.txt; fi
+    - pip install -r requirements.txt
 
 script:
     - $MAIN_CMD $SETUP_CMD
