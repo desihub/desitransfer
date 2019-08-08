@@ -106,15 +106,17 @@ class DTSStatus(object):
 
     def __init__(self, directory):
         self.directory = directory
-        self.json = os.path.join(self.directory, 'dts_status.json')
+        self.json = os.path.join(self.directory, 'desi_transfer_status.json')
         self.status = list()
         if not os.path.exists(self.directory):
             log.debug("os.makedirs('%s')", self.directory)
             os.makedirs(self.directory)
             for ext in ('html', 'js'):
-                src = resource_filename('desispec', 'data/dts/dts_status.' + ext)
+                src = resource_filename('desitransfer',
+                                        'data/desi_transfer_status.' + ext)
                 if ext == 'html':
-                    shutil.copyfile(src, os.path.join(self.directory, 'index.html'))
+                    shutil.copyfile(src,
+                                    os.path.join(self.directory, 'index.html'))
                 else:
                     shutil.copy(src, self.directory)
             return
@@ -192,7 +194,7 @@ def _options(*args):
     prsr.add_argument('-d', '--debug', action='store_true',
                       help='Set log level to DEBUG.')
     prsr.add_argument('-k', '--kill', metavar='FILE',
-                      default=os.path.join(os.environ['HOME'], 'stop_dts'),
+                      default=os.path.join(os.environ['HOME'], 'stop_desi_transfer'),
                       help="Exit the script when FILE is detected (default %(default)s).")
     prsr.add_argument('-n', '--nersc', default='cori', metavar='NERSC_HOST',
                       help="Trigger DESI pipeline on this NERSC system (default %(default)s).")
