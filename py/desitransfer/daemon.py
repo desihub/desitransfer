@@ -64,7 +64,7 @@ class DTSPipeline(object):
         self.nodes = str(nodes)
         return
 
-    def command(night, exposure, command='update'):
+    def command(self, night, exposure, command='update'):
         """Generate a ``desi_night`` command to pass to the pipeline.
 
         Parameters
@@ -92,7 +92,7 @@ class DTSPipeline(object):
              '--nersc_queue', self.queue,
              '--nersc_maxnodes', self.nodes]
         log.debug(' '.join(c))
-        return cmd
+        return c
 
 
 class DTSStatus(object):
