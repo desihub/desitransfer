@@ -2,8 +2,6 @@
 desitransfer
 ============
 
-DESI data transfer infrastructure.
-
 .. image:: https://img.shields.io/travis/desihub/desitransfer.svg
     :target: https://travis-ci.org/desihub/desitransfer
     :alt: Travis Build Status
@@ -11,6 +9,22 @@ DESI data transfer infrastructure.
 .. image:: https://coveralls.io/repos/desihub/desitransfer/badge.svg?service=github
     :target: https://coveralls.io/github/desihub/desitransfer
     :alt: Test Coverage Status
+
+.. image:: https://readthedocs.org/projects/desitransfer/badge/?version=latest
+    :target: http://desitransfer.readthedocs.org/en/latest/
+    :alt: Documentation Status
+
+Overview
+========
+
+DESI data transfer infrastructure.
+
+Documentation
+=============
+
+Please visit `desitransfer on Read the Docs`_
+
+.. _`desitransfer on Read the Docs`: http://desitransfer.readthedocs.org/en/latest/
 
 License
 =======
