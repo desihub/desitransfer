@@ -28,9 +28,9 @@ log = None
 DTSDir = namedtuple('DTSDir', 'source, staging, destination, hpss')
 
 
-dir_perm  = (stat.S_ISGID |
-             stat.S_IRUSR | stat.S_IWUSR | stat.S_IXUSR |
-             stat.S_IRGRP | stat.S_IXGRP)  # 0o2750
+dir_perm = (stat.S_ISGID |
+            stat.S_IRUSR | stat.S_IWUSR | stat.S_IXUSR |
+            stat.S_IRGRP | stat.S_IXGRP)  # 0o2750
 file_perm = stat.S_IRUSR | stat.S_IRGRP    # 0o0440
 
 
@@ -152,7 +152,7 @@ class DTSStatus(object):
             rows = [[r[0], r[1], stage, not failure, l, ts]
                     for r in self.status if r[0] == i]
         else:
-            rows = [[i, int(exposure), stage, not failure, l, ts],]
+            rows = [[i, int(exposure), stage, not failure, l, ts], ]
         for row in rows:
             self.status.insert(0, row)
         self.status = sorted(self.status, key=lambda x: x[0]*10000000 + x[1],
@@ -168,7 +168,7 @@ def _config():
     return [DTSDir('/data/dts/exposures/raw',
                    os.path.realpath(os.path.join(os.environ['DESI_ROOT'], 'spectro', 'staging', 'raw')),
                    os.path.realpath(os.environ['DESI_SPECTRO_DATA']),
-                   'desi/spectro/data'),]
+                   'desi/spectro/data'), ]
 
 
 def _options(*args):
@@ -244,7 +244,7 @@ def _configure_log(debug, size=100000000, backups=100):
     if debug:
         log.setLevel(logging.DEBUG)
     email_from = os.environ['USER'] + '@' + getfqdn()
-    email_to = ['desi-data@desi.lbl.gov',]
+    email_to = ['desi-data@desi.lbl.gov', ]
     handler2 = SMTPHandler('localhost', email_from, email_to,
                            'Critical error reported by desi_dts!')
     formatter2 = logging.Formatter('At %(asctime)s, desi_dts failed with this message:\n\n%(message)s\n\nKia ora koutou,\nThe DESI Collaboration Account',
