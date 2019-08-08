@@ -11,7 +11,7 @@ desitransfer
     :alt: Test Coverage Status
 
 .. image:: https://readthedocs.org/projects/desitransfer/badge/?version=latest
-    :target: http://desitransfer.readthedocs.org/en/latest/
+    :target: https://desitransfer.readthedocs.io/en/latest/
     :alt: Documentation Status
 
 Overview
@@ -24,7 +24,7 @@ Documentation
 
 Please visit `desitransfer on Read the Docs`_
 
-.. _`desitransfer on Read the Docs`: http://desitransfer.readthedocs.org/en/latest/
+.. _`desitransfer on Read the Docs`: https://desitransfer.readthedocs.io/en/latest/
 
 License
 =======
