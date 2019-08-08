@@ -54,7 +54,7 @@ setup_keywords['package_dir'] = {'': 'py'}
 setup_keywords['cmdclass'] = {'module_file': ds.DesiModule,
                               'version': ds.DesiVersion,
                               'test': ds.DesiTest,
-                              'api': ds.DesiAPI,
+                              # 'api': ds.DesiAPI,
                               'sdist': DistutilsSdist}
 setup_keywords['test_suite']='{name}.test.{name}_test_suite'.format(**setup_keywords)
 #
