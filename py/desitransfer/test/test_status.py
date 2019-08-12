@@ -8,7 +8,7 @@ import unittest
 from unittest.mock import patch
 from tempfile import TemporaryDirectory
 from pkg_resources import resource_filename
-from ..status import TransferStatus
+from ..status import TransferStatus, _options
 
 
 class TestStatus(unittest.TestCase):
@@ -28,6 +28,14 @@ class TestStatus(unittest.TestCase):
 
     def tearDown(self):
         pass
+
+    def test_options(self):
+        """Test command-line arguments.
+        """
+        with patch.dict('os.environ', {'DESI_ROOT': '/desi'}):
+            options = _options('20190703', '12345678')
+            self.assertEqual(options.night, 20190703)
+            self.assertEqual(options.expid, 12345678)
 
     def test_TransferStatus_init(self):
         """Test status reporting mechanism setup.

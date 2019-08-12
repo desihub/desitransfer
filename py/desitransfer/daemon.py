@@ -38,7 +38,7 @@ expected_files = ('desi-{exposure}.fits.fz',
                   'guider-{exposure}.fits.fz')
 
 
-class DTSPipeline(object):
+class PipelineCommand(object):
     """Simple object for generating pipeline commands.
 
     Parameters
@@ -257,7 +257,7 @@ def main():
     options = _options()
     _configure_log(options.debug)
     ssh = 'ssh'
-    pipeline = DTSPipeline(options.nersc, ssh=ssh)
+    pipeline = PipelineCommand(options.nersc, ssh=ssh)
     while True:
         log.info('Starting transfer loop.')
         if os.path.exists(options.kill):
