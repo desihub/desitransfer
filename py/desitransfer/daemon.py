@@ -7,14 +7,13 @@ desitransfer.daemon
 Entry point for :command:`desi_transfer_daemon`.
 """
 import datetime as dt
-import json
 import logging
 import os
 import shutil
 import stat
 import subprocess as sub
 import sys
-import time
+from argparse import ArgumentParser
 from collections import namedtuple
 from logging.handlers import RotatingFileHandler, SMTPHandler
 from socket import getfqdn
@@ -44,13 +43,13 @@ class DTSPipeline(object):
 
     Parameters
     ----------
-    host : str
+    host : :class:`str`
         Run the pipeline on this NERSC system.
-    ssh : str, optional
+    ssh : :class:`str`, optional
         SSH command to use.
-    queue : str, optional
+    queue : :class:`str`, optional
         NERSC queue to use.
-    nodes : int, optional
+    nodes : :class:`int`, optional
         Value for the ``--nersc_maxnodes`` option.
     """
     desi_night = os.path.realpath(os.path.join(os.environ['HOME'],
@@ -69,11 +68,11 @@ class DTSPipeline(object):
 
         Parameters
         ----------
-        night : str
+        night : :class:`str`
             Night of observation.
-        exposure : str
+        exposure : :class:`str`
             Exposure number.
-        command : str, optional
+        command : :class:`str`, optional
             Specific command to pass to ``desi_night``.
 
         Returns
@@ -93,74 +92,6 @@ class DTSPipeline(object):
              '--nersc_maxnodes', self.nodes]
         log.debug(' '.join(c))
         return c
-
-
-class DTSStatus(object):
-    """Simple object for interacting with DTS status reports.
-
-    Parameters
-    ----------
-    directory : str
-        Retrieve and store JSON-encoded transfer status data in `directory`.
-    """
-
-    def __init__(self, directory):
-        self.directory = directory
-        self.json = os.path.join(self.directory, 'desi_transfer_status.json')
-        self.status = list()
-        if not os.path.exists(self.directory):
-            log.debug("os.makedirs('%s')", self.directory)
-            os.makedirs(self.directory)
-            for ext in ('html', 'js'):
-                src = resource_filename('desitransfer',
-                                        'data/desi_transfer_status.' + ext)
-                if ext == 'html':
-                    shutil.copyfile(src,
-                                    os.path.join(self.directory, 'index.html'))
-                else:
-                    shutil.copy(src, self.directory)
-            return
-        try:
-            with open(self.json) as j:
-                self.status = json.load(j)
-        except FileNotFoundError:
-            pass
-        return
-
-    def update(self, night, exposure, stage, failure=False, last=None):
-        """Update the transfer status.
-
-        Parameters
-        ----------
-        night : str
-            Night of observation.
-        exposure : str
-            Exposure number.
-        stage : str
-            Stage of data transfer ('rsync', 'checksum', 'backup', ...).
-        failure : bool, optional
-            Indicate failure.
-        last : str, optional
-            Mark this exposure as the last of a given type for the night
-            ('arcs', 'flats', 'science').
-        """
-        if last is None:
-            l = ''
-        else:
-            l = last
-        ts = int(time.time() * 1000)  # Convert to milliseconds for JS.
-        i = int(night)
-        if exposure == 'all':
-            rows = [[r[0], r[1], stage, not failure, l, ts]
-                    for r in self.status if r[0] == i]
-        else:
-            rows = [[i, int(exposure), stage, not failure, l, ts], ]
-        for row in rows:
-            self.status.insert(0, row)
-        self.status = sorted(self.status, key=lambda x: x[0]*10000000 + x[1],
-                             reverse=True)
-        with open(self.json, 'w') as j:
-            json.dump(self.status, j, indent=None, separators=(',', ':'))
 
 
 def _config():
@@ -186,7 +117,6 @@ def _options(*args):
     :class:`argparse.Namespace`
         The parsed command-line options.
     """
-    from argparse import ArgumentParser
     desc = "Transfer DESI raw data files."
     prsr = ArgumentParser(prog=os.path.basename(sys.argv[0]), description=desc)
     prsr.add_argument('-b', '--backup', metavar='H', type=int, default=20,
@@ -225,11 +155,11 @@ def _configure_log(debug, size=100000000, backups=100):
 
     Parameters
     ----------
-    debug : bool
+    debug : :class:`bool`
         If ``True`` set the log level to ``DEBUG``.
-    size : int, optional
+    size : :class:`int`, optional
         Rotate log file after N bytes.
-    backups : int, optional
+    backups : :class:`int`, optional
         Keep N old log files.
     """
     global log
@@ -281,14 +211,14 @@ def verify_checksum(checksum_file, files):
 
     Parameters
     ----------
-    checksum_file : str
+    checksum_file : :class:`str`
         The checksum file.
-    files : list
+    files : :class:`list`
         The list of files in the directory containing the checksum file.
 
     Returns
     -------
-    int
+    :class:`int`
         An integer that indicates the number of checksum mismatches.  A
         value of -1 indicates that the lines in the checksum file does not
         match the number of files in the exposure.
@@ -337,7 +267,7 @@ def main():
         # Find symlinks at KPNO.
         #
         for d in _config():
-            status = DTSStatus(os.path.join(os.path.dirname(d.staging), 'status'))
+            status = TransferStatus(os.path.join(os.path.dirname(d.staging), 'status'))
             cmd = [ssh, '-q', 'dts', '/bin/find', d.source, '-type', 'l']
             _, out, err = _popen(cmd)
             links = sorted([x for x in out.split('\n') if x])
