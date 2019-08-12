@@ -3,9 +3,12 @@
 """Test desitransfer.daemon.
 """
 import os
+import logging
 import unittest
 from unittest.mock import call, patch, MagicMock
-from ..daemon import (_config, PipelineCommand, _options, _popen,
+from pkg_resources import resource_filename
+from ..daemon import (_config, _configure_log, PipelineCommand,
+                      _options, _popen, log,
                       check_exposure, verify_checksum)
 
 
@@ -89,6 +92,20 @@ class TestDaemon(unittest.TestCase):
         m.debug.assert_called_once_with('foo bar')
         p.assert_called_once_with(['foo', 'bar'], stdout=-1, stderr=-1)
 
+    @patch('desitransfer.daemon.SMTPHandler')
+    @patch('desitransfer.daemon.RotatingFileHandler')
+    @patch('desitransfer.daemon.get_logger')
+    def test_configure_log(self, gl, rfh, smtp):
+        """Test logging configuration.
+        """
+        ll = gl.return_value = MagicMock()
+        with patch.dict('os.environ', {'DESI_ROOT': '/desi'}):
+            _configure_log(True)
+        rfh.assert_called_once_with('/desi/spectro/staging/logs/desi_transfer_daemon.log',
+                                    backupCount=100, maxBytes=100000000)
+        gl.assert_called_once_with(timestamp=True)
+        ll.setLevel.assert_called_once_with(logging.DEBUG)
+
     def test_check_exposure(self):
         """Test detection of expected files.
         """
@@ -102,7 +119,39 @@ class TestDaemon(unittest.TestCase):
     def test_verify_checksum(self):
         """Test checksum verification.
         """
-        pass
+        c = resource_filename('desitransfer.test', 't/t.sha256sum')
+        d = os.path.dirname(c)
+        with patch('desitransfer.daemon.log') as l:
+            o = verify_checksum(c, ['t.sha256sum', 'test_file_1.txt', 'test_file_2.txt'])
+            self.assertEqual(o, 0)
+        l.debug.assert_has_calls([call("%s is valid.", os.path.join(d, 'test_file_1.txt')),
+                                  call("%s is valid.", os.path.join(d, 'test_file_2.txt'))])
+        #
+        # Wrong number of files.
+        #
+        with patch('desitransfer.daemon.log') as l:
+            o = verify_checksum(c, ['t.sha256sum', 'test_file_1.txt'])
+            self.assertEqual(o, -1)
+        l.error.assert_has_calls([call("%s does not match the number of files!", c)])
+        #
+        # Bad list of files.
+        #
+        with patch('desitransfer.daemon.log') as l:
+            o = verify_checksum(c, ['t.sha256sum', 'test_file_1.txt', 'test_file_3.txt'])
+            self.assertEqual(o, 1)
+        l.debug.assert_has_calls([call("%s is valid.", os.path.join(d, 'test_file_1.txt'))])
+        l.error.assert_has_calls([call("%s does not appear in %s!", os.path.join(d, 'test_file_3.txt'), c)])
+        #
+        # Hack hashlib to produce incorrect checksums.
+        #
+        with patch('desitransfer.daemon.log') as l:
+            with patch('hashlib.sha256') as h:
+                # h.sha256 = MagicMock()
+                h.hexdigest.return_value = 'abcdef'
+                o = verify_checksum(c, ['t.sha256sum', 'test_file_1.txt', 'test_file_2.txt'])
+                self.assertEqual(o, 2)
+        l.error.assert_has_calls([call("Checksum mismatch for %s!", os.path.join(d, 'test_file_1.txt')),
+                                  call("Checksum mismatch for %s!", os.path.join(d, 'test_file_2.txt'))])
 
 
 def test_suite():

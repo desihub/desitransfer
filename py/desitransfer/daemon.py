@@ -7,6 +7,7 @@ desitransfer.daemon
 Entry point for :command:`desi_transfer_daemon`.
 """
 import datetime as dt
+import hashlib
 import logging
 import os
 import shutil
@@ -105,7 +106,7 @@ def _config():
 
 
 def _options(*args):
-    """Parse command-line options for DTS script.
+    """Parse command-line options for :command:`desi_transfer_daemon`.
 
     Parameters
     ----------
@@ -165,7 +166,7 @@ def _configure_log(debug, size=100000000, backups=100):
     global log
     log_filename = os.path.realpath(os.path.join(os.environ['DESI_ROOT'],
                                                  'spectro', 'staging', 'logs',
-                                                 'desi_dts.log'))
+                                                 'desi_transfer_daemon.log'))
     log = get_logger(timestamp=True)
     h = log.parent.handlers[0]
     handler = RotatingFileHandler(log_filename, maxBytes=size,
@@ -178,8 +179,8 @@ def _configure_log(debug, size=100000000, backups=100):
     email_from = os.environ['USER'] + '@' + getfqdn()
     email_to = ['desi-data@desi.lbl.gov', ]
     handler2 = SMTPHandler('localhost', email_from, email_to,
-                           'Critical error reported by desi_dts!')
-    formatter2 = logging.Formatter('At %(asctime)s, desi_dts failed with this message:\n\n%(message)s\n\nKia ora koutou,\nThe DESI Collaboration Account',
+                           'Critical error reported by desi_transfer_daemon!')
+    formatter2 = logging.Formatter('At %(asctime)s, desi_transfer_daemon failed with this message:\n\n%(message)s\n\nKia ora koutou,\nThe DESI Collaboration Account',
                                    '%Y-%m-%dT%H:%M:%S %Z')
     handler2.setFormatter(formatter2)
     handler2.setLevel(logging.CRITICAL)
@@ -225,6 +226,10 @@ def verify_checksum(checksum_file, files):
     """
     with open(checksum_file) as c:
         data = c.read()
+    #
+    # The trailing \n at the end of the file should make the length of
+    # lines equal to the length of files.
+    #
     lines = data.split('\n')
     errors = 0
     if len(lines) == len(files):
@@ -234,12 +239,20 @@ def verify_checksum(checksum_file, files):
             ff = os.path.join(d, f)
             if ff != checksum_file:
                 with open(ff, 'rb') as fp:
-                    h = hashlib.sha256(fp.read).hexdigest()
-            if digest[f] == h:
-                log.debug("%f is valid.", ff)
-            else:
-                log.error("Checksum mismatch for %s!", ff)
-                errors += 1
+                    h = hashlib.sha256(fp.read()).hexdigest()
+                try:
+                    hh = digest[f]
+                except KeyError:
+                    hh = ''
+                    log.error("%s does not appear in %s!", ff, checksum_file)
+                    errors += 1
+                if hh == h:
+                    log.debug("%s is valid.", ff)
+                elif hh == '':
+                    pass
+                else:
+                    log.error("Checksum mismatch for %s!", ff)
+                    errors += 1
         return errors
     else:
         log.error("%s does not match the number of files!", checksum_file)
