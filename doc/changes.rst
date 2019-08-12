@@ -5,7 +5,7 @@ Change Log
 0.1.1 (unreleased)
 ------------------
 
-* No changes yet.
+* Increased test coverage.
 
 0.1.0 (2019-08-08)
 ------------------
