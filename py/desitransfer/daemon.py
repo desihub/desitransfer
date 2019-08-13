@@ -124,6 +124,8 @@ def _options(*args):
                       help='UTC time in hours to trigger HPSS backups (default %(default)s:00 UTC).')
     prsr.add_argument('-d', '--debug', action='store_true',
                       help='Set log level to DEBUG.')
+    prsr.add_argument('-e', '--rsh', metavar='COMMAND', dest='ssh', default='/bin/ssh',
+                      help="Use COMMAND for remote shell access (default '%(default)s').")
     prsr.add_argument('-k', '--kill', metavar='FILE',
                       default=os.path.join(os.environ['HOME'], 'stop_desi_transfer'),
                       help="Exit the script when FILE is detected (default %(default)s).")
@@ -144,6 +146,16 @@ def _options(*args):
 
 def _popen(command):
     """Simple wrapper for :class:`subprocess.Popen` to avoid repeated code.
+
+    Parameters
+    ----------
+    command : :class:`list`
+        Command to pass to :class:`subprocess.Popen`.
+
+    Returns
+    -------
+    :func:`tuple`
+        The returncode, standard output and standard error.
     """
     log.debug(' '.join(command))
     p = sub.Popen(command, stdout=sub.PIPE, stderr=sub.PIPE)
@@ -269,8 +281,7 @@ def main():
     """
     options = _options()
     _configure_log(options.debug)
-    ssh = 'ssh'
-    pipeline = PipelineCommand(options.nersc, ssh=ssh)
+    pipeline = PipelineCommand(options.nersc, ssh=options.ssh)
     while True:
         log.info('Starting transfer loop.')
         if os.path.exists(options.kill):
@@ -281,7 +292,7 @@ def main():
         #
         for d in _config():
             status = TransferStatus(os.path.join(os.path.dirname(d.staging), 'status'))
-            cmd = [ssh, '-q', 'dts', '/bin/find', d.source, '-type', 'l']
+            cmd = [options.ssh, '-q', 'dts', '/bin/find', d.source, '-type', 'l']
             _, out, err = _popen(cmd)
             links = sorted([x for x in out.split('\n') if x])
             if links:
