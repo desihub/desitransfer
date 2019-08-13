@@ -78,7 +78,7 @@ class PipelineCommand(object):
 
         Returns
         -------
-        list
+        :class:`list`
             A command suitable for passing to :class:`subprocess.Popen`.
         """
         cmd = command
@@ -271,6 +271,28 @@ def verify_checksum(checksum_file, files):
         return -1
 
 
+def _rsync(s, d, config='dts'):
+    """Set up rsync command.
+
+    Parameters
+    ----------
+    s : :class:`str`
+        Source directory.
+    d : :class:`str`
+        Destination directory.
+    config : :class:`str`, optional
+        Pass this configuration to the ssh command.
+
+    Returns
+    -------
+    :class:`list`
+        A list suitable for passing to :class:`subprocess.Popen`.
+    """
+    return ['/bin/rsync', '--verbose', '--no-motd', '--recursive',
+            '--copy-dirlinks', '--times', '--omit-dir-times',
+            config + ':' + s + '/', d + '/']
+
+
 def main():
     """Entry point for :command:`desi_transfer_daemon`.
 
@@ -313,11 +335,7 @@ def main():
                     se = os.path.join(n, exposure)
                     de = os.path.join(d.destination, night, exposure)
                     if not os.path.isdir(se) and not os.path.isdir(de):
-                        cmd = ['/bin/rsync', '--verbose', '--no-motd',
-                               '--recursive', '--copy-dirlinks', '--times',
-                               '--omit-dir-times',
-                               'dts:'+os.path.join(d.source, night, exposure)+'/',
-                               se+'/']
+                        cmd = _rsync(os.path.join(d.source, night, exposure), se)
                         if options.shadow:
                             log.debug(' '.join(cmd))
                             rsync_status = '0'
