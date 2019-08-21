@@ -91,7 +91,7 @@ def main():
             print("INFO: %s detected, shutting down daily transfer script." % options.kill)
             return 0
         for d in _config():
-            log = options.destination + '.log'
+            log = d.destination + '.log'
             cmd = rsync(d.source, d.destination)
             with open(log, 'ab') as l:
                 l.write(stamp().encode('utf-8'))
