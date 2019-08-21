@@ -94,10 +94,11 @@ def main():
             log = d.destination + '.log'
             cmd = rsync(d.source, d.destination)
             with open(log, 'ab') as l:
-                l.write(stamp().encode('utf-8'))
-                l.write(' '.join(cmd).encode('utf-8'))
+                l.write(("DEBUG: %s\n" % stamp()).encode('utf-8'))
+                l.write(("DEBUG: %s\n" % ' '.join(cmd)).encode('utf-8'))
                 p = sub.Popen(cmd, stdout=l, stderr=sub.STDOUT)
                 status = p.wait()
+                l.flush()
             if status == 0:
                 for dirpath, dirnames, filenames in os.walk(d.destination):
                     for d in dirnames:
