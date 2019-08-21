@@ -30,7 +30,7 @@ class TestDaily(unittest.TestCase):
         """Test transfer directory configuration.
         """
         with patch.dict('os.environ',
-                        {'DESI_ROOT': '/desi/root',}):
+                        {'DESI_ROOT': '/desi/root'}):
             c = _config()
             self.assertEqual(c[0].source, '/exposures/desi/sps')
             self.assertEqual(c[0].staging, 'UNUSED')
