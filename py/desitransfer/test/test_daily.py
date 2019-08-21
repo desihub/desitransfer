@@ -41,12 +41,13 @@ class TestDaily(unittest.TestCase):
     def test_options(self):
         """Test command-line arguments.
         """
-        options = _options('--debug')
+        options = _options('--daemon', '--kill',
+                           os.path.expanduser('~/stop_daily_transfer'))
         self.assertEqual(options.sleep, 24)
-        self.assertTrue(options.debug)
+        self.assertTrue(options.daemon)
         self.assertEqual(options.kill,
                          os.path.join(os.environ['HOME'],
-                                      'stop_desi_transfer'))
+                                      'stop_daily_transfer'))
 
 
 def test_suite():

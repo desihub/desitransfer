@@ -57,10 +57,18 @@ setup_keywords['cmdclass'] = {'module_file': ds.DesiModule,
                               # 'api': ds.DesiAPI,
                               'sdist': DistutilsSdist}
 setup_keywords['test_suite']='{name}.test.{name}_test_suite'.format(**setup_keywords)
+setup_keywords['classifiers'] = ['Development Status :: 4 - Beta',
+                                 'Environment :: Console',
+                                 'Intended Audience :: Science/Research',
+                                 'License :: OSI Approved :: BSD License',
+                                 'Operating System :: POSIX :: Linux',
+                                 'Programming Language :: Python :: 3 :: Only',
+                                 'Topic :: Scientific/Engineering :: Astronomy']
 #
 # Autogenerate command-line scripts.
 #
-# setup_keywords['entry_points'] = {'console_scripts':['desi_transfer_daemon = desitransfer.daemon:main',
+# setup_keywords['entry_points'] = {'console_scripts':['desi_daily_transfer = desitransfer.daily:main',
+#                                                      'desi_transfer_daemon = desitransfer.daemon:main',
 #                                                      'desi_transfer_status = desitransfer.status:main']}
 #
 # Add internal data directories.

@@ -52,9 +52,9 @@ def _options(*args):
     prsr = ArgumentParser(prog=os.path.basename(sys.argv[0]), description=desc)
     # prsr.add_argument('-b', '--backup', metavar='H', type=int, default=20,
     #                   help='UTC time in hours to trigger HPSS backups (default %(default)s:00 UTC).')
-    prsr.add_argument('-d', '--debug', action='store_true',
-                      help='Set log level to DEBUG.')
-    prsr.add_argument('-D', '--daemon', action='store_true',
+    # prsr.add_argument('-d', '--debug', action='store_true',
+    #                   help='Set log level to DEBUG.')
+    prsr.add_argument('-d', '--daemon', action='store_true',
                       help='Run in daemon mode.  If not specificed, the script will run once and exit.')
     prsr.add_argument('-e', '--rsh', metavar='COMMAND', dest='ssh', default='/bin/ssh',
                       help="Use COMMAND for remote shell access (default '%(default)s').")
@@ -67,8 +67,8 @@ def _options(*args):
     #                   help="Only transfer files, don't start the DESI pipeline.")
     prsr.add_argument('-s', '--sleep', metavar='H', type=int, default=24,
                       help='In daemon mode, sleep H hours before checking for new data (default %(default)s hours).')
-    prsr.add_argument('-S', '--shadow', action='store_true',
-                      help='Observe the actions of another data transfer script but do not make any changes.')
+    # prsr.add_argument('-S', '--shadow', action='store_true',
+    #                   help='Observe the actions of another data transfer script but do not make any changes.')
     if len(args) > 0:
         options = prsr.parse_args(args)
     else:  # pragma: no cover
