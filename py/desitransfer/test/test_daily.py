@@ -5,7 +5,7 @@
 import os
 import unittest
 from unittest.mock import patch
-from ..daily import main
+from ..daily import _config, _options
 
 
 class TestDaily(unittest.TestCase):
@@ -25,6 +25,28 @@ class TestDaily(unittest.TestCase):
 
     def tearDown(self):
         pass
+
+    def test_config(self):
+        """Test transfer directory configuration.
+        """
+        with patch.dict('os.environ',
+                        {'DESI_ROOT': '/desi/root',}):
+            c = _config()
+            self.assertEqual(c[0].source, '/exposures/desi/sps')
+            self.assertEqual(c[0].staging, 'UNUSED')
+            self.assertEqual(c[0].destination, os.path.join(os.environ['DESI_ROOT'],
+                                                            'engineering', 'spectrograph', 'sps'))
+            self.assertEqual(c[0].hpss, 'UNUSED')
+
+    def test_options(self):
+        """Test command-line arguments.
+        """
+        options = _options('--debug')
+        self.assertEqual(options.sleep, 24)
+        self.assertTrue(options.debug)
+        self.assertEqual(options.kill,
+                         os.path.join(os.environ['HOME'],
+                                      'stop_desi_transfer'))
 
 
 def test_suite():

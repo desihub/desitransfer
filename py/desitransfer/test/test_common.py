@@ -5,7 +5,7 @@
 import os
 import unittest
 from unittest.mock import patch
-from ..common import DTSDir, dir_perm, file_perm
+from ..common import DTSDir, dir_perm, file_perm, rsync
 
 
 class TestCommon(unittest.TestCase):
@@ -43,6 +43,15 @@ class TestCommon(unittest.TestCase):
         self.assertEqual(d.staging, '/desi/spectro/staging/raw')
         self.assertEqual(d.destination, '/desi/spectro/data')
         self.assertEqual(d.hpss, '/nersc/projects/desi/spectro/data')
+
+    def test_rsync(self):
+        """Test construction of rsync command.
+        """
+        r = rsync('/source', '/destination')
+        self.assertListEqual(r, ['/bin/rsync', '--verbose',
+                                 '--recursive', '--copy-dirlinks', '--times',
+                                 '--omit-dir-times', 'dts:/source/',
+                                 '/destination/'])
 
 
 def test_suite():

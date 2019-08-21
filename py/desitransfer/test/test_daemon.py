@@ -8,7 +8,7 @@ import unittest
 from unittest.mock import call, patch, MagicMock
 from pkg_resources import resource_filename
 from ..daemon import (_config, _configure_log, PipelineCommand,
-                      _options, _popen, _rsync, log,
+                      _options, _popen, log,
                       check_exposure, verify_checksum)
 
 
@@ -152,15 +152,6 @@ class TestDaemon(unittest.TestCase):
                 self.assertEqual(o, 2)
         l.error.assert_has_calls([call("Checksum mismatch for %s!", os.path.join(d, 'test_file_1.txt')),
                                   call("Checksum mismatch for %s!", os.path.join(d, 'test_file_2.txt'))])
-
-    def test_rsync(self):
-        """Test construction of rsync command.
-        """
-        r = _rsync('/source', '/destination')
-        self.assertListEqual(r, ['/bin/rsync', '--verbose', '--no-motd',
-                                 '--recursive', '--copy-dirlinks', '--times',
-                                 '--omit-dir-times', 'dts:/source/',
-                                 '/destination/'])
 
 
 def test_suite():
