@@ -11,27 +11,16 @@ import hashlib
 import logging
 import os
 import shutil
-import stat
 import subprocess as sub
 import sys
 from argparse import ArgumentParser
-from collections import namedtuple
 from logging.handlers import RotatingFileHandler, SMTPHandler
 from socket import getfqdn
 from pkg_resources import resource_filename
 from desiutil.log import get_logger
-
+from .common import DTSDir, dir_perm, file_perm
 
 log = None
-
-
-DTSDir = namedtuple('DTSDir', 'source, staging, destination, hpss')
-
-
-dir_perm = (stat.S_ISGID |
-            stat.S_IRUSR | stat.S_IWUSR | stat.S_IXUSR |
-            stat.S_IRGRP | stat.S_IXGRP)  # 0o2750
-file_perm = stat.S_IRUSR | stat.S_IRGRP    # 0o0440
 
 
 expected_files = ('desi-{exposure}.fits.fz',
