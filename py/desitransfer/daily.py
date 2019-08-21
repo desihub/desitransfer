@@ -7,10 +7,11 @@ desitransfer.daily
 Entry point for :command:`desi_daily_transfer`.
 """
 import os
+import subprocess as sub
 import sys
 import time
 from argparse import ArgumentParser
-from .common import DTSDir, dir_perm, file_perm, rsync
+from .common import DTSDir, dir_perm, file_perm, rsync, stamp
 
 
 def _config():
@@ -87,11 +88,25 @@ def main():
     while True:
         if os.path.exists(options.kill):
             # log.info("%s detected, shutting down daily transfer script.", options.kill)
-            print("%s detected, shutting down daily transfer script." % options.kill)
+            print("INFO: %s detected, shutting down daily transfer script." % options.kill)
             return 0
         for d in _config():
             log = options.destination + '.log'
-            cmd = rsync(options.source, options.destination)
+            cmd = rsync(d.source, d.destination)
+            with open(log, 'ab') as l:
+                l.write(stamp().encode('utf-8'))
+                l.write(' '.join(cmd).encode('utf-8'))
+                p = sub.Popen(cmd, stdout=l, stderr=sub.STDOUT)
+                status = p.wait()
+            if status == 0:
+                for dirpath, dirnames, filenames in os.walk(d.destination):
+                    for d in dirnames:
+                        os.chmod(os.path.join(dirpath, d), dir_perm)
+                    for f in filenames:
+                        os.chmod(os.path.join(dirpath, f), file_perm)
+            else:
+                print("ERROR: rsync problem detected for ${0.source} -> ${0.destination}!".format(d))
+                return status
         if options.daemon:
             time.sleep(options.sleep*60*60)
         else:

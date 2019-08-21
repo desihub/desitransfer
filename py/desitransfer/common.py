@@ -6,9 +6,10 @@ desitransfer.common
 
 Code needed by all scripts.
 """
+import datetime as dt
 import stat
 from collections import namedtuple
-
+import pytz
 
 DTSDir = namedtuple('DTSDir', 'source, staging, destination, hpss')
 
@@ -39,3 +40,21 @@ def rsync(s, d, config='dts'):
     return ['/bin/rsync', '--verbose', '--recursive',
             '--copy-dirlinks', '--times', '--omit-dir-times',
             config + ':' + s + '/', d + '/']
+
+
+def stamp(zone='US/Pacific'):
+    """Simple timestamp.
+
+    Parameters
+    ----------
+    zone : :class:`str`, optional
+        Operational timezone.
+
+    Returns
+    -------
+    :class:`str`
+        A nicely-formatted timestamp.
+    """
+    tz = pytz.timezone(zone)
+    n = dt.datetime.utcnow().replace(tzinfo=pytz.utc)
+    return n.astimezone(tz).strftime('%Y-%m-%d %H:%M:%S %Z')

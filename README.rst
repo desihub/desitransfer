@@ -6,8 +6,8 @@ desitransfer
     :target: https://travis-ci.org/desihub/desitransfer
     :alt: Travis Build Status
 
-.. image:: https://coveralls.io/repos/desihub/desitransfer/badge.svg?service=github
-    :target: https://coveralls.io/github/desihub/desitransfer
+.. image:: https://coveralls.io/repos/github/desihub/desitransfer/badge.svg?branch=master
+    :target: https://coveralls.io/github/desihub/desitransfer?branch=master
     :alt: Test Coverage Status
 
 .. image:: https://readthedocs.org/projects/desitransfer/badge/?version=latest

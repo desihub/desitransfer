@@ -2,10 +2,11 @@
 # -*- coding: utf-8 -*-
 """Test desitransfer.common.
 """
+import datetime
 import os
 import unittest
 from unittest.mock import patch
-from ..common import DTSDir, dir_perm, file_perm, rsync
+from ..common import DTSDir, dir_perm, file_perm, rsync, stamp
 
 
 class TestCommon(unittest.TestCase):
@@ -52,6 +53,14 @@ class TestCommon(unittest.TestCase):
                                  '--recursive', '--copy-dirlinks', '--times',
                                  '--omit-dir-times', 'dts:/source/',
                                  '/destination/'])
+
+    @patch('desitransfer.common.dt')
+    def test_stamp(self, mock_dt):
+        """Test timestamp.
+        """
+        mock_dt.datetime.utcnow.return_value = datetime.datetime(2019, 7, 3, 12, 0, 0)
+        s = stamp('US/Arizona')
+        self.assertEqual(s, '2019-07-03 05:00:00 MST')
 
 
 def test_suite():
