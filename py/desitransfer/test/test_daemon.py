@@ -123,15 +123,15 @@ class TestDaemon(unittest.TestCase):
         gl.assert_called_once_with(timestamp=True)
         ll.setLevel.assert_called_once_with(logging.DEBUG)
 
-    def test_check_exposure(self):
+    @patch('os.path.exists')
+    def test_check_exposure(self, mock_exists):
         """Test detection of expected files.
         """
-        with patch('os.path.exists') as e:
-            e.return_value = True
-            self.assertTrue(check_exposure('/desi/20190703', 12345678))
-        e.assert_has_calls([call('/desi/20190703/desi-12345678.fits.fz'),
-                            call('/desi/20190703/fibermap-12345678.fits'),
-                            call('/desi/20190703/guider-12345678.fits.fz')])
+        mock_exists.return_value = True
+        self.assertTrue(check_exposure('/desi/20190703', 12345678))
+        mock_exists.assert_has_calls([call('/desi/20190703/desi-12345678.fits.fz'),
+                                      call('/desi/20190703/fibermap-12345678.fits'),
+                                      call('/desi/20190703/guider-12345678.fits.fz')])
 
     def test_verify_checksum(self):
         """Test checksum verification.

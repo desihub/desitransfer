@@ -369,6 +369,9 @@ def transfer_directory(d, options, pipeline):
         The pipeline command construction object.
     """
     status = TransferStatus(os.path.join(os.path.dirname(d.staging), 'status'))
+    #
+    # Find symlinks at KPNO.
+    #
     cmd = [options.ssh, '-q', 'dts', '/bin/find', d.source, '-type', 'l']
     _, out, err = _popen(cmd)
     links = sorted([x for x in out.split('\n') if x])
@@ -606,9 +609,6 @@ def main():
         if os.path.exists(options.kill):
             log.info("%s detected, shutting down transfer daemon.", options.kill)
             return 0
-        #
-        # Find symlinks at KPNO.
-        #
         for d in transfer_directories:
             transfer_directory(d, options, pipeline)
         time.sleep(options.sleep*60)
