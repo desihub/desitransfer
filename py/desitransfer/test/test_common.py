@@ -6,7 +6,7 @@ import datetime
 import os
 import unittest
 from unittest.mock import patch
-from ..common import DTSDir, dir_perm, file_perm, empty_rsync, rsync, stamp, yesterday
+from ..common import DTSDir, dir_perm, file_perm, expand_environment, empty_rsync, rsync, stamp, yesterday
 
 
 class TestCommon(unittest.TestCase):
@@ -44,6 +44,22 @@ class TestCommon(unittest.TestCase):
         self.assertEqual(d.staging, '/desi/spectro/staging/raw')
         self.assertEqual(d.destination, '/desi/spectro/data')
         self.assertEqual(d.hpss, '/nersc/projects/desi/spectro/data')
+
+    def test_expand_environment(self):
+        """Test expansion of environment variables in dictionaries.
+        """
+        pd = {'HOME': '/home/me',
+              'DESI_ROOT': '/desi',
+              'DESI_SPECTRO_REDUX': '/desi/spectro/redux',
+              'SPECPROD': 'foo'}
+        input = {'src': '{HOME}/source',
+                 'dest': '{DESI_SPECTRO_REDUX}/{SPECPROD}',
+                 'foo': {'a': '{SPECPROD}', 'b': [1, 2, 3], 'c': 4}}
+        with patch.dict('os.environ', pd):
+            out = expand_environment(input)
+        self.assertEqual(out['src'], '/home/me/source')
+        self.assertEqual(out['dest'], '/desi/spectro/redux/foo')
+        self.assertEqual(out['foo']['a'], 'foo')
 
     def test_empty_rsync(self):
         """Test parsing of rsync output.

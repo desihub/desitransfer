@@ -9,7 +9,7 @@ import unittest
 from unittest.mock import call, patch, MagicMock
 from pkg_resources import resource_filename
 from ..daemon import (_config, _configure_log, PipelineCommand,
-                      _options, _popen, log,
+                      _options, _read_configuration, _popen, log,
                       check_exposure, verify_checksum,
                       lock_directory, unlock_directory, rsync_night)
 
@@ -31,6 +31,18 @@ class TestDaemon(unittest.TestCase):
 
     def tearDown(self):
         pass
+
+    def test_read_configuration(self):
+        """Test reading configuration file.
+        """
+        with patch.dict('os.environ',
+                        {'DESI_ROOT': '/desi/root',
+                         'DESI_SPECTRO_DATA': '/desi/root/spectro/data'}):
+            c = _read_configuration()
+        self.assertEqual(c[0]['destination'], '/desi/root/spectro/data')
+        self.assertEqual(c[0]['staging'], '/desi/root/spectro/staging/raw')
+        self.assertEqual(c[0]['pipeline']['desi_night'],
+                         os.path.join(os.environ['HOME'], 'bin', 'wrap_desi_night.sh'))
 
     def test_config(self):
         """Test transfer directory configuration.

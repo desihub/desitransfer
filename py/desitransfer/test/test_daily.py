@@ -69,7 +69,6 @@ class TestDaily(unittest.TestCase):
                              call().write(b'DEBUG: /bin/rsync --verbose --recursive --copy-dirlinks --times --omit-dir-times dts:/src/d0/ /dst/d0/\n'),
                              call().flush(),
                              call().__exit__(None, None, None)])
-        print(mock_chmod.mock_calls)
         mock_walk.assert_called_once_with('/dst/d0')
         mock_chmod.assert_has_calls([call('/dst/d0', 1512),
                                      call('/dst/d0/f1', 288),

@@ -7,6 +7,7 @@ desitransfer.common
 Code needed by all scripts.
 """
 import datetime as dt
+import os
 import re
 import stat
 from collections import namedtuple
@@ -19,6 +20,29 @@ dir_perm = (stat.S_ISGID |
             stat.S_IRUSR | stat.S_IWUSR | stat.S_IXUSR |
             stat.S_IRGRP | stat.S_IXGRP)  # 0o2750
 file_perm = stat.S_IRUSR | stat.S_IRGRP    # 0o0440
+
+
+def expand_environment(d):
+    """Expand environment variables in the values of dictionary `d`.
+
+    Parameters
+    ----------
+    d : :class:`dict`
+        A dictionary or other object with keywords and values.
+
+    Returns
+    -------
+    :class:`dict`
+        The dictionary with values expanded.
+    """
+    env = re.compile(r'\{[A-Z_0-9]+\}')
+    for k, v in d.items():
+        if isinstance(v, dict):
+            d[k] = expand_environment(v)
+        if isinstance(v, str):
+            if env.search(v) is not None:
+                d[k] = v.format(**os.environ)
+    return d
 
 
 def empty_rsync(out):

@@ -8,6 +8,7 @@ Entry point for :command:`desi_transfer_daemon`.
 """
 import datetime as dt
 import hashlib
+import json
 import logging
 import os
 import shutil
@@ -18,8 +19,9 @@ from argparse import ArgumentParser
 from logging.handlers import RotatingFileHandler, SMTPHandler
 from socket import getfqdn
 from tempfile import TemporaryFile
+from pkg_resources import resource_filename
 from desiutil.log import get_logger
-from .common import DTSDir, dir_perm, file_perm, rsync, yesterday
+from .common import DTSDir, dir_perm, file_perm, expand_environment, rsync, yesterday
 
 
 log = None
@@ -131,6 +133,12 @@ def _options(*args):
     prsr.add_argument('-S', '--shadow', action='store_true',
                       help='Observe the actions of another data transfer script but do not make any changes.')
     return prsr.parse_args()
+
+
+def _read_configuration():
+    with open(resource_filename('desitransfer', 'data/desi_transfer_daemon.json')) as j:
+        c = json.load(j)
+    return [expand_environment(cc) for cc in c]
 
 
 def _popen(command):
@@ -521,7 +529,7 @@ def transfer_exposure(d, options, link, status, pipeline):
         # Verify checksums.
         #
         exposure_files = os.listdir(staging_exposure)
-        checksum_file = os.path.join(se, "checksum-{0}-{1}.sha256sum".format(night, exposure))
+        checksum_file = os.path.join(staging_exposure, "checksum-{0}-{1}.sha256sum".format(night, exposure))
         if os.path.exists(checksum_file):
             checksum_status = verify_checksum(checksum_file, exposure_files)
         else:
