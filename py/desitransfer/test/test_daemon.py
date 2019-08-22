@@ -10,7 +10,8 @@ from unittest.mock import call, patch, MagicMock
 from pkg_resources import resource_filename
 from ..daemon import (_config, _configure_log, PipelineCommand,
                       _options, _popen, log,
-                      check_exposure, verify_checksum)
+                      check_exposure, verify_checksum,
+                      lock_directory, unlock_directory, rsync_night)
 
 
 class TestDaemon(unittest.TestCase):
@@ -156,6 +157,73 @@ class TestDaemon(unittest.TestCase):
                 self.assertEqual(o, 2)
         l.error.assert_has_calls([call("Checksum mismatch for %s!", os.path.join(d, 'test_file_1.txt')),
                                   call("Checksum mismatch for %s!", os.path.join(d, 'test_file_2.txt'))])
+
+    @patch('os.walk')
+    @patch('os.chmod')
+    @patch('desitransfer.daemon.log')
+    def test_lock_directory(self, mock_log, mock_chmod, mock_walk):
+        """Test directory locking.
+        """
+        mock_walk.return_value = [('/d0', ['d1', 'd2'], ['f1', 'f2']),
+                                  ('/d0/d1', [], ['f3']),
+                                  ('/d0/d2', [], ['f4'])]
+        lock_directory('/d0')
+        mock_log.debug.assert_has_calls([call("os.chmod('%s', 0o%o)", '/d0', 0o2750),
+                                         call("os.chmod('%s', 0o%o)", '/d0/f1', 0o0440),
+                                         call("os.chmod('%s', 0o%o)", '/d0/f2', 0o0440),
+                                         call("os.chmod('%s', 0o%o)", '/d0/d1', 0o2750),
+                                         call("os.chmod('%s', 0o%o)", '/d0/d1/f3', 0o0440),
+                                         call("os.chmod('%s', 0o%o)", '/d0/d2', 0o2750),
+                                         call("os.chmod('%s', 0o%o)", '/d0/d2/f4', 0o0440)])
+        mock_chmod.assert_has_calls([call('/d0', 0o2750),
+                                     call('/d0/f1', 0o0440),
+                                     call('/d0/f2', 0o0440),
+                                     call('/d0/d1', 0o2750),
+                                     call('/d0/d1/f3', 0o0440),
+                                     call('/d0/d2', 0o2750),
+                                     call('/d0/d2/f4', 0o0440)])
+
+
+    @patch('os.walk')
+    @patch('os.chmod')
+    @patch('desitransfer.daemon.log')
+    def test_unlock_directory(self, mock_log, mock_chmod, mock_walk):
+        """Test directory unlocking.
+        """
+        mock_walk.return_value = [('/d0', ['d1', 'd2'], ['f1', 'f2']),
+                                  ('/d0/d1', [], ['f3']),
+                                  ('/d0/d2', [], ['f4'])]
+        unlock_directory('/d0')
+        mock_log.debug.assert_has_calls([call("os.chmod('%s', 0o%o)", '/d0', 0o2750),
+                                         call("os.chmod('%s', 0o%o)", '/d0/f1', 0o0640),
+                                         call("os.chmod('%s', 0o%o)", '/d0/f2', 0o0640),
+                                         call("os.chmod('%s', 0o%o)", '/d0/d1', 0o2750),
+                                         call("os.chmod('%s', 0o%o)", '/d0/d1/f3', 0o0640),
+                                         call("os.chmod('%s', 0o%o)", '/d0/d2', 0o2750),
+                                         call("os.chmod('%s', 0o%o)", '/d0/d2/f4', 0o0640)])
+        mock_chmod.assert_has_calls([call('/d0', 0o2750),
+                                     call('/d0/f1', 0o0640),
+                                     call('/d0/f2', 0o0640),
+                                     call('/d0/d1', 0o2750),
+                                     call('/d0/d1/f3', 0o0640),
+                                     call('/d0/d2', 0o2750),
+                                     call('/d0/d2/f4', 0o0640)])
+
+    @patch('desitransfer.daemon._popen')
+    @patch('desitransfer.daemon.lock_directory')
+    @patch('desitransfer.daemon.unlock_directory')
+    @patch('desitransfer.daemon.log')
+    def test_rsync_night(self, mock_log, mock_unlock, mock_lock, mock_popen):
+        """Test resyncing an entire night.
+        """
+        cmd = ['/bin/rsync', '--verbose', '--recursive', '--copy-dirlinks',
+               '--times', '--omit-dir-times',
+               'dts:/source/20190703/', '/destination/20190703/']
+        mock_popen.return_value = ('0', 'stdout', 'stderr')
+        rsync_night('/source', '/destination', '20190703', True)
+        mock_log.debug.assert_called_with(' '.join(cmd))
+        rsync_night('/source', '/destination', '20190703')
+        mock_popen.assert_called_with(cmd)
 
 
 def test_suite():

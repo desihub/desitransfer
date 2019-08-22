@@ -11,6 +11,7 @@ import hashlib
 import logging
 import os
 import shutil
+import stat
 import subprocess as sub
 import sys
 from argparse import ArgumentParser
@@ -272,6 +273,81 @@ def verify_checksum(checksum_file, files):
         return -1
 
 
+def unlock_directory(directory, test=False):
+    """Set a directory and its contents user-writeable.
+
+    Parameters
+    ----------
+    directory : :class:`str`
+        Directory to unlock.
+    test : :class:`bool`, optional
+        If ``True``, only print the commands.
+    """
+    for dirpath, dirnames, filenames in os.walk(directory):
+        log.debug("os.chmod('%s', 0o%o)", dirpath, dir_perm | stat.S_IWUSR)
+        if not test:
+            os.chmod(dirpath, dir_perm | stat.S_IWUSR)
+        for f in filenames:
+            log.debug("os.chmod('%s', 0o%o)", os.path.join(dirpath, f),
+                      file_perm | stat.S_IWUSR)
+            if not test:
+                os.chmod(os.path.join(dirpath, f), file_perm | stat.S_IWUSR)
+
+
+def lock_directory(directory, test=False):
+    """Set a directory and its contents read-only.
+
+    Parameters
+    ----------
+    directory : :class:`str`
+        Directory to lock.
+    test : :class:`bool`, optional
+        If ``True``, only print the commands.
+    """
+    for dirpath, dirnames, filenames in os.walk(directory):
+        log.debug("os.chmod('%s', 0o%o)", dirpath, dir_perm)
+        if not test:
+            os.chmod(dirpath, dir_perm)
+        for f in filenames:
+            log.debug("os.chmod('%s', 0o%o)", os.path.join(dirpath, f), file_perm)
+            if not test:
+                os.chmod(os.path.join(dirpath, f), file_perm)
+
+
+def rsync_night(source, destination, night, test=False):
+    """Run an rsync command on an entire `night`, for example, to pick up
+    delayed files.
+
+    Parameters
+    ----------
+    source : :class:`str`
+        Source directory.
+    destination : :class:`str`
+        Destination directory.
+    night : :class:`str`
+        Night directory.
+    test : :class:`bool`, optional
+        If ``True``, only print the commands.
+    """
+    #
+    # Unlock files.
+    #
+    unlock_directory(os.path.join(destination, night), test)
+    #
+    # Run rsync.
+    #
+    cmd = rsync(os.path.join(source, night),
+                os.path.join(destination, night))
+    if test:
+        log.debug(' '.join(cmd))
+    else:
+        rsync_status, out, err = _popen(cmd)
+    #
+    # Lock files.
+    #
+    lock_directory(os.path.join(destination, night), test)
+
+
 def main():
     """Entry point for :command:`desi_transfer_daemon`.
 
@@ -331,18 +407,7 @@ def main():
                         #
                         # Check permissions.
                         #
-                        log.debug("os.chmod('%s', 0o%o)", se, dir_perm)
-                        if not options.shadow:
-                            os.chmod(se, dir_perm)
-                        exposure_files = os.listdir(se)
-                        for f in exposure_files:
-                            ff = os.path.join(se, f)
-                            if os.path.isfile(ff):
-                                log.debug("os.chmod('%s', 0o%o)", ff, file_perm)
-                                if not options.shadow:
-                                    os.chmod(ff, file_perm)
-                            else:
-                                log.warning("Unexpected file type detected: %s", ff)
+                        lock_directory(se, options.shadow)
                         #
                         # Verify checksums.
                         #
@@ -440,27 +505,7 @@ def main():
                             log.info('No files appear to have changed in %s.', yst)
                         else:
                             log.warning('New files detected in %s!', yst)
-                            for dirpath, dirnames, filenames in os.walk(os.path.join(d.destination, yst)):
-                                for d in dirnames:
-                                    log.debug("os.chmod('%s', 0o%o)", os.path.join(dirpath, d), dir_perm)
-                                    if not options.shadow:
-                                        os.chmod(os.path.join(dirpath, d), dir_perm)
-                                for f in filenames:
-                                    log.debug("os.chmod('%s', 0o%o)", os.path.join(dirpath, f), file_perm)
-                                    if not options.shadow:
-                                        os.chmod(os.path.join(dirpath, f), file_perm)
-                            cmd = rsync(os.path.join(d.source, yst),
-                                        os.path.join(d.destination, yst))
-                            rsync_status, out, err = _popen(cmd)
-                            for dirpath, dirnames, filenames in os.walk(os.path.join(d.destination, yst)):
-                                for d in dirnames:
-                                    log.debug("os.chmod('%s', 0o%o)", os.path.join(dirpath, d), dir_perm)
-                                    if not options.shadow:
-                                        os.chmod(os.path.join(dirpath, d), dir_perm)
-                                for f in filenames:
-                                    log.debug("os.chmod('%s', 0o%o)", os.path.join(dirpath, f), file_perm)
-                                    if not options.shadow:
-                                        os.chmod(os.path.join(dirpath, f), file_perm)
+                            rsync_night(d.source, d.destination, yst, options.shadow)
                 else:
                     log.warning("No data from %s detected, skipping catch-up transfer.", yst)
             #
@@ -489,6 +534,23 @@ def main():
                     if backup_file in backup_files and backup_file + '.idx' in backup_files:
                         log.debug("Backup of %s already complete.", yst)
                     else:
+                        #
+                        # Run a final sync of the night and see if anything changed.
+                        # This isn't supposed to be necessary, but during
+                        # commissioning, all kinds of crazy stuff might happen.
+                        #
+                        sync_file = sync_file.replace('ketchup', 'final_sync')
+                        cmd = rsync(os.path.join(d.source, yst),
+                                    os.path.join(d.destination, yst), test=True)
+                        rsync_status, out, err = _popen(cmd)
+                        if empty_rsync(out):
+                            log.info('No files appear to have changed in %s.', yst)
+                        else:
+                            log.warning('New files detected in %s!', yst)
+                            rsync_night(d.source, d.destination, yst, options.shadow)
+                        #
+                        # Issue HTAR command.
+                        #
                         start_dir = os.getcwd()
                         log.debug("os.chdir('%s')", d.destination)
                         os.chdir(d.destination)
