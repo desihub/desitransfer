@@ -355,7 +355,7 @@ def transfer_directory(d, options, pipeline):
     ----------
     d : :class:`desitransfer.common.DTSDir`
         Configuration for the destination directory.
-    options : :class:`argparse.NamedTuple`
+    options : :class:`argparse.Namespace`
         The command-line options.
     pipeline : :class:`desitransfer.daemon.PipelineCommand`
         The pipeline command construction object.
@@ -473,7 +473,7 @@ def transfer_exposure(d, options, link, status, pipeline):
     ----------
     d : :class:`desitransfer.common.DTSDir`
         Configuration for the destination directory.
-    options : :class:`argparse.NamedTuple`
+    options : :class:`argparse.Namespace`
         The command-line options.
     link : :class:`str`
         The exposure path.

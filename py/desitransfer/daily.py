@@ -79,6 +79,11 @@ def transfer_directory(d):
     ----------
     d : :class:`desitransfer.common.DTSDir`
         Configuration for the destination directory.
+
+    Returns
+    -------
+    :class:`int`
+        The status returned by :command:`rsync`.
     """
     log = d.destination + '.log'
     cmd = rsync(d.source, d.destination)
@@ -107,7 +112,6 @@ def main():
     options = _options()
     while True:
         if os.path.exists(options.kill):
-            # log.info("%s detected, shutting down daily transfer script.", options.kill)
             print("INFO: %s detected, shutting down daily transfer script." % options.kill)
             return 0
         for d in _config():
