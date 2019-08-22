@@ -3,6 +3,7 @@
 """Test desitransfer.daily.
 """
 import os
+import sys
 import unittest
 from unittest.mock import patch
 from ..daily import _config, _options
@@ -41,13 +42,15 @@ class TestDaily(unittest.TestCase):
     def test_options(self):
         """Test command-line arguments.
         """
-        options = _options('--daemon', '--kill',
-                           os.path.expanduser('~/stop_daily_transfer'))
-        self.assertEqual(options.sleep, 24)
-        self.assertTrue(options.daemon)
-        self.assertEqual(options.kill,
-                         os.path.join(os.environ['HOME'],
-                                      'stop_daily_transfer'))
+        with patch.object(sys, 'argv',
+                          ['desi_daily_transfer', '--daemon', '--kill',
+                           os.path.expanduser('~/stop_daily_transfer')]):
+            options = _options()
+            self.assertEqual(options.sleep, 24)
+            self.assertTrue(options.daemon)
+            self.assertEqual(options.kill,
+                             os.path.join(os.environ['HOME'],
+                                          'stop_daily_transfer'))
 
 
 def test_suite():

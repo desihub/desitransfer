@@ -6,7 +6,7 @@ import datetime
 import os
 import unittest
 from unittest.mock import patch
-from ..common import DTSDir, dir_perm, file_perm, rsync, stamp, yesterday
+from ..common import DTSDir, dir_perm, file_perm, empty_rsync, rsync, stamp, yesterday
 
 
 class TestCommon(unittest.TestCase):
@@ -44,6 +44,23 @@ class TestCommon(unittest.TestCase):
         self.assertEqual(d.staging, '/desi/spectro/staging/raw')
         self.assertEqual(d.destination, '/desi/spectro/data')
         self.assertEqual(d.hpss, '/nersc/projects/desi/spectro/data')
+
+    def test_empty_rsync(self):
+        """Test parsing of rsync output.
+        """
+        r = """receiving incremental file list
+
+sent 765 bytes  received 238,769 bytes  159,689.33 bytes/sec
+total size is 118,417,836,324  speedup is 494,367.55
+"""
+        self.assertTrue(empty_rsync(r))
+        r = """receiving incremental file list
+foo/bar.txt
+
+sent 765 bytes  received 238,769 bytes  159,689.33 bytes/sec
+total size is 118,417,836,324  speedup is 494,367.55
+"""
+        self.assertFalse(empty_rsync(r))
 
     def test_rsync(self):
         """Test construction of rsync command.

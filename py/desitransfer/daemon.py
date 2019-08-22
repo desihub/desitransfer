@@ -423,7 +423,9 @@ def main():
             now = int(dt.datetime.utcnow().strftime('%H'))
             ketchup_file = d.destination.replace('/', '_')
             sync_file = os.path.join(os.environ['CSCRATCH'],
-                                     'ketchup_{0}_{1}.log'.format(ketchup_file, yst))
+                                     'ketchup_{0}_{1}.txt'.format(ketchup_file, yst))
+            if options.shadow:
+                sync_file.replace('.txt', '.shadow.txt')
             if now >= options.catchup:
                 if os.path.isdir(os.path.join(d.destination, yst)):
                     if os.path.exists(sync_file):
@@ -432,8 +434,33 @@ def main():
                         cmd = rsync(os.path.join(d.source, yst),
                                     os.path.join(d.destination, yst), test=True)
                         rsync_status, out, err = _popen(cmd)
-                    # changed=$(/usr/bin/grep -E -v '^(receiving|sent|total)' ${sync_file} | \
-                    #     /usr/bin/grep -E -v '^$' | /usr/bin/wc -l)
+                        with open(sync_file, 'w') as sf:
+                            sf.write(out)
+                        if empty_rsync(out):
+                            log.info('No files appear to have changed in %s.', yst)
+                        else:
+                            log.warning('New files detected in %s!', yst)
+                            for dirpath, dirnames, filenames in os.walk(os.path.join(d.destination, yst)):
+                                for d in dirnames:
+                                    log.debug("os.chmod('%s', 0o%o)", os.path.join(dirpath, d), dir_perm)
+                                    if not options.shadow:
+                                        os.chmod(os.path.join(dirpath, d), dir_perm)
+                                for f in filenames:
+                                    log.debug("os.chmod('%s', 0o%o)", os.path.join(dirpath, f), file_perm)
+                                    if not options.shadow:
+                                        os.chmod(os.path.join(dirpath, f), file_perm)
+                            cmd = rsync(os.path.join(d.source, yst),
+                                        os.path.join(d.destination, yst))
+                            rsync_status, out, err = _popen(cmd)
+                            for dirpath, dirnames, filenames in os.walk(os.path.join(d.destination, yst)):
+                                for d in dirnames:
+                                    log.debug("os.chmod('%s', 0o%o)", os.path.join(dirpath, d), dir_perm)
+                                    if not options.shadow:
+                                        os.chmod(os.path.join(dirpath, d), dir_perm)
+                                for f in filenames:
+                                    log.debug("os.chmod('%s', 0o%o)", os.path.join(dirpath, f), file_perm)
+                                    if not options.shadow:
+                                        os.chmod(os.path.join(dirpath, f), file_perm)
                 else:
                     log.warning("No data from %s detected, skipping catch-up transfer.", yst)
             #

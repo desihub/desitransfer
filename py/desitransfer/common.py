@@ -7,6 +7,7 @@ desitransfer.common
 Code needed by all scripts.
 """
 import datetime as dt
+import re
 import stat
 from collections import namedtuple
 import pytz
@@ -18,6 +19,23 @@ dir_perm = (stat.S_ISGID |
             stat.S_IRUSR | stat.S_IWUSR | stat.S_IXUSR |
             stat.S_IRGRP | stat.S_IXGRP)  # 0o2750
 file_perm = stat.S_IRUSR | stat.S_IRGRP    # 0o0440
+
+
+def empty_rsync(out):
+    """Scan rsync output for files to be transferred.
+
+    Parameters
+    ----------
+    out : :class:`str`
+        Output from :command:`rsync`.
+
+    Returns
+    -------
+    :class:`bool`
+        ``True`` if there are no files to transfer.
+    """
+    rr = re.compile(r'(receiving|sent [0-9]+ bytes|total size)')
+    return all([rr.match(l) is not None for l in out.split('\n') if l])
 
 
 def rsync(s, d, test=False, config='dts'):

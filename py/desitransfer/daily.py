@@ -69,11 +69,7 @@ def _options(*args):
                       help='In daemon mode, sleep H hours before checking for new data (default %(default)s hours).')
     # prsr.add_argument('-S', '--shadow', action='store_true',
     #                   help='Observe the actions of another data transfer script but do not make any changes.')
-    if len(args) > 0:
-        options = prsr.parse_args(args)
-    else:  # pragma: no cover
-        options = prsr.parse_args()
-    return options
+    return prsr.parse_args()
 
 
 def main():
