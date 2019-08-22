@@ -2,8 +2,9 @@
 # -*- coding: utf-8 -*-
 """Test desitransfer.daemon.
 """
-import os
 import logging
+import os
+import sys
 import unittest
 from unittest.mock import call, patch, MagicMock
 from pkg_resources import resource_filename
@@ -72,25 +73,28 @@ class TestDaemon(unittest.TestCase):
     def test_options(self):
         """Test command-line arguments.
         """
-        options = _options('--debug')
-        self.assertEqual(options.backup, 20)
-        self.assertTrue(options.debug)
-        self.assertEqual(options.kill,
-                         os.path.join(os.environ['HOME'],
-                                      'stop_desi_transfer'))
+        with patch.object(sys, 'argv', ['desi_transfer_daemon', '--debug']):
+            options = _options()
+            self.assertEqual(options.backup, 20)
+            self.assertTrue(options.debug)
+            self.assertEqual(options.kill,
+                             os.path.join(os.environ['HOME'],
+                                          'stop_desi_transfer'))
 
-    def test_popen(self):
+    @patch('desitransfer.daemon.TemporaryFile')
+    @patch('subprocess.Popen')
+    @patch('desitransfer.daemon.log')
+    def test_popen(self, mock_log, mock_popen, mock_temp):
         """Test Popen wrapper.
         """
-        with patch('desitransfer.daemon.log') as m:
-            with patch('subprocess.Popen') as p:
-                proc = p.return_value = MagicMock()
-                proc.returncode = 0
-                proc.communicate.return_value = (b'stdout', b'stderr')
-                pp = _popen(['foo', 'bar'])
-                self.assertEqual(pp, ('0', 'stdout', 'stderr'))
-        m.debug.assert_called_once_with('foo bar')
-        p.assert_called_once_with(['foo', 'bar'], stdout=-1, stderr=-1)
+        mock_file = mock_temp().__enter__.return_value = MagicMock()
+        mock_file.read.return_value = b'MOCK'
+        proc = mock_popen.return_value = MagicMock()
+        proc.returncode = 0
+        pp = _popen(['foo', 'bar'])
+        self.assertEqual(pp, ('0', 'MOCK', 'MOCK'))
+        mock_log.debug.assert_called_once_with('foo bar')
+        mock_popen.assert_called_once_with(['foo', 'bar'], stdout=mock_file, stderr=mock_file)
 
     @patch('desitransfer.daemon.SMTPHandler')
     @patch('desitransfer.daemon.RotatingFileHandler')

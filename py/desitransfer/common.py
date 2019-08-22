@@ -20,7 +20,7 @@ dir_perm = (stat.S_ISGID |
 file_perm = stat.S_IRUSR | stat.S_IRGRP    # 0o0440
 
 
-def rsync(s, d, config='dts'):
+def rsync(s, d, test=False, config='dts'):
     """Set up rsync command.
 
     Parameters
@@ -29,6 +29,8 @@ def rsync(s, d, config='dts'):
         Source directory.
     d : :class:`str`
         Destination directory.
+    test : :class:`str`, optional
+        If ``True``, add ``--dry-run`` to the command.
     config : :class:`str`, optional
         Pass this configuration to the ssh command.
 
@@ -37,9 +39,12 @@ def rsync(s, d, config='dts'):
     :class:`list`
         A list suitable for passing to :class:`subprocess.Popen`.
     """
-    return ['/bin/rsync', '--verbose', '--recursive',
-            '--copy-dirlinks', '--times', '--omit-dir-times',
-            config + ':' + s + '/', d + '/']
+    c =  ['/bin/rsync', '--verbose', '--recursive',
+          '--copy-dirlinks', '--times', '--omit-dir-times',
+          config + ':' + s + '/', d + '/']
+    if test:
+        c.insert(1, '--dry-run')
+    return c
 
 
 def stamp(zone='US/Pacific'):

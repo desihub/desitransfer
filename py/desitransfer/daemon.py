@@ -16,9 +16,10 @@ import sys
 from argparse import ArgumentParser
 from logging.handlers import RotatingFileHandler, SMTPHandler
 from socket import getfqdn
-from pkg_resources import resource_filename
+from tempfile import TemporaryFile
 from desiutil.log import get_logger
 from .common import DTSDir, dir_perm, file_perm, rsync, yesterday
+
 
 log = None
 
@@ -111,6 +112,8 @@ def _options(*args):
     prsr = ArgumentParser(prog=os.path.basename(sys.argv[0]), description=desc)
     prsr.add_argument('-b', '--backup', metavar='H', type=int, default=20,
                       help='UTC time in hours to trigger HPSS backups (default %(default)s:00 UTC).')
+    prsr.add_argument('-c', '--catchup', metavar='H', type=int, default=14,
+                      help='UTC time in hours to look for delayed files (default %(default)s:00 UTC).')
     prsr.add_argument('-d', '--debug', action='store_true',
                       help='Set log level to DEBUG.')
     prsr.add_argument('-e', '--rsh', metavar='COMMAND', dest='ssh', default='/bin/ssh',
@@ -126,11 +129,7 @@ def _options(*args):
                       help='Sleep M minutes before checking for new data (default %(default)s minutes).')
     prsr.add_argument('-S', '--shadow', action='store_true',
                       help='Observe the actions of another data transfer script but do not make any changes.')
-    if len(args) > 0:
-        options = prsr.parse_args(args)
-    else:  # pragma: no cover
-        options = prsr.parse_args()
-    return options
+    return prsr.parse_args()
 
 
 def _popen(command):
@@ -147,8 +146,13 @@ def _popen(command):
         The returncode, standard output and standard error.
     """
     log.debug(' '.join(command))
-    p = sub.Popen(command, stdout=sub.PIPE, stderr=sub.PIPE)
-    out, err = p.communicate()
+    with TemporaryFile() as tout, TemporaryFile() as terr:
+        p = sub.Popen(command, stdout=tout, stderr=terr)
+        p.wait()
+        tout.seek(0)
+        out = tout.read()
+        terr.seek(0)
+        err = terr.read()
     return (str(p.returncode), out.decode('utf-8'), err.decode('utf-8'))
 
 
@@ -181,8 +185,16 @@ def _configure_log(debug, size=100000000, backups=100):
     email_to = ['desi-data@desi.lbl.gov', ]
     handler2 = SMTPHandler('localhost', email_from, email_to,
                            'Critical error reported by desi_transfer_daemon!')
-    formatter2 = logging.Formatter('At %(asctime)s, desi_transfer_daemon failed with this message:\n\n%(message)s\n\nKia ora koutou,\nThe DESI Collaboration Account',
-                                   '%Y-%m-%dT%H:%M:%S %Z')
+    fmt = """Greetings,
+
+At %(asctime)s, desi_transfer_daemon failed with this message:
+
+%(message)s
+
+Kia ora koutou,
+The DESI Collaboration Account
+"""
+    formatter2 = logging.Formatter(fmt, datefmt='%Y-%m-%d %H:%M:%S %Z')
     handler2.setFormatter(formatter2)
     handler2.setLevel(logging.CRITICAL)
     log.parent.addHandler(handler2)
@@ -396,12 +408,39 @@ def main():
             else:
                 log.warning('No links found, check connection.')
             #
+            # WARNING: some of the auxilliary files below were created under
+            # the assumption that only one source directory exists at KPNO and
+            # only one destination directory exists at NERSC.  This should be
+            # fixed now, but watch out for this.
+            #
+            # Do a "catch-up" transfer to catch delayed files in the morning,
+            # rather than at noon.
+            # 07:00 MST = 14:00 UTC.
+            # This script can do nothing about exposures that were never linked
+            # into the DTS area at KPNO in the first place.
+            #
+            yst = yesterday()
+            now = int(dt.datetime.utcnow().strftime('%H'))
+            ketchup_file = d.destination.replace('/', '_')
+            sync_file = os.path.join(os.environ['CSCRATCH'],
+                                     'ketchup_{0}_{1}.log'.format(ketchup_file, yst))
+            if now >= options.catchup:
+                if os.path.isdir(os.path.join(d.destination, yst)):
+                    if os.path.exists(sync_file):
+                        log.debug("%s detected, catch-up transfer is done.", sync_file)
+                    else:
+                        cmd = rsync(os.path.join(d.source, yst),
+                                    os.path.join(d.destination, yst), test=True)
+                        rsync_status, out, err = _popen(cmd)
+                    # changed=$(/usr/bin/grep -E -v '^(receiving|sent|total)' ${sync_file} | \
+                    #     /usr/bin/grep -E -v '^$' | /usr/bin/wc -l)
+                else:
+                    log.warning("No data from %s detected, skipping catch-up transfer.", yst)
+            #
             # Are any nights eligible for backup?
             # 12:00 MST = 19:00 UTC.
             # Plus one hour just to be safe, so after 20:00 UTC.
             #
-            yst = yesterday()
-            now = int(dt.datetime.utcnow().strftime('%H'))
             hpss_file = d.hpss.replace('/', '_')
             ls_file = os.path.join(os.environ['CSCRATCH'], hpss_file + '.txt')
             if options.shadow:
@@ -429,7 +468,7 @@ def main():
                         cmd = ['/usr/common/mss/bin/htar',
                                '-cvhf', os.path.join(d.hpss, backup_file),
                                '-H', 'crc:verify=all',
-                               yesterday]
+                               yst]
                         if options.shadow:
                             log.debug(' '.join(cmd))
                         else:
@@ -438,6 +477,6 @@ def main():
                         os.chdir(start_dir)
                         status.update(night, 'all', 'backup')
                 else:
-                    log.warning("No data from %s detected, skipping HPSS backup.", yesterday)
+                    log.warning("No data from %s detected, skipping HPSS backup.", yst)
         time.sleep(options.sleep*60)
     return 0
