@@ -14,25 +14,66 @@ from argparse import ArgumentParser
 from .common import DTSDir, dir_perm, file_perm, rsync, stamp
 
 
+class DailyDirectory(object):
+    """Simple object to hold daily transfer configuration.
+
+    Parameters
+    ----------
+    source : :class:`str`
+        Source directory.
+    destination : :class:`str`
+        Desitination directory.
+    """
+
+    def __init__(self, source, destination):
+        self.source = source
+        self.destination = destination
+
+    def transfer(self):
+        """Data transfer operations for a single destination directory.
+
+        Returns
+        -------
+        :class:`int`
+            The status returned by :command:`rsync`.
+        """
+        log = self.destination + '.log'
+        cmd = rsync(self.source, self.destination)
+        with open(log, 'ab') as l:
+            l.write(("DEBUG: %s\n" % stamp()).encode('utf-8'))
+            l.write(("DEBUG: %s\n" % ' '.join(cmd)).encode('utf-8'))
+            l.flush()
+            p = sub.Popen(cmd, stdout=l, stderr=sub.STDOUT)
+            status = p.wait()
+        if status == 0:
+            self.lock()
+        return status
+
+    def lock(self):
+        """Make a directory read-only.
+        """
+        for dirpath, dirnames, filenames in os.walk(self.destination):
+            os.chmod(dirpath, dir_perm)
+            for f in filenames:
+                os.chmod(os.path.join(dirpath, f), file_perm)
+
+
 def _config():
     """Wrap configuration so that module can be imported without
     environment variables set.
     """
-    return [DTSDir('/exposures/desi/sps', 'UNUSED',
-                   os.path.realpath(os.path.join(os.environ['DESI_ROOT'],
-                                                 'engineering', 'spectrograph',
-                                                 'sps')),
-                   'UNUSED'),
-            DTSDir('/data/dts/exposures/lost+found', 'UNUSED',
-                   os.path.realpath(os.path.join(os.environ['DESI_ROOT'],
-                                                 'spectro', 'staging',
-                                                 'lost+found')),
-                   'UNUSED'),
-            DTSDir('/data/fvc/data', 'UNUSED',
-                   os.path.realpath(os.path.join(os.environ['DESI_ROOT'],
-                                                 'engineering', 'fvc',
-                                                 'images')),
-                   'UNUSED')]
+    return [DailyDirectory('/exposures/desi/sps',
+                           os.path.realpath(os.path.join(os.environ['DESI_ROOT'],
+                                                         'engineering', 'spectrograph',
+                                                         'sps'))),
+            DailyDirectory('/data/dts/exposures/lost+found',
+                           os.path.realpath(os.path.join(os.environ['DESI_ROOT'],
+                                                         'spectro', 'staging',
+                                                         'lost+found'))),
+            DailyDirectory('/data/fvc/data',
+                           os.path.realpath(os.path.join(os.environ['DESI_ROOT'],
+                                                         'engineering', 'fvc',
+                                                         'images')))]
 
 
 def _options(*args):
@@ -72,35 +113,6 @@ def _options(*args):
     return prsr.parse_args()
 
 
-def transfer_directory(d):
-    """Data transfer operations for a single destination directory.
-
-    Parameters
-    ----------
-    d : :class:`desitransfer.common.DTSDir`
-        Configuration for the destination directory.
-
-    Returns
-    -------
-    :class:`int`
-        The status returned by :command:`rsync`.
-    """
-    log = d.destination + '.log'
-    cmd = rsync(d.source, d.destination)
-    with open(log, 'ab') as l:
-        l.write(("DEBUG: %s\n" % stamp()).encode('utf-8'))
-        l.write(("DEBUG: %s\n" % ' '.join(cmd)).encode('utf-8'))
-        l.flush()
-        p = sub.Popen(cmd, stdout=l, stderr=sub.STDOUT)
-        status = p.wait()
-    if status == 0:
-        for dirpath, dirnames, filenames in os.walk(d.destination):
-            os.chmod(dirpath, dir_perm)
-            for f in filenames:
-                os.chmod(os.path.join(dirpath, f), file_perm)
-    return status
-
-
 def main():
     """Entry point for :command:`desi_daily_transfer`.
 
@@ -115,7 +127,7 @@ def main():
             print("INFO: %s detected, shutting down daily transfer script." % options.kill)
             return 0
         for d in _config():
-            status = transfer_directory(d)
+            status = d.transfer()
             if status != 0:
                 print("ERROR: rsync problem detected for ${0.source} -> ${0.destination}!".format(d))
                 return status
