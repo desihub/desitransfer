@@ -112,9 +112,9 @@ def _options(*args):
     desc = "Transfer DESI raw data files."
     prsr = ArgumentParser(prog=os.path.basename(sys.argv[0]), description=desc)
     prsr.add_argument('-b', '--backup', metavar='H', type=int, default=20,
-                      help='UTC time in hours to trigger HPSS backups (default %(default)s:00 UTC).')
+                      help='UTC time in hours to trigger HPSS backups (default %(default)s:00 UTC). Disable this with an invalid hour, e.g. 30.')
     prsr.add_argument('-c', '--catchup', metavar='H', type=int, default=14,
-                      help='UTC time in hours to look for delayed files (default %(default)s:00 UTC).')
+                      help='UTC time in hours to look for delayed files (default %(default)s:00 UTC). Disable this with an invalid hour, e.g. 30.')
     prsr.add_argument('-d', '--debug', action='store_true',
                       help='Set log level to DEBUG.')
     prsr.add_argument('-e', '--rsh', metavar='COMMAND', dest='ssh', default='/bin/ssh',
@@ -348,6 +348,239 @@ def rsync_night(source, destination, night, test=False):
     lock_directory(os.path.join(destination, night), test)
 
 
+def transfer_directory(d, options, pipeline):
+    """Data transfer operations for a single destination directory.
+
+    Parameters
+    ----------
+    d : :class:`desitransfer.common.DTSDir`
+        Configuration for the destination directory.
+    options : :class:`argparse.NamedTuple`
+        The command-line options.
+    pipeline : :class:`desitransfer.daemon.PipelineCommand`
+        The pipeline command construction object.
+    """
+    status = TransferStatus(os.path.join(os.path.dirname(d.staging), 'status'))
+    cmd = [options.ssh, '-q', 'dts', '/bin/find', d.source, '-type', 'l']
+    _, out, err = _popen(cmd)
+    links = sorted([x for x in out.split('\n') if x])
+    if links:
+        for l in links:
+            transfer_exposure(d, options, l, status, pipeline)
+    else:
+        log.warning('No links found, check connection.')
+    #
+    # WARNING: some of the auxilliary files below were created under
+    # the assumption that only one source directory exists at KPNO and
+    # only one destination directory exists at NERSC.  This should be
+    # fixed now, but watch out for this.
+    #
+    # Do a "catch-up" transfer to catch delayed files in the morning,
+    # rather than at noon.
+    # 07:00 MST = 14:00 UTC.
+    # This script can do nothing about exposures that were never linked
+    # into the DTS area at KPNO in the first place.
+    #
+    yst = yesterday()
+    now = int(dt.datetime.utcnow().strftime('%H'))
+    if now >= options.catchup:
+        if os.path.isdir(os.path.join(d.destination, yst)):
+            ketchup_file = d.destination.replace('/', '_')
+            sync_file = os.path.join(os.environ['CSCRATCH'],
+                                     'ketchup_{0}_{1}.txt'.format(ketchup_file, yst))
+            if options.shadow:
+                sync_file.replace('.txt', '.shadow.txt')
+            if os.path.exists(sync_file):
+                log.debug("%s detected, catch-up transfer is done.", sync_file)
+            else:
+                cmd = rsync(os.path.join(d.source, yst),
+                            os.path.join(d.destination, yst), test=True)
+                rsync_status, out, err = _popen(cmd)
+                with open(sync_file, 'w') as sf:
+                    sf.write(out)
+                if empty_rsync(out):
+                    log.info('No files appear to have changed in %s.', yst)
+                else:
+                    log.warning('New files detected in %s!', yst)
+                    rsync_night(d.source, d.destination, yst, options.shadow)
+        else:
+            log.warning("No data from %s detected, skipping catch-up transfer.", yst)
+    #
+    # Are any nights eligible for backup?
+    # 12:00 MST = 19:00 UTC.
+    # Plus one hour just to be safe, so after 20:00 UTC.
+    #
+    if now >= options.backup:
+        if os.path.isdir(os.path.join(d.destination, yst)):
+            hpss_file = d.hpss.replace('/', '_')
+            ls_file = os.path.join(os.environ['CSCRATCH'], hpss_file + '.txt')
+            if options.shadow:
+                ls_file = ls_file.replace('.txt', '.shadow.txt')
+            log.debug("os.remove('%s')", ls_file)
+            os.remove(ls_file)
+            cmd = ['/usr/common/mss/bin/hsi', '-O', ls_file,
+                   'ls', '-l', d.hpss]
+            _, out, err = _popen(cmd)
+            #
+            # Both a .tar and a .tar.idx file should be present.
+            #
+            with open(ls_file) as l:
+                data = l.read()
+            backup_files = [l.split()[-1] for l in data.split('\n') if l]
+            backup_file = hpss_file + '_' + yst + '.tar'
+            if backup_file in backup_files and backup_file + '.idx' in backup_files:
+                log.debug("Backup of %s already complete.", yst)
+            else:
+                #
+                # Run a final sync of the night and see if anything changed.
+                # This isn't supposed to be necessary, but during
+                # commissioning, all kinds of crazy stuff might happen.
+                #
+                # sync_file = sync_file.replace('ketchup', 'final_sync')
+                cmd = rsync(os.path.join(d.source, yst),
+                            os.path.join(d.destination, yst), test=True)
+                rsync_status, out, err = _popen(cmd)
+                if empty_rsync(out):
+                    log.info('No files appear to have changed in %s.', yst)
+                else:
+                    log.warning('New files detected in %s!', yst)
+                    rsync_night(d.source, d.destination, yst, options.shadow)
+                #
+                # Issue HTAR command.
+                #
+                start_dir = os.getcwd()
+                log.debug("os.chdir('%s')", d.destination)
+                os.chdir(d.destination)
+                cmd = ['/usr/common/mss/bin/htar',
+                       '-cvhf', os.path.join(d.hpss, backup_file),
+                       '-H', 'crc:verify=all',
+                       yst]
+                if options.shadow:
+                    log.debug(' '.join(cmd))
+                else:
+                    _, out, err = _popen(cmd)
+                log.debug("os.chdir('%s')", start_dir)
+                os.chdir(start_dir)
+                status.update(night, 'all', 'backup')
+        else:
+            log.warning("No data from %s detected, skipping HPSS backup.", yst)
+
+
+def transfer_exposure(d, options, link, status, pipeline):
+    """Data transfer operations for a single exposure.
+
+    Parameters
+    ----------
+    d : :class:`desitransfer.common.DTSDir`
+        Configuration for the destination directory.
+    options : :class:`argparse.NamedTuple`
+        The command-line options.
+    link : :class:`str`
+        The exposure path.
+    status : :class:`desitransfer.status.TransferStatus`
+        The status object associated with `d`.
+    pipeline : :class:`desitransfer.daemon.PipelineCommand`
+        The pipeline command construction object.
+    """
+    exposure = os.path.basename(link)
+    night = os.path.basename(os.path.dirname(link))
+    staging_night = os.path.join(d.staging, night)
+    destination_night = os.path.join(d.destination, night)
+    staging_exposure = os.path.join(staging_night, exposure)
+    destination_exposure = os.path.join(destination_night, exposure)
+    #
+    # New night detected?
+    #
+    if not os.path.isdir(staging_night):
+        log.debug("os.makedirs('%s', exist_ok=True)", staging_night)
+        if not options.shadow:
+            os.makedirs(staging_night, exist_ok=True)
+    #
+    # Has exposure already been transferred?
+    #
+    if not os.path.isdir(staging_exposure) and not os.path.isdir(destination_exposure):
+        cmd = rsync(os.path.join(d.source, night, exposure), staging_exposure)
+        if options.shadow:
+            log.debug(' '.join(cmd))
+            rsync_status = '0'
+        else:
+            rsync_status, out, err = _popen(cmd)
+    else:
+        log.info('%s already transferred.', staging_exposure)
+        rsync_status = 'done'
+    #
+    # Transfer complete.
+    #
+    if rsync_status == '0':
+        status.update(night, exposure, 'rsync')
+        #
+        # Check permissions.
+        #
+        lock_directory(staging_exposure, options.shadow)
+        #
+        # Verify checksums.
+        #
+        exposure_files = os.listdir(staging_exposure)
+        checksum_file = os.path.join(se, "checksum-{0}-{1}.sha256sum".format(night, exposure))
+        if os.path.exists(checksum_file):
+            checksum_status = verify_checksum(checksum_file, exposure_files)
+        else:
+            log.warning("No checksum file for %s/%s!", night, exposure)
+            checksum_status = 0
+        #
+        # Did we pass checksums?
+        #
+        if checksum_status == 0:
+            status.update(night, exposure, 'checksum')
+            #
+            # Set up DESI_SPECTRO_DATA.
+            #
+            if not os.path.isdir(destination_night):
+                log.debug("os.makedirs('%s', exist_ok=True)", destination_night)
+                if not options.shadow:
+                    os.makedirs(destination_night, exist_ok=True)
+            #
+            # Move data into DESI_SPECTRO_DATA.
+            #
+            if not os.path.isdir(destination_exposure):
+                log.debug("shutil.move('%s', '%s')", staging_exposure, destination_night)
+                if not options.shadow:
+                    shutil.move(staging_exposure, destination_night)
+            #
+            # Is this a "realistic" exposure?
+            #
+            if options.pipeline and check_exposure(destination_exposure, exposure):
+                #
+                # Run update
+                #
+                cmd = pipeline.command(night, exposure)
+                if not options.shadow:
+                    _, out, err = _popen(cmd)
+                done = False
+                for k in ('flats', 'arcs', 'science'):
+                    if os.path.exists(os.path.join(destination_exposure, '{0}-{1}-{2}.done'.format(k, night, exposure))):
+                        cmd = pipeline.command(night, exposure, command=k)
+                        if not options.shadow:
+                            _, out, err = _popen(cmd)
+                        status.update(night, exposure, 'pipeline', last=k)
+                        done = True
+                if not done:
+                    status.update(night, exposure, 'pipeline')
+            else:
+                log.info("%s/%s appears to be test data. Skipping pipeline activation.", night, exposure)
+        else:
+            log.error("Checksum problem detected for %s/%s!", night, exposure)
+            status.update(night, exposure, 'checksum', failure=True)
+    elif rsync_status == 'done':
+        #
+        # Do nothing, successfully.
+        #
+        pass
+    else:
+        log.error('rsync problem detected!')
+        status.update(night, exposure, 'rsync', failure=True)
+
+
 def main():
     """Entry point for :command:`desi_transfer_daemon`.
 
@@ -359,6 +592,7 @@ def main():
     options = _options()
     _configure_log(options.debug)
     pipeline = PipelineCommand(options.nersc, ssh=options.ssh)
+    transfer_directories = _config()
     while True:
         log.info('Starting transfer loop.')
         if os.path.exists(options.kill):
@@ -367,205 +601,7 @@ def main():
         #
         # Find symlinks at KPNO.
         #
-        for d in _config():
-            status = TransferStatus(os.path.join(os.path.dirname(d.staging), 'status'))
-            cmd = [options.ssh, '-q', 'dts', '/bin/find', d.source, '-type', 'l']
-            _, out, err = _popen(cmd)
-            links = sorted([x for x in out.split('\n') if x])
-            if links:
-                for l in links:
-                    exposure = os.path.basename(l)
-                    night = os.path.basename(os.path.dirname(l))
-                    #
-                    # New night detected?
-                    #
-                    n = os.path.join(d.staging, night)
-                    if not os.path.isdir(n):
-                        log.debug("os.makedirs('%s', exist_ok=True)", n)
-                        if not options.shadow:
-                            os.makedirs(n, exist_ok=True)
-                    #
-                    # Has exposure already been transferred?
-                    #
-                    se = os.path.join(n, exposure)
-                    de = os.path.join(d.destination, night, exposure)
-                    if not os.path.isdir(se) and not os.path.isdir(de):
-                        cmd = rsync(os.path.join(d.source, night, exposure), se)
-                        if options.shadow:
-                            log.debug(' '.join(cmd))
-                            rsync_status = '0'
-                        else:
-                            rsync_status, out, err = _popen(cmd)
-                    else:
-                        log.info('%s already transferred.', se)
-                        rsync_status = 'done'
-                    #
-                    # Transfer complete.
-                    #
-                    if rsync_status == '0':
-                        status.update(night, exposure, 'rsync')
-                        #
-                        # Check permissions.
-                        #
-                        lock_directory(se, options.shadow)
-                        #
-                        # Verify checksums.
-                        #
-                        checksum_file = os.path.join(se, "checksum-{0}-{1}.sha256sum".format(night, exposure))
-                        if os.path.exists(checksum_file):
-                            checksum_status = verify_checksum(checksum_file, exposure_files)
-                        else:
-                            log.warning("No checksum file for %s/%s!", night, exposure)
-                            checksum_status = 0
-                        #
-                        # Did we pass checksums?
-                        #
-                        if checksum_status == 0:
-                            status.update(night, exposure, 'checksum')
-                            #
-                            # Set up DESI_SPECTRO_DATA.
-                            #
-                            dn = os.path.join(d.destination, night)
-                            if not os.path.isdir(dn):
-                                log.debug("os.makedirs('%s', exist_ok=True)", dn)
-                                if not options.shadow:
-                                    os.makedirs(dn, exist_ok=True)
-                            #
-                            # Move data into DESI_SPECTRO_DATA.
-                            #
-                            if not os.path.isdir(de):
-                                log.debug("shutil.move('%s', '%s')", se, dn)
-                                if not options.shadow:
-                                    shutil.move(se, dn)
-                            #
-                            # Is this a "realistic" exposure?
-                            #
-                            if options.pipeline and check_exposure(de, exposure):
-                                #
-                                # Run update
-                                #
-                                cmd = pipeline.command(night, exposure)
-                                if not options.shadow:
-                                    _, out, err = _popen(cmd)
-                                done = False
-                                for k in ('flats', 'arcs', 'science'):
-                                    if os.path.exists(os.path.join(de, '{0}-{1}-{2}.done'.format(k, night, exposure))):
-                                        cmd = pipeline.command(night, exposure, command=k)
-                                        if not options.shadow:
-                                            _, out, err = _popen(cmd)
-                                        status.update(night, exposure, 'pipeline', last=k)
-                                        done = True
-                                if not done:
-                                    status.update(night, exposure, 'pipeline')
-                            else:
-                                log.info("%s/%s appears to be test data. Skipping pipeline activation.", night, exposure)
-                        else:
-                            log.error("Checksum problem detected for %s/%s!", night, exposure)
-                            status.update(night, exposure, 'checksum', failure=True)
-                    elif rsync_status == 'done':
-                        #
-                        # Do nothing, successfully.
-                        #
-                        pass
-                    else:
-                        log.error('rsync problem detected!')
-                        status.update(night, exposure, 'rsync', failure=True)
-            else:
-                log.warning('No links found, check connection.')
-            #
-            # WARNING: some of the auxilliary files below were created under
-            # the assumption that only one source directory exists at KPNO and
-            # only one destination directory exists at NERSC.  This should be
-            # fixed now, but watch out for this.
-            #
-            # Do a "catch-up" transfer to catch delayed files in the morning,
-            # rather than at noon.
-            # 07:00 MST = 14:00 UTC.
-            # This script can do nothing about exposures that were never linked
-            # into the DTS area at KPNO in the first place.
-            #
-            yst = yesterday()
-            now = int(dt.datetime.utcnow().strftime('%H'))
-            ketchup_file = d.destination.replace('/', '_')
-            sync_file = os.path.join(os.environ['CSCRATCH'],
-                                     'ketchup_{0}_{1}.txt'.format(ketchup_file, yst))
-            if options.shadow:
-                sync_file.replace('.txt', '.shadow.txt')
-            if now >= options.catchup:
-                if os.path.isdir(os.path.join(d.destination, yst)):
-                    if os.path.exists(sync_file):
-                        log.debug("%s detected, catch-up transfer is done.", sync_file)
-                    else:
-                        cmd = rsync(os.path.join(d.source, yst),
-                                    os.path.join(d.destination, yst), test=True)
-                        rsync_status, out, err = _popen(cmd)
-                        with open(sync_file, 'w') as sf:
-                            sf.write(out)
-                        if empty_rsync(out):
-                            log.info('No files appear to have changed in %s.', yst)
-                        else:
-                            log.warning('New files detected in %s!', yst)
-                            rsync_night(d.source, d.destination, yst, options.shadow)
-                else:
-                    log.warning("No data from %s detected, skipping catch-up transfer.", yst)
-            #
-            # Are any nights eligible for backup?
-            # 12:00 MST = 19:00 UTC.
-            # Plus one hour just to be safe, so after 20:00 UTC.
-            #
-            hpss_file = d.hpss.replace('/', '_')
-            ls_file = os.path.join(os.environ['CSCRATCH'], hpss_file + '.txt')
-            if options.shadow:
-                ls_file = ls_file.replace('.txt', '.shadow.txt')
-            if now >= options.backup:
-                if os.path.isdir(os.path.join(d.destination, yst)):
-                    log.debug("os.remove('%s')", ls_file)
-                    os.remove(ls_file)
-                    cmd = ['/usr/common/mss/bin/hsi', '-O', ls_file,
-                           'ls', '-l', d.hpss]
-                    _, out, err = _popen(cmd)
-                    #
-                    # Both a .tar and a .tar.idx file should be present.
-                    #
-                    with open(ls_file) as l:
-                        data = l.read()
-                    backup_files = [l.split()[-1] for l in data.split('\n') if l]
-                    backup_file = hpss_file + '_' + yst + '.tar'
-                    if backup_file in backup_files and backup_file + '.idx' in backup_files:
-                        log.debug("Backup of %s already complete.", yst)
-                    else:
-                        #
-                        # Run a final sync of the night and see if anything changed.
-                        # This isn't supposed to be necessary, but during
-                        # commissioning, all kinds of crazy stuff might happen.
-                        #
-                        sync_file = sync_file.replace('ketchup', 'final_sync')
-                        cmd = rsync(os.path.join(d.source, yst),
-                                    os.path.join(d.destination, yst), test=True)
-                        rsync_status, out, err = _popen(cmd)
-                        if empty_rsync(out):
-                            log.info('No files appear to have changed in %s.', yst)
-                        else:
-                            log.warning('New files detected in %s!', yst)
-                            rsync_night(d.source, d.destination, yst, options.shadow)
-                        #
-                        # Issue HTAR command.
-                        #
-                        start_dir = os.getcwd()
-                        log.debug("os.chdir('%s')", d.destination)
-                        os.chdir(d.destination)
-                        cmd = ['/usr/common/mss/bin/htar',
-                               '-cvhf', os.path.join(d.hpss, backup_file),
-                               '-H', 'crc:verify=all',
-                               yst]
-                        if options.shadow:
-                            log.debug(' '.join(cmd))
-                        else:
-                            _, out, err = _popen(cmd)
-                        log.debug("os.chdir('%s')", start_dir)
-                        os.chdir(start_dir)
-                        status.update(night, 'all', 'backup')
-                else:
-                    log.warning("No data from %s detected, skipping HPSS backup.", yst)
+        for d in transfer_directories:
+            transfer_directory(d, options, pipeline)
         time.sleep(options.sleep*60)
     return 0

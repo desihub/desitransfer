@@ -56,8 +56,8 @@ def _options(*args):
     #                   help='Set log level to DEBUG.')
     prsr.add_argument('-d', '--daemon', action='store_true',
                       help='Run in daemon mode.  If not specificed, the script will run once and exit.')
-    prsr.add_argument('-e', '--rsh', metavar='COMMAND', dest='ssh', default='/bin/ssh',
-                      help="Use COMMAND for remote shell access (default '%(default)s').")
+    # prsr.add_argument('-e', '--rsh', metavar='COMMAND', dest='ssh', default='/bin/ssh',
+    #                   help="Use COMMAND for remote shell access (default '%(default)s').")
     prsr.add_argument('-k', '--kill', metavar='FILE',
                       default=os.path.join(os.environ['HOME'], 'stop_desi_transfer'),
                       help="Exit the script when FILE is detected (default %(default)s).")
@@ -70,6 +70,30 @@ def _options(*args):
     # prsr.add_argument('-S', '--shadow', action='store_true',
     #                   help='Observe the actions of another data transfer script but do not make any changes.')
     return prsr.parse_args()
+
+
+def transfer_directory(d):
+    """Data transfer operations for a single destination directory.
+
+    Parameters
+    ----------
+    d : :class:`desitransfer.common.DTSDir`
+        Configuration for the destination directory.
+    """
+    log = d.destination + '.log'
+    cmd = rsync(d.source, d.destination)
+    with open(log, 'ab') as l:
+        l.write(("DEBUG: %s\n" % stamp()).encode('utf-8'))
+        l.write(("DEBUG: %s\n" % ' '.join(cmd)).encode('utf-8'))
+        l.flush()
+        p = sub.Popen(cmd, stdout=l, stderr=sub.STDOUT)
+        status = p.wait()
+    if status == 0:
+        for dirpath, dirnames, filenames in os.walk(d.destination):
+            os.chmod(dirpath, dir_perm)
+            for f in filenames:
+                os.chmod(os.path.join(dirpath, f), file_perm)
+    return status
 
 
 def main():
@@ -87,21 +111,8 @@ def main():
             print("INFO: %s detected, shutting down daily transfer script." % options.kill)
             return 0
         for d in _config():
-            log = d.destination + '.log'
-            cmd = rsync(d.source, d.destination)
-            with open(log, 'ab') as l:
-                l.write(("DEBUG: %s\n" % stamp()).encode('utf-8'))
-                l.write(("DEBUG: %s\n" % ' '.join(cmd)).encode('utf-8'))
-                l.flush()
-                p = sub.Popen(cmd, stdout=l, stderr=sub.STDOUT)
-                status = p.wait()
-            if status == 0:
-                for dirpath, dirnames, filenames in os.walk(d.destination):
-                    for d in dirnames:
-                        os.chmod(os.path.join(dirpath, d), dir_perm)
-                    for f in filenames:
-                        os.chmod(os.path.join(dirpath, f), file_perm)
-            else:
+            status = transfer_directory(d)
+            if status != 0:
                 print("ERROR: rsync problem detected for ${0.source} -> ${0.destination}!".format(d))
                 return status
         if options.daemon:
