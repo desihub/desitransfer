@@ -5,7 +5,7 @@ Change Log
 0.2.1 (unreleased)
 ------------------
 
-* No changes yet.
+* Removed obsolete shell script :command:`desi_daily_transfer.sh`.
 
 0.2.0 (2019-08-22)
 ------------------

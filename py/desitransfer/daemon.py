@@ -18,7 +18,7 @@ from logging.handlers import RotatingFileHandler, SMTPHandler
 from socket import getfqdn
 from pkg_resources import resource_filename
 from desiutil.log import get_logger
-from .common import DTSDir, dir_perm, file_perm, rsync
+from .common import DTSDir, dir_perm, file_perm, rsync, yesterday
 
 log = None
 
@@ -400,14 +400,14 @@ def main():
             # 12:00 MST = 19:00 UTC.
             # Plus one hour just to be safe, so after 20:00 UTC.
             #
-            yesterday = (dt.datetime.now() - dt.timedelta(seconds=86400)).strftime('%Y%m%d')
+            yst = yesterday()
             now = int(dt.datetime.utcnow().strftime('%H'))
             hpss_file = d.hpss.replace('/', '_')
             ls_file = os.path.join(os.environ['CSCRATCH'], hpss_file + '.txt')
             if options.shadow:
                 ls_file = ls_file.replace('.txt', '.shadow.txt')
             if now >= options.backup:
-                if os.path.isdir(os.path.join(d.destination, yesterday)):
+                if os.path.isdir(os.path.join(d.destination, yst)):
                     log.debug("os.remove('%s')", ls_file)
                     os.remove(ls_file)
                     cmd = ['/usr/common/mss/bin/hsi', '-O', ls_file,
@@ -419,9 +419,9 @@ def main():
                     with open(ls_file) as l:
                         data = l.read()
                     backup_files = [l.split()[-1] for l in data.split('\n') if l]
-                    backup_file = hpss_file + '_' + yesterday + '.tar'
+                    backup_file = hpss_file + '_' + yst + '.tar'
                     if backup_file in backup_files and backup_file + '.idx' in backup_files:
-                        log.debug("Backup of %s already complete.", yesterday)
+                        log.debug("Backup of %s already complete.", yst)
                     else:
                         start_dir = os.getcwd()
                         log.debug("os.chdir('%s')", d.destination)

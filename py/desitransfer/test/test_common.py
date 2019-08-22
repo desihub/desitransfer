@@ -6,7 +6,7 @@ import datetime
 import os
 import unittest
 from unittest.mock import patch
-from ..common import DTSDir, dir_perm, file_perm, rsync, stamp
+from ..common import DTSDir, dir_perm, file_perm, rsync, stamp, yesterday
 
 
 class TestCommon(unittest.TestCase):
@@ -61,6 +61,15 @@ class TestCommon(unittest.TestCase):
         mock_dt.datetime.utcnow.return_value = datetime.datetime(2019, 7, 3, 12, 0, 0)
         s = stamp('US/Arizona')
         self.assertEqual(s, '2019-07-03 05:00:00 MST')
+
+    @patch('desitransfer.common.dt')
+    def test_yesterday(self, mock_dt):
+        """Test timestamp.
+        """
+        mock_dt.datetime.now.return_value = datetime.datetime(2019, 7, 3, 12, 0, 0)
+        mock_dt.timedelta.return_value = datetime.timedelta(seconds=86400)
+        y = yesterday()
+        self.assertEqual(y, '20190702')
 
 
 def test_suite():

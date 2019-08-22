@@ -58,3 +58,9 @@ def stamp(zone='US/Pacific'):
     tz = pytz.timezone(zone)
     n = dt.datetime.utcnow().replace(tzinfo=pytz.utc)
     return n.astimezone(tz).strftime('%Y-%m-%d %H:%M:%S %Z')
+
+
+def yesterday():
+    """Yesterday's date in DESI "NIGHT" format, YYYYMMDD.
+    """
+    return (dt.datetime.now() - dt.timedelta(seconds=86400)).strftime('%Y%m%d')
