@@ -22,6 +22,7 @@ from tempfile import TemporaryFile
 from pkg_resources import resource_filename
 from desiutil.log import get_logger
 from .common import DTSDir, dir_perm, file_perm, expand_environment, rsync, yesterday
+from .status import TransferStatus
 
 
 log = None
