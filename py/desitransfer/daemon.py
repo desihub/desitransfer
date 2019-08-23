@@ -231,15 +231,13 @@ def check_exposure(destination, exposure):
                 for f in expected_files])
 
 
-def verify_checksum(checksum_file, files):
+def verify_checksum(checksum_file):
     """Verify checksums supplied with the raw data.
 
     Parameters
     ----------
     checksum_file : :class:`str`
         The checksum file.
-    files : :class:`list`
-        The list of files in the directory containing the checksum file.
 
     Returns
     -------
@@ -255,10 +253,11 @@ def verify_checksum(checksum_file, files):
     # lines equal to the length of files.
     #
     lines = data.split('\n')
+    d = os.path.dirname(checksum_file)
+    files = os.listdir(d)
     errors = 0
     if len(lines) == len(files):
         digest = dict([(l.split()[1], l.split()[0]) for l in lines if l])
-        d = os.path.dirname(checksum_file)
         for f in files:
             ff = os.path.join(d, f)
             if ff != checksum_file:
@@ -533,10 +532,15 @@ def transfer_exposure(d, options, link, status, pipeline):
         #
         # Verify checksums.
         #
-        exposure_files = os.listdir(staging_exposure)
         checksum_file = os.path.join(staging_exposure, "checksum-{0}-{1}.sha256sum".format(night, exposure))
         if os.path.exists(checksum_file):
-            checksum_status = verify_checksum(checksum_file, exposure_files)
+            checksum_status = verify_checksum(checksum_file)
+        elif not os.path.exists(staging_exposure):
+            #
+            # This can happen in shadow mode.
+            #
+            log.debug("%s does not exist, ignore checksum error.", staging_exposure)
+            checksum_status = 1
         else:
             log.warning("No checksum file for %s/%s!", night, exposure)
             checksum_status = 0

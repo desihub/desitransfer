@@ -138,35 +138,43 @@ class TestDaemon(unittest.TestCase):
         """
         c = resource_filename('desitransfer.test', 't/t.sha256sum')
         d = os.path.dirname(c)
-        with patch('desitransfer.daemon.log') as l:
-            o = verify_checksum(c, ['t.sha256sum', 'test_file_1.txt', 'test_file_2.txt'])
-            self.assertEqual(o, 0)
+        with patch('os.listdir') as mock_listdir:
+            mock_listdir.return_value = ['t.sha256sum', 'test_file_1.txt', 'test_file_2.txt']
+            with patch('desitransfer.daemon.log') as l:
+                o = verify_checksum(c)
+        self.assertEqual(o, 0)
         l.debug.assert_has_calls([call("%s is valid.", os.path.join(d, 'test_file_1.txt')),
                                   call("%s is valid.", os.path.join(d, 'test_file_2.txt'))])
         #
         # Wrong number of files.
         #
-        with patch('desitransfer.daemon.log') as l:
-            o = verify_checksum(c, ['t.sha256sum', 'test_file_1.txt'])
-            self.assertEqual(o, -1)
+        with patch('os.listdir') as mock_listdir:
+            mock_listdir.return_value = ['t.sha256sum', 'test_file_1.txt']
+            with patch('desitransfer.daemon.log') as l:
+                o = verify_checksum(c)
+        self.assertEqual(o, -1)
         l.error.assert_has_calls([call("%s does not match the number of files!", c)])
         #
         # Bad list of files.
         #
-        with patch('desitransfer.daemon.log') as l:
-            o = verify_checksum(c, ['t.sha256sum', 'test_file_1.txt', 'test_file_3.txt'])
-            self.assertEqual(o, 1)
+        with patch('os.listdir') as mock_listdir:
+            mock_listdir.return_value = ['t.sha256sum', 'test_file_1.txt', 'test_file_3.txt']
+            with patch('desitransfer.daemon.log') as l:
+                o = verify_checksum(c)
+        self.assertEqual(o, 1)
         l.debug.assert_has_calls([call("%s is valid.", os.path.join(d, 'test_file_1.txt'))])
         l.error.assert_has_calls([call("%s does not appear in %s!", os.path.join(d, 'test_file_3.txt'), c)])
         #
         # Hack hashlib to produce incorrect checksums.
         #
-        with patch('desitransfer.daemon.log') as l:
-            with patch('hashlib.sha256') as h:
-                # h.sha256 = MagicMock()
-                h.hexdigest.return_value = 'abcdef'
-                o = verify_checksum(c, ['t.sha256sum', 'test_file_1.txt', 'test_file_2.txt'])
-                self.assertEqual(o, 2)
+        with patch('os.listdir') as mock_listdir:
+            mock_listdir.return_value = ['t.sha256sum', 'test_file_1.txt', 'test_file_2.txt']
+            with patch('desitransfer.daemon.log') as l:
+                with patch('hashlib.sha256') as h:
+                    # h.sha256 = MagicMock()
+                    h.hexdigest.return_value = 'abcdef'
+                    o = verify_checksum(c)
+        self.assertEqual(o, 2)
         l.error.assert_has_calls([call("Checksum mismatch for %s!", os.path.join(d, 'test_file_1.txt')),
                                   call("Checksum mismatch for %s!", os.path.join(d, 'test_file_2.txt'))])
 
