@@ -8,7 +8,6 @@ Entry point for :command:`desi_transfer_daemon`.
 """
 import datetime as dt
 import hashlib
-import json
 import logging
 import os
 import shutil
@@ -17,12 +16,13 @@ import subprocess as sub
 import sys
 import time
 from argparse import ArgumentParser
+from configparser import ConfigParser, ExtendedInterpolation
 from logging.handlers import RotatingFileHandler, SMTPHandler
 from socket import getfqdn
 from tempfile import TemporaryFile
 from pkg_resources import resource_filename
 from desiutil.log import get_logger
-from .common import DTSDir, dir_perm, file_perm, expand_environment, rsync, yesterday
+from .common import DTSDir, dir_perm, file_perm, rsync, yesterday
 from .status import TransferStatus
 
 
@@ -138,9 +138,11 @@ def _options(*args):
 
 
 def _read_configuration():
-    with open(resource_filename('desitransfer', 'data/desi_transfer_daemon.json')) as j:
-        c = json.load(j)
-    return [expand_environment(cc) for cc in c]
+    ini = resource_filename('desitransfer', 'data/desi_transfer_daemon.ini')
+    conf = ConfigParser(defaults=os.environ,
+                        interpolation=ExtendedInterpolation())
+    files = conf.read(ini)
+    return conf, [s for s in conf.sections() if '::' not in s]
 
 
 def _popen(command):

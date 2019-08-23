@@ -38,10 +38,10 @@ class TestDaemon(unittest.TestCase):
         with patch.dict('os.environ',
                         {'DESI_ROOT': '/desi/root',
                          'DESI_SPECTRO_DATA': '/desi/root/spectro/data'}):
-            c = _read_configuration()
-        self.assertEqual(c[0]['destination'], '/desi/root/spectro/data')
-        self.assertEqual(c[0]['staging'], '/desi/root/spectro/staging/raw')
-        self.assertEqual(c[0]['pipeline']['desi_night'],
+            c, s = _read_configuration()
+        self.assertEqual(c[s[0]]['destination'], '/desi/root/spectro/data')
+        self.assertEqual(c[s[0]]['staging'], '/desi/root/spectro/staging/raw')
+        self.assertEqual(c[s[0]+'::pipeline']['desi_night'],
                          os.path.join(os.environ['HOME'], 'bin', 'wrap_desi_night.sh'))
 
     def test_config(self):
