@@ -7,9 +7,9 @@
 # DESI Environment: Moved this to crontab
 # source /global/common/software/desi/desi_environment.sh ${DESIMODULES_VERSION}
 # Program or script you want to run
-PROGRAM=${DESITRANSFER}/bin/desi_transfer_daemon.sh
+PROGRAM=${DESITRANSFER}/bin/desi_transfer_daemon
 # Command line options for PRGFILE
-PRGOPTS=""
+PRGOPTS="--debug --shadow --no-pipeline"
 NICE="nice -n 19"
 # LOCKDIR=${CSCRATCH}/run
 #
