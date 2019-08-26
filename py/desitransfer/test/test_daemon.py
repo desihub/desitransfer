@@ -289,10 +289,40 @@ class TestDaemon(unittest.TestCase):
                 transfer_directory(c[0], options, pipeline)
                 mock_log.warning.assert_has_calls([call('No links found, check connection.')])
 
-    def test_transfer_exposure(self):
+    @patch('os.makedirs')
+    @patch('os.path.isdir')
+    @patch('desitransfer.daemon._popen')
+    @patch('desitransfer.daemon.TransferStatus')
+    @patch('desitransfer.daemon.log')
+    def test_transfer_exposure(self, mock_log, mock_status, mock_popen, mock_isdir, mock_mkdir):
         """Test transfer of a single exposure.
         """
-        pass
+        with patch.dict('os.environ',
+                        {'DESI_ROOT': '/desi/root',
+                         'DESI_SPECTRO_DATA': '/desi/root/spectro/data'}):
+            with patch.object(sys, 'argv', ['desi_transfer_daemon', '--debug']):
+                c = _config()
+                options = _options()
+                pipeline = PipelineCommand(options.nersc, ssh=options.ssh)
+                #
+                # Already transferred
+                #
+                mock_isdir.return_value = True
+                transfer_exposure(c[0], options, '20190703/00000127', mock_status, pipeline)
+                mock_log.debug.assert_has_calls([call('%s already transferred.', '/desi/root/spectro/staging/raw/20190703/00000127')])
+                #
+                # rsync error bypasses a lot of code.
+                #
+                mock_isdir.return_value = False
+                mock_popen.return_value = ('1', '', '')
+                transfer_exposure(c[0], options, '20190703/00000127', mock_status, pipeline)
+                mock_log.debug.assert_has_calls([call("os.makedirs('%s', exist_ok=True)", '/desi/root/spectro/staging/raw/20190703')])
+                mock_mkdir.assert_called_once_with('/desi/root/spectro/staging/raw/20190703', exist_ok=True)
+                mock_popen.assert_called_once_with(['/bin/rsync', '--verbose', '--recursive',
+                                                    '--copy-dirlinks', '--times', '--omit-dir-times',
+                                                    'dts:/data/dts/exposures/raw/20190703/00000127/', '/desi/root/spectro/staging/raw/20190703/00000127/'])
+                mock_log.error.assert_called_once_with('rsync problem detected!')
+                mock_status.update.assert_called_once_with('20190703', '00000127', 'rsync', failure=True)
 
     @patch('desitransfer.daemon.rsync_night')
     @patch('desitransfer.daemon._popen')
