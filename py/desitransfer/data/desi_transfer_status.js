@@ -84,12 +84,12 @@ $(function() {
                 // } else {
                 //     // new exposure
                 // }
-                var c = this.raw[k][2] ? "bg-success" : "bg-danger";
-                if (!this.raw[k][2]) {
+                var c = this.raw[k][3] ? "bg-success" : "bg-danger";
+                if (!this.raw[k][3]) {
                     b_rows[1] = this.nightButton(n, "show", false);
                     b_rows[2] = this.nightButton(n, "hide", false);
                 }
-                var l = this.raw[k][3].length > 0 ? " Last " + this.raw[k][3] + " exposure." : "";
+                var l = this.raw[k][5].length > 0 ? " Last " + this.raw[k][5] + " exposure." : "";
                 var r = "<tr id=\"e" + n + "/" + p +"\">" +
                         "<td>" + p + "</td>" +
                         "<td class=\"" + c + "\">" + l + "</td>" +
@@ -106,6 +106,6 @@ $(function() {
             this.finishNight(night, buttons, b_rows, t, t_rows);
         }
     };
-    $.getJSON("dts_status.json", {}, function(data) { Status.raw = data; }).always(Status.display);
+    $.getJSON("desi_transfer_status.json", {}, function(data) { Status.raw = data; }).always(Status.display);
     return true;
 });

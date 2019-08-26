@@ -22,7 +22,7 @@ from socket import getfqdn
 from tempfile import TemporaryFile
 from pkg_resources import resource_filename
 from desiutil.log import get_logger
-from .common import DTSDir, dir_perm, file_perm, rsync, yesterday
+from .common import DTSDir, dir_perm, file_perm, rsync, yesterday, empty_rsync
 from .status import TransferStatus
 
 
@@ -100,13 +100,8 @@ def _config():
                    'desi/spectro/data'), ]
 
 
-def _options(*args):
+def _options():
     """Parse command-line options for :command:`desi_transfer_daemon`.
-
-    Parameters
-    ----------
-    args : iterable
-        Arguments to the function will be parsed for testing purposes.
 
     Returns
     -------
@@ -384,100 +379,17 @@ def transfer_directory(d, options, pipeline):
     else:
         log.warning('No links found, check connection.')
     #
-    # WARNING: some of the auxilliary files below were created under
-    # the assumption that only one source directory exists at KPNO and
-    # only one destination directory exists at NERSC.  This should be
-    # fixed now, but watch out for this.
-    #
-    # Do a "catch-up" transfer to catch delayed files in the morning,
-    # rather than at noon.
-    # 07:00 MST = 14:00 UTC.
-    # This script can do nothing about exposures that were never linked
-    # into the DTS area at KPNO in the first place.
+    # Check for delayed files.
     #
     yst = yesterday()
     now = int(dt.datetime.utcnow().strftime('%H'))
     if now >= options.catchup:
-        if os.path.isdir(os.path.join(d.destination, yst)):
-            ketchup_file = d.destination.replace('/', '_')
-            sync_file = os.path.join(os.environ['CSCRATCH'],
-                                     'ketchup_{0}_{1}.txt'.format(ketchup_file, yst))
-            if options.shadow:
-                sync_file.replace('.txt', '.shadow.txt')
-            if os.path.exists(sync_file):
-                log.debug("%s detected, catch-up transfer is done.", sync_file)
-            else:
-                cmd = rsync(os.path.join(d.source, yst),
-                            os.path.join(d.destination, yst), test=True)
-                rsync_status, out, err = _popen(cmd)
-                with open(sync_file, 'w') as sf:
-                    sf.write(out)
-                if empty_rsync(out):
-                    log.info('No files appear to have changed in %s.', yst)
-                else:
-                    log.warning('New files detected in %s!', yst)
-                    rsync_night(d.source, d.destination, yst, options.shadow)
-        else:
-            log.warning("No data from %s detected, skipping catch-up transfer.", yst)
+        catchup_night(d, yst, options.shadow)
     #
     # Are any nights eligible for backup?
-    # 12:00 MST = 19:00 UTC.
-    # Plus one hour just to be safe, so after 20:00 UTC.
     #
     if now >= options.backup:
-        if os.path.isdir(os.path.join(d.destination, yst)):
-            hpss_file = d.hpss.replace('/', '_')
-            ls_file = os.path.join(os.environ['CSCRATCH'], hpss_file + '.txt')
-            if options.shadow:
-                ls_file = ls_file.replace('.txt', '.shadow.txt')
-            log.debug("os.remove('%s')", ls_file)
-            os.remove(ls_file)
-            cmd = ['/usr/common/mss/bin/hsi', '-O', ls_file,
-                   'ls', '-l', d.hpss]
-            _, out, err = _popen(cmd)
-            #
-            # Both a .tar and a .tar.idx file should be present.
-            #
-            with open(ls_file) as l:
-                data = l.read()
-            backup_files = [l.split()[-1] for l in data.split('\n') if l]
-            backup_file = hpss_file + '_' + yst + '.tar'
-            if backup_file in backup_files and backup_file + '.idx' in backup_files:
-                log.debug("Backup of %s already complete.", yst)
-            else:
-                #
-                # Run a final sync of the night and see if anything changed.
-                # This isn't supposed to be necessary, but during
-                # commissioning, all kinds of crazy stuff might happen.
-                #
-                # sync_file = sync_file.replace('ketchup', 'final_sync')
-                cmd = rsync(os.path.join(d.source, yst),
-                            os.path.join(d.destination, yst), test=True)
-                rsync_status, out, err = _popen(cmd)
-                if empty_rsync(out):
-                    log.info('No files appear to have changed in %s.', yst)
-                else:
-                    log.warning('New files detected in %s!', yst)
-                    rsync_night(d.source, d.destination, yst, options.shadow)
-                #
-                # Issue HTAR command.
-                #
-                start_dir = os.getcwd()
-                log.debug("os.chdir('%s')", d.destination)
-                os.chdir(d.destination)
-                cmd = ['/usr/common/mss/bin/htar',
-                       '-cvhf', os.path.join(d.hpss, backup_file),
-                       '-H', 'crc:verify=all',
-                       yst]
-                if options.shadow:
-                    log.debug(' '.join(cmd))
-                else:
-                    _, out, err = _popen(cmd)
-                log.debug("os.chdir('%s')", start_dir)
-                os.chdir(start_dir)
-                status.update(night, 'all', 'backup')
-        else:
-            log.warning("No data from %s detected, skipping HPSS backup.", yst)
+        backup_night(d, yst, status, options.shadow)
 
 
 def transfer_exposure(d, options, link, status, pipeline):
@@ -520,7 +432,7 @@ def transfer_exposure(d, options, link, status, pipeline):
         else:
             rsync_status, out, err = _popen(cmd)
     else:
-        log.info('%s already transferred.', staging_exposure)
+        log.debug('%s already transferred.', staging_exposure)
         rsync_status = 'done'
     #
     # Transfer complete.
@@ -600,6 +512,120 @@ def transfer_exposure(d, options, link, status, pipeline):
         status.update(night, exposure, 'rsync', failure=True)
 
 
+def catchup_night(d, night, test=False):
+    """Do a "catch-up" transfer to catch delayed files in the morning, rather than at noon.
+
+    Parameters
+    ----------
+    d : :class:`desitransfer.common.DTSDir`
+        Configuration for the destination directory.
+    night : :class:`str`
+        Night to check.
+    test : :class:`bool`, optional
+        If ``True``, only print the commands.
+
+    Notes
+    -----
+    * 07:00 MST = 14:00 UTC.
+    * This script can do nothing about exposures that were never linked
+      into the DTS area at KPNO in the first place.
+    """
+    if os.path.isdir(os.path.join(d.destination, night)):
+        ketchup_file = d.destination.replace('/', '_')
+        sync_file = os.path.join(os.environ['CSCRATCH'],
+                                 'ketchup_{0}_{1}.txt'.format(ketchup_file, night))
+        if test:
+            sync_file = sync_file.replace('.txt', '.shadow.txt')
+        if os.path.exists(sync_file):
+            log.debug("%s detected, catch-up transfer is done.", sync_file)
+        else:
+            cmd = rsync(os.path.join(d.source, night),
+                        os.path.join(d.destination, night), test=True)
+            rsync_status, out, err = _popen(cmd)
+            with open(sync_file, 'w') as sf:
+                sf.write(out)
+            if empty_rsync(out):
+                log.info('No files appear to have changed in %s.', night)
+            else:
+                log.warning('New files detected in %s!', night)
+                rsync_night(d.source, d.destination, night, test)
+    else:
+        log.warning("No data from %s detected, skipping catch-up transfer.", night)
+
+
+def backup_night(d, night, status, test=False):
+    """Final sync and backup for a specific night.
+
+    Parameters
+    ----------
+    d : :class:`desitransfer.common.DTSDir`
+        Configuration for the destination directory.
+    night : :class:`str`
+        Night to check.
+    status : :class:`desitransfer.status.TransferStatus`
+        The status object associated with `d`.
+    test : :class:`bool`, optional
+        If ``True``, only print the commands.
+
+    Notes
+    -----
+    * 12:00 MST = 19:00 UTC, plus one hour just to be safe, so after 20:00 UTC.
+    """
+    if os.path.isdir(os.path.join(d.destination, night)):
+        hpss_file = d.hpss.replace('/', '_')
+        ls_file = os.path.join(os.environ['CSCRATCH'], hpss_file + '.txt')
+        if test:
+            ls_file = ls_file.replace('.txt', '.shadow.txt')
+        log.debug("os.remove('%s')", ls_file)
+        os.remove(ls_file)
+        cmd = ['/usr/common/mss/bin/hsi', '-O', ls_file,
+               'ls', '-l', d.hpss]
+        _, out, err = _popen(cmd)
+        #
+        # Both a .tar and a .tar.idx file should be present.
+        #
+        with open(ls_file) as l:
+            data = l.read()
+        backup_files = [l.split()[-1] for l in data.split('\n') if l]
+        backup_file = hpss_file + '_' + night + '.tar'
+        if backup_file in backup_files and backup_file + '.idx' in backup_files:
+            log.debug("Backup of %s already complete.", night)
+        else:
+            #
+            # Run a final sync of the night and see if anything changed.
+            # This isn't supposed to be necessary, but during
+            # commissioning, all kinds of crazy stuff might happen.
+            #
+            # sync_file = sync_file.replace('ketchup', 'final_sync')
+            cmd = rsync(os.path.join(d.source, night),
+                        os.path.join(d.destination, night), test=True)
+            rsync_status, out, err = _popen(cmd)
+            if empty_rsync(out):
+                log.info('No files appear to have changed in %s.', night)
+            else:
+                log.warning('New files detected in %s!', night)
+                rsync_night(d.source, d.destination, night, test)
+            #
+            # Issue HTAR command.
+            #
+            start_dir = os.getcwd()
+            log.debug("os.chdir('%s')", d.destination)
+            os.chdir(d.destination)
+            cmd = ['/usr/common/mss/bin/htar',
+                   '-cvhf', os.path.join(d.hpss, backup_file),
+                   '-H', 'crc:verify=all',
+                   night]
+            if test:
+                log.debug(' '.join(cmd))
+            else:
+                _, out, err = _popen(cmd)
+            log.debug("os.chdir('%s')", start_dir)
+            os.chdir(start_dir)
+            status.update(night, 'all', 'backup')
+    else:
+        log.warning("No data from %s detected, skipping HPSS backup.", night)
+
+
 def main():
     """Entry point for :command:`desi_transfer_daemon`.
 
@@ -618,6 +644,7 @@ def main():
             log.info("%s detected, shutting down transfer daemon.", options.kill)
             return 0
         for d in transfer_directories:
+            log.info('Looking for new data in %s.', d.source)
             transfer_directory(d, options, pipeline)
         time.sleep(options.sleep*60)
     return 0
