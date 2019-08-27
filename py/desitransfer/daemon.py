@@ -15,6 +15,7 @@ import stat
 import subprocess as sub
 import sys
 import time
+import traceback
 from argparse import ArgumentParser
 from configparser import ConfigParser, ExtendedInterpolation
 from logging.handlers import RotatingFileHandler, SMTPHandler
@@ -644,6 +645,9 @@ def main():
             return 0
         for d in transfer_directories:
             log.info('Looking for new data in %s.', d.source)
-            transfer_directory(d, options, pipeline)
+            try:
+                transfer_directory(d, options, pipeline)
+            except Exception as e:
+                log.critical("Exception detected in transfer of %s!\n\n%s", d.source, traceback.format_exc())
         time.sleep(options.sleep*60)
     return 0
