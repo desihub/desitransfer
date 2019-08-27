@@ -150,21 +150,23 @@ $(function() {
         Eo.addStage = function(stage) {
             if (stage.n == this.n && stage.e == this.e) {
                 for (var k = 0; k < Exposure.stages.length; k++) {
+                    var s = Exposure.stages[k]
                     //
                     // Does stage have a defined timestamp?
                     //
-                    if (stage.stage[Exposure.stages[k]].stamp != 0) {
+                    if (stage.stage[s].stamp != 0) {
                         //
                         // Is it more recent?  This will also be true if this
                         // has an undefined timestamp.
                         //
-                        if (stage.stage[Exposure.stages[k]].stamp > this.stage[Exposure.stages[k]].stamp) {
-                            this.stage[Exposure.stages[k]] = stage.stage[Exposure.stages[k]];
+                        if (stage.stage[s].stamp > this.stage[s].stamp) {
+                            this.stage[s].success = stage.stage[s].success;
+                            this.stage[s].stamp = stage.stage[s].stamp;
                         }
                     }
                 }
             } else {
-                alert("Can't add " + stage.toString() " to " + this.toString() + "!");
+                alert("Can't add " + stage.toString() + " to " + this.toString() + "!");
             }
         };
         //
