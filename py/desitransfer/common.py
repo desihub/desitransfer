@@ -58,9 +58,9 @@ def rsync(s, d, test=False, config='dts'):
     :class:`list`
         A list suitable for passing to :class:`subprocess.Popen`.
     """
-    c =  ['/bin/rsync', '--verbose', '--recursive',
-          '--copy-dirlinks', '--times', '--omit-dir-times',
-          config + ':' + s + '/', d + '/']
+    c = ['/bin/rsync', '--verbose', '--recursive',
+         '--copy-dirlinks', '--times', '--omit-dir-times',
+         config + ':' + s + '/', d + '/']
     if test:
         c.insert(1, '--dry-run')
     return c

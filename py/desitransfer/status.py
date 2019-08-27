@@ -73,13 +73,51 @@ class TransferStatus(object):
             rows = [[r[0], r[1], stage, not failure, last, ts]
                     for r in self.status if r[0] == i]
         else:
-            rows = [[i, int(exposure), stage, not failure, last, ts], ]
+            ie = int(exposure)
+            r = [i, ie, stage, not failure, last, ts]
+            il = []
+            if last:
+                il = self.find(i, ie, stage)
+            if il:
+                self.status[il[0]] = r
+                rows = []
+            else:
+                rows = [r, ]
         for row in rows:
             self.status.insert(0, row)
         self.status = sorted(self.status, key=lambda x: x[0]*10000000 + x[1],
                              reverse=True)
         with open(self.json, 'w') as j:
             json.dump(self.status, j, indent=None, separators=(',', ':'))
+
+    def find(self, night, exposure=None, stage=None):
+        """Find status entries that match `night`, etc.
+
+        Parameters
+        ----------
+        night : :class:`str`
+            Night of observation.
+        exposure : :class:`str`, optional
+            Exposure number.
+        stage : :class:`str`, optional
+            Stage of data transfer ('rsync', 'checksum', 'backup', ...).
+
+        Returns
+        -------
+        :class:`list`
+            A list of the *indexes* of matching status entries.
+        """
+        if exposure is None and stage is None:
+            return [k for k, r in enumerate(self.status) if r[0] == night]
+        elif exposure is None:
+            return [k for k, r in enumerate(self.status) if r[0] == night
+                    and r[2] == stage]
+        elif stage is None:
+            return [k for k, r in enumerate(self.status) if r[0] == night
+                    and r[1] == exposure]
+        else:
+            return [k for k, r in enumerate(self.status) if r[0] == night
+                    and r[1] == exposure and r[2] == stage]
 
 
 def _options(*args):

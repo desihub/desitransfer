@@ -207,7 +207,6 @@ class TestDaemon(unittest.TestCase):
                                      call('/d0/d2', 0o2750),
                                      call('/d0/d2/f4', 0o0440)])
 
-
     @patch('os.walk')
     @patch('os.chmod')
     @patch('desitransfer.daemon.log')
@@ -370,6 +369,7 @@ class TestDaemon(unittest.TestCase):
                                               call('/desi/root/spectro/data/20190703/00000127/arcs-20190703-00000127.done'),
                                               call('/desi/root/spectro/data/20190703/00000127/science-20190703-00000127.done')])
                 mock_status.update.assert_has_calls([call('20190703', '00000127', 'checksum'),
+                                                     call('20190703', '00000127', 'pipeline'),
                                                      call('20190703', '00000127', 'pipeline', last='flats'),
                                                      call('20190703', '00000127', 'pipeline', last='arcs'),
                                                      call('20190703', '00000127', 'pipeline', last='science')])
@@ -390,6 +390,33 @@ class TestDaemon(unittest.TestCase):
                 transfer_exposure(c[0], options, '20190703/00000127', mock_status, pipeline)
                 mock_log.info.assert_has_calls([call("%s/%s appears to be test data. Skipping pipeline activation.", '20190703', '00000127')])
 
+    @patch('os.path.isdir')
+    @patch('desitransfer.daemon.verify_checksum')
+    @patch('desitransfer.daemon._popen')
+    @patch('desitransfer.daemon.TransferStatus')
+    @patch('desitransfer.daemon.log')
+    def test_transfer_exposure_real_files(self, mock_log, mock_status, mock_popen, mock_cksum, mock_isdir):
+        """Test single exposure files with files that actually exist.
+        """
+        with TemporaryDirectory() as desi_root:
+            os.makedirs(os.path.join(desi_root, 'spectro', 'staging', 'raw', '20190703', '00000127'))
+            os.makedirs(os.path.join(desi_root, 'spectro', 'data'))
+            # with open(os.path.join(desi_root, 'spectro', 'staging', 'raw', '20190703', '00000127', 'checksum-20190703-00000127.sha256sum'), 'w') as s:
+            #     s.write('foo')
+            with patch.dict('os.environ',
+                            {'DESI_ROOT': desi_root,
+                             'DESI_SPECTRO_DATA': os.path.join(desi_root, 'spectro', 'data')}):
+                with patch.object(sys, 'argv', ['desi_transfer_daemon', '--debug', '--shadow']):
+                    c = _config()
+                    options = _options()
+                    pipeline = PipelineCommand(options.nersc, ssh=options.ssh)
+                    mock_popen.return_value = ('0', '', '')
+                    mock_cksum.return_value = 0
+                    mock_isdir.return_value = False
+                    transfer_exposure(c[0], options, '20190703/00000127', mock_status, pipeline)
+                    mock_log.warning.assert_has_calls([call("No checksum file for %s/%s!", '20190703', '00000127')])
+                    mock_log.info.assert_has_calls([call("%s/%s appears to be test data. Skipping pipeline activation.", '20190703', '00000127')])
+                    # mock_log.debug.assert_has_calls([call('%s already transferred.', desi_root + '/spectro/staging/raw/20190703/00000127')])
 
     @patch('desitransfer.daemon.rsync_night')
     @patch('desitransfer.daemon._popen')
@@ -476,8 +503,8 @@ desi_spectro_data_20190702.tar.idx
                 with open(ls_file, 'w') as f:
                     f.write(fake_hsi1)
                 backup_night(c[0], '20190703', mock_status, True)
-                mock_log.debug.assert_has_calls([call("os.remove('%s')", ls_file)],
-                                                 call("Backup of %s already complete.", '20190703'))
+                mock_log.debug.assert_has_calls([call("os.remove('%s')", ls_file),
+                                                 call("Backup of %s already complete.", '20190703')])
                 mock_rm.assert_called_once_with(ls_file)
                 #
                 # Not yet backed up

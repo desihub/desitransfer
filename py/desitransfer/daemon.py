@@ -487,16 +487,13 @@ def transfer_exposure(d, options, link, status, pipeline):
                 cmd = pipeline.command(night, exposure)
                 if not options.shadow:
                     _, out, err = _popen(cmd)
-                done = False
+                status.update(night, exposure, 'pipeline')
                 for k in ('flats', 'arcs', 'science'):
                     if os.path.exists(os.path.join(destination_exposure, '{0}-{1}-{2}.done'.format(k, night, exposure))):
                         cmd = pipeline.command(night, exposure, command=k)
                         if not options.shadow:
                             _, out, err = _popen(cmd)
                         status.update(night, exposure, 'pipeline', last=k)
-                        done = True
-                if not done:
-                    status.update(night, exposure, 'pipeline')
             else:
                 log.info("%s/%s appears to be test data. Skipping pipeline activation.", night, exposure)
         else:

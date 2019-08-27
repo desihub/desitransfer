@@ -6,6 +6,9 @@ Change Log
 ------------------
 
 * Removed obsolete shell script :command:`desi_daily_transfer.sh`.
+* Refactor code for increased test coverage (PR `#1`_).
+
+.. _`#1`: https://github.com/desihub/desitransfer/pull/1
 
 0.2.0 (2019-08-22)
 ------------------
