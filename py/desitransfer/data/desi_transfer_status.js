@@ -199,10 +199,10 @@ $(function() {
         // Main display function.
         //
         display: function() {
-            if (typeof this.raw === "undefined") alert("this.raw undefined!");
-            if (typeof this.nights === "undefined") alert("this.nights undefined!");
-            if (typeof this.hasNight === "undefined") alert("this.hasNight undefined!");
-            if (typeof this.display === "undefined") alert("this.display undefined!");
+            // if (typeof this.raw === "undefined") alert("this.raw undefined!");
+            // if (typeof this.nights === "undefined") alert("this.nights undefined!");
+            // if (typeof this.hasNight === "undefined") alert("this.hasNight undefined!");
+            // if (typeof this.display === "undefined") alert("this.display undefined!");
             $("#content").empty();
             var night;
             for (var k = 0; k < this.raw.length; k++) {
