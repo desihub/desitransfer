@@ -9,7 +9,7 @@
 # Program or script you want to run
 PROGRAM=${DESITRANSFER}/bin/desi_transfer_daemon
 # Command line options for PRGFILE
-PRGOPTS="--debug --shadow --no-pipeline"
+PRGOPTS="--debug --no-pipeline"
 NICE="nice -n 19"
 # LOCKDIR=${CSCRATCH}/run
 #
