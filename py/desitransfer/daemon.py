@@ -468,8 +468,10 @@ def transfer_exposure(d, options, link, status, pipeline):
             #
             if not os.path.isdir(destination_night):
                 log.debug("os.makedirs('%s', exist_ok=True)", destination_night)
+                log.debug("os.chmod('%s', 0o%o)", destination_night, dir_perm)
                 if not options.shadow:
                     os.makedirs(destination_night, exist_ok=True)
+                    os.chmod(destination_night, dir_perm)
             #
             # Move data into DESI_SPECTRO_DATA.
             #

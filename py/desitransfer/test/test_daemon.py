@@ -289,6 +289,7 @@ class TestDaemon(unittest.TestCase):
                 mock_log.warning.assert_has_calls([call('No links found, check connection.')])
 
     @patch('shutil.move')
+    @patch('os.chmod')
     @patch('os.makedirs')
     @patch('os.path.exists')
     @patch('os.path.isdir')
@@ -297,7 +298,7 @@ class TestDaemon(unittest.TestCase):
     @patch('desitransfer.daemon._popen')
     @patch('desitransfer.daemon.TransferStatus')
     @patch('desitransfer.daemon.log')
-    def test_transfer_exposure(self, mock_log, mock_status, mock_popen, mock_lock, mock_cksum, mock_isdir, mock_exists, mock_mkdir, mock_mv):
+    def test_transfer_exposure(self, mock_log, mock_status, mock_popen, mock_lock, mock_cksum, mock_isdir, mock_exists, mock_mkdir, mock_chmod, mock_mv):
         """Test transfer of a single exposure.
         """
         desi_night = os.path.join(os.environ['HOME'], 'bin', 'wrap_desi_night.sh')
@@ -336,6 +337,10 @@ class TestDaemon(unittest.TestCase):
                 mock_cksum.return_value = 0
                 transfer_exposure(c[0], options, '20190703/00000127', mock_status, pipeline)
                 mock_lock.assert_called_once_with('/desi/root/spectro/staging/raw/20190703/00000127', options.shadow)
+                mock_log.debug.assert_has_calls([call("os.makedirs('%s', exist_ok=True)", '/desi/root/spectro/data/20190703'),
+                                                         call("os.chmod('%s', 0o%o)", '/desi/root/spectro/data/20190703', 0o2750)])
+                mock_mkdir.assert_has_calls([call('/desi/root/spectro/data/20190703', exist_ok=True)])
+                mock_chmod.assert_called_once_with('/desi/root/spectro/data/20190703', 0o2750)
                 mock_cksum.assert_called_once_with('/desi/root/spectro/staging/raw/20190703/00000127/checksum-20190703-00000127.sha256sum')
                 mock_mv.assert_called_once_with('/desi/root/spectro/staging/raw/20190703/00000127', '/desi/root/spectro/data/20190703')
                 mock_popen.assert_has_calls([call(['/bin/ssh', '-q', 'cori', desi_night, 'update', '--night', '20190703', '--expid', '00000127', '--nersc', 'cori', '--nersc_queue', 'realtime', '--nersc_maxnodes', '25']),
@@ -374,6 +379,7 @@ class TestDaemon(unittest.TestCase):
                                                      call('20190703', '00000127', 'pipeline', last='arcs'),
                                                      call('20190703', '00000127', 'pipeline', last='science')])
                 mock_log.debug.assert_has_calls([call("os.makedirs('%s', exist_ok=True)", '/desi/root/spectro/data/20190703'),
+                                                 call("os.chmod('%s', 0o%o)", '/desi/root/spectro/data/20190703', 0o2750),
                                                  call("shutil.move('%s', '%s')", '/desi/root/spectro/staging/raw/20190703/00000127', '/desi/root/spectro/data/20190703')])
                 # mock_popen.assert_has_calls([call(['/bin/ssh', '-q', 'cori', 'wrap_desi_night.sh'])])
             #
