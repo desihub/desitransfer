@@ -17,7 +17,9 @@ desitransfer
 Overview
 ========
 
-DESI data transfer infrastructure.
+DESI_ data transfer infrastructure.
+
+.. _DESI: https://www.desi.lbl.gov
 
 Documentation
 =============

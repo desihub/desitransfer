@@ -98,10 +98,35 @@ class TestStatus(unittest.TestCase):
                 self.assertEqual(s.status[0], [20200703, 12345679, 'checksum', True, '', 1565300090000])
                 s.update('20200703', '12345680', 'rsync', last='science')
                 self.assertEqual(s.status[0], [20200703, 12345680, 'rsync', True, 'science', 1565300090000])
+                s.update('20200703', '12345681', 'pipeline')
+                self.assertEqual(s.status[0], [20200703, 12345681, 'pipeline', True, '', 1565300090000])
+                s.update('20200703', '12345681', 'pipeline', last='arcs')
+                self.assertEqual(s.status[0], [20200703, 12345681, 'pipeline', True, 'arcs', 1565300090000])
                 s.update('20200703', 'all', 'backup')
                 b = [i[3] for i in s.status if i[2] == 'backup']
                 self.assertTrue(all(b))
-                self.assertEqual(len(b), 4)
+                self.assertEqual(len(b), 5)
+
+    def test_TransferStatus_find(self):
+        """Test status search.
+        """
+        st = [[20200703, 12345678, 'checksum', True, '', 1565300074664],
+              [20200703, 12345678, 'rsync', True, '', 1565300074664],
+              [20200703, 12345677, 'checksum', True, '', 1565300073000],
+              [20200703, 12345677, 'rsync', True, '', 1565300073000]]
+        with TemporaryDirectory() as d:
+            js = os.path.join(d, 'desi_transfer_status.json')
+            with open(js, 'w') as f:
+                json.dump(st, f, indent=None, separators=(',', ':'))
+            s = TransferStatus(d)
+            i = s.find(20200702)
+            self.assertEqual(len(i), 0)
+            i = s.find(20200703)
+            self.assertEqual(len(i), 4)
+            i = s.find(20200703, 12345678)
+            self.assertEqual(len(i), 2)
+            i = s.find(20200703, stage='checksum')
+            self.assertEqual(len(i), 2)
 
 
 def test_suite():
