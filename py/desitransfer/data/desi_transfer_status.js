@@ -136,7 +136,7 @@ $(function() {
                 var stamp = "INCOMPLETE";
                 if (this.stage[Exposure.stages[k]].stamp != 0) {
                     c = this.stage[Exposure.stages[k]].success ? "bg-success" : "bg-danger";
-                    var d = new Date(Exposure.stages[k]].stamp);
+                    var d = new Date(this.stage[Exposure.stages[k]].stamp);
                     stamp = d.toISOString();
                 }
                 r +=  "<td class=\"" + c + "\">" + stamp + "</td>";
