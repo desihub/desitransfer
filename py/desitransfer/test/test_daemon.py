@@ -289,12 +289,16 @@ class TestDaemon(unittest.TestCase):
                 transfer_directory(c[0], options, pipeline)
                 mock_log.warning.assert_has_calls([call('No links found, check connection.')])
 
+    @patch('shutil.move')
     @patch('os.makedirs')
+    @patch('os.path.exists')
     @patch('os.path.isdir')
+    @patch('desitransfer.daemon.verify_checksum')
+    @patch('desitransfer.daemon.lock_directory')
     @patch('desitransfer.daemon._popen')
     @patch('desitransfer.daemon.TransferStatus')
     @patch('desitransfer.daemon.log')
-    def test_transfer_exposure(self, mock_log, mock_status, mock_popen, mock_isdir, mock_mkdir):
+    def test_transfer_exposure(self, mock_log, mock_status, mock_popen, mock_lock, mock_cksum, mock_isdir, mock_exists, mock_mkdir, mock_mv):
         """Test transfer of a single exposure.
         """
         with patch.dict('os.environ',
@@ -323,6 +327,68 @@ class TestDaemon(unittest.TestCase):
                                                     'dts:/data/dts/exposures/raw/20190703/00000127/', '/desi/root/spectro/staging/raw/20190703/00000127/'])
                 mock_log.error.assert_called_once_with('rsync problem detected!')
                 mock_status.update.assert_called_once_with('20190703', '00000127', 'rsync', failure=True)
+                #
+                # Actually run the pipeline
+                #
+                mock_isdir.return_value = False
+                mock_exists.return_value = True
+                mock_popen.return_value = ('0', '', '')
+                mock_cksum.return_value = 0
+                transfer_exposure(c[0], options, '20190703/00000127', mock_status, pipeline)
+                mock_lock.assert_called_once_with('/desi/root/spectro/staging/raw/20190703/00000127', options.shadow)
+                mock_cksum.assert_called_once_with('/desi/root/spectro/staging/raw/20190703/00000127/checksum-20190703-00000127.sha256sum')
+                mock_mv.assert_called_once_with('/desi/root/spectro/staging/raw/20190703/00000127', '/desi/root/spectro/data/20190703')
+                mock_popen.assert_has_calls([call(['/bin/ssh', '-q', 'cori', '/home/weaver/bin/wrap_desi_night.sh', 'update', '--night', '20190703', '--expid', '00000127', '--nersc', 'cori', '--nersc_queue', 'realtime', '--nersc_maxnodes', '25']),
+                                             call(['/bin/ssh', '-q', 'cori', '/home/weaver/bin/wrap_desi_night.sh', 'flats', '--night', '20190703', '--expid', '00000127', '--nersc', 'cori', '--nersc_queue', 'realtime', '--nersc_maxnodes', '25']),
+                                             call(['/bin/ssh', '-q', 'cori', '/home/weaver/bin/wrap_desi_night.sh', 'arcs', '--night', '20190703', '--expid', '00000127', '--nersc', 'cori', '--nersc_queue', 'realtime', '--nersc_maxnodes', '25']),
+                                             call(['/bin/ssh', '-q', 'cori', '/home/weaver/bin/wrap_desi_night.sh', 'redshifts', '--night', '20190703', '--expid', '00000127', '--nersc', 'cori', '--nersc_queue', 'realtime', '--nersc_maxnodes', '25'])])
+            #
+            # Shadow mode will trigger main code body
+            #
+            with patch.object(sys, 'argv', ['desi_transfer_daemon', '--debug', '--shadow']):
+                c = _config()
+                options = _options()
+                pipeline = PipelineCommand(options.nersc, ssh=options.ssh)
+                #
+                # Not already transferred, checksum file does not exist.
+                #
+                mock_isdir.return_value = False
+                mock_exists.return_value = False
+                transfer_exposure(c[0], options, '20190703/00000127', mock_status, pipeline)
+                mock_status.update.assert_has_calls([call('20190703', '00000127', 'rsync'),
+                                                     call('20190703', '00000127', 'checksum', failure=True)])
+                mock_log.debug.assert_has_calls([call("%s does not exist, ignore checksum error.", '/desi/root/spectro/staging/raw/20190703/00000127')])
+                mock_log.error.assert_has_calls([call("Checksum problem detected for %s/%s!", '20190703', '00000127')])
+                #
+                # Not already transferred, checksum file does exist.
+                #
+                mock_exists.return_value = True
+                mock_cksum.return_value = 0
+                transfer_exposure(c[0], options, '20190703/00000127', mock_status, pipeline)
+                mock_exists.assert_has_calls([call('/desi/root/spectro/data/20190703/00000127/flats-20190703-00000127.done'),
+                                              call('/desi/root/spectro/data/20190703/00000127/arcs-20190703-00000127.done'),
+                                              call('/desi/root/spectro/data/20190703/00000127/science-20190703-00000127.done')])
+                mock_status.update.assert_has_calls([call('20190703', '00000127', 'checksum'),
+                                                     call('20190703', '00000127', 'pipeline', last='flats'),
+                                                     call('20190703', '00000127', 'pipeline', last='arcs'),
+                                                     call('20190703', '00000127', 'pipeline', last='science')])
+                mock_log.debug.assert_has_calls([call("os.makedirs('%s', exist_ok=True)", '/desi/root/spectro/data/20190703'),
+                                                 call("shutil.move('%s', '%s')", '/desi/root/spectro/staging/raw/20190703/00000127', '/desi/root/spectro/data/20190703')])
+                # mock_popen.assert_has_calls([call(['/bin/ssh', '-q', 'cori', 'wrap_desi_night.sh'])])
+            #
+            # No-pipeline mode.
+            #
+            with patch.object(sys, 'argv', ['desi_transfer_daemon', '--debug', '--no-pipeline']):
+                c = _config()
+                options = _options()
+                pipeline = PipelineCommand(options.nersc, ssh=options.ssh)
+                mock_isdir.return_value = False
+                mock_exists.return_value = True
+                mock_popen.return_value = ('0', '', '')
+                mock_cksum.return_value = 0
+                transfer_exposure(c[0], options, '20190703/00000127', mock_status, pipeline)
+                mock_log.info.assert_has_calls([call("%s/%s appears to be test data. Skipping pipeline activation.", '20190703', '00000127')])
+
 
     @patch('desitransfer.daemon.rsync_night')
     @patch('desitransfer.daemon._popen')
