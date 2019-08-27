@@ -577,7 +577,10 @@ def backup_night(d, night, status, test=False):
         if test:
             ls_file = ls_file.replace('.txt', '.shadow.txt')
         log.debug("os.remove('%s')", ls_file)
-        os.remove(ls_file)
+        try:
+            os.remove(ls_file)
+        except FileNotFoundError:
+            log.debug("Failed to remove %s because it didn't exist. That's OK.", ls_file)
         cmd = ['/usr/common/mss/bin/hsi', '-O', ls_file,
                'ls', '-l', d.hpss]
         _, out, err = _popen(cmd)
