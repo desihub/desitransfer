@@ -301,6 +301,7 @@ class TestDaemon(unittest.TestCase):
     def test_transfer_exposure(self, mock_log, mock_status, mock_popen, mock_lock, mock_cksum, mock_isdir, mock_exists, mock_mkdir, mock_mv):
         """Test transfer of a single exposure.
         """
+        desi_night = os.path.join(os.environ['HOME'], 'bin', 'wrap_desi_night.sh')
         with patch.dict('os.environ',
                         {'DESI_ROOT': '/desi/root',
                          'DESI_SPECTRO_DATA': '/desi/root/spectro/data'}):
@@ -338,10 +339,10 @@ class TestDaemon(unittest.TestCase):
                 mock_lock.assert_called_once_with('/desi/root/spectro/staging/raw/20190703/00000127', options.shadow)
                 mock_cksum.assert_called_once_with('/desi/root/spectro/staging/raw/20190703/00000127/checksum-20190703-00000127.sha256sum')
                 mock_mv.assert_called_once_with('/desi/root/spectro/staging/raw/20190703/00000127', '/desi/root/spectro/data/20190703')
-                mock_popen.assert_has_calls([call(['/bin/ssh', '-q', 'cori', '/home/weaver/bin/wrap_desi_night.sh', 'update', '--night', '20190703', '--expid', '00000127', '--nersc', 'cori', '--nersc_queue', 'realtime', '--nersc_maxnodes', '25']),
-                                             call(['/bin/ssh', '-q', 'cori', '/home/weaver/bin/wrap_desi_night.sh', 'flats', '--night', '20190703', '--expid', '00000127', '--nersc', 'cori', '--nersc_queue', 'realtime', '--nersc_maxnodes', '25']),
-                                             call(['/bin/ssh', '-q', 'cori', '/home/weaver/bin/wrap_desi_night.sh', 'arcs', '--night', '20190703', '--expid', '00000127', '--nersc', 'cori', '--nersc_queue', 'realtime', '--nersc_maxnodes', '25']),
-                                             call(['/bin/ssh', '-q', 'cori', '/home/weaver/bin/wrap_desi_night.sh', 'redshifts', '--night', '20190703', '--expid', '00000127', '--nersc', 'cori', '--nersc_queue', 'realtime', '--nersc_maxnodes', '25'])])
+                mock_popen.assert_has_calls([call(['/bin/ssh', '-q', 'cori', desi_night, 'update', '--night', '20190703', '--expid', '00000127', '--nersc', 'cori', '--nersc_queue', 'realtime', '--nersc_maxnodes', '25']),
+                                             call(['/bin/ssh', '-q', 'cori', desi_night, 'flats', '--night', '20190703', '--expid', '00000127', '--nersc', 'cori', '--nersc_queue', 'realtime', '--nersc_maxnodes', '25']),
+                                             call(['/bin/ssh', '-q', 'cori', desi_night, 'arcs', '--night', '20190703', '--expid', '00000127', '--nersc', 'cori', '--nersc_queue', 'realtime', '--nersc_maxnodes', '25']),
+                                             call(['/bin/ssh', '-q', 'cori', desi_night, 'redshifts', '--night', '20190703', '--expid', '00000127', '--nersc', 'cori', '--nersc_queue', 'realtime', '--nersc_maxnodes', '25'])])
             #
             # Shadow mode will trigger main code body
             #
