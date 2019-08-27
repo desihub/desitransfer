@@ -191,7 +191,8 @@ def _configure_log(debug, size=100000000, backups=100):
     if debug:
         log.setLevel(logging.DEBUG)
     email_from = os.environ['USER'] + '@' + getfqdn()
-    email_to = ['desi-data@desi.lbl.gov', ]
+    # email_to = ['desi-data@desi.lbl.gov', ]
+    email_to = ['baweaver@lbl.gov', ]
     handler2 = SMTPHandler('localhost', email_from, email_to,
                            'Critical error reported by desi_transfer_daemon!')
     fmt = """Greetings,
