@@ -87,7 +87,7 @@ $(function() {
         // Table of individual exposures.
         //
         No.table_rows = function() {
-            var r = "<table id=\"t" + this.n + "\" style=\"display:none;\">" +
+            var r = "<table id=\"t" + this.n + "\" class=\"table table-borderless table-sm\"style=\"display:none;\">" +
                     this.exposures[0].header() + "<tbody>";
             for (var k = 0; k < this.exposures.length; k++) {
                 r += this.exposures[k].row();
@@ -145,10 +145,10 @@ $(function() {
             var r = "<tr id=\"e" + this.toString() +"\">" +
                     "<td>" + this.pad() + "</td>";
             for (var k = 0; k < Exposure.stages.length; k++) {
-                var c = "bg-warning";
+                var c = "table-warning";
                 var stamp = "INCOMPLETE";
                 if (this.stage[Exposure.stages[k]].stamp != 0) {
-                    c = this.stage[Exposure.stages[k]].success ? "bg-success" : "bg-danger";
+                    c = this.stage[Exposure.stages[k]].success ? "table-success" : "table-danger";
                     var d = new Date(this.stage[Exposure.stages[k]].stamp);
                     stamp = d.toISOString();
                 }
