@@ -104,6 +104,7 @@ while /bin/true; do
                 # Transfer complete.
                 #
                 if [[ "${status}" == "0" ]]; then
+                    sprun desi_transfer_status --directory ${status_dir} ${night} ${exposure} rsync
                     #
                     # Check permissions.
                     #
@@ -123,6 +124,7 @@ while /bin/true; do
                     # Did we pass checksums?
                     #
                     if [[ "${checksum_status}" == "0" ]]; then
+                        sprun desi_transfer_status --directory ${status_dir} ${night} ${exposure} checksum
                         #
                         # Set up DESI_SPECTRO_DATA.
                         #
@@ -146,39 +148,27 @@ while /bin/true; do
                                 --night ${night} --expid ${exposure} \
                                 --nersc ${pipeline_host} --nersc_queue realtime \
                                 --nersc_maxnodes 25
+                            sprun desi_transfer_status --directory ${status_dir} ${night} ${exposure} pipeline
                             #
-                            # if (flat|arc) done, run flat|arc update.
+                            # if (flat|arc|science) done, run flat|arc|redshifts update.
                             #
-                            if [[ -f ${dest}/${night}/${exposure}/flats-${night}-${exposure}.done ]]; then
-                                sprun ${ssh} ${desi_night} flats \
-                                    --night ${night} \
-                                    --nersc ${pipeline_host} --nersc_queue realtime \
-                                    --nersc_maxnodes 25
-                                sprun desi_transfer_status --directory ${status_dir} --last flats ${night} ${exposure}
-                            elif [[ -f ${dest}/${night}/${exposure}/arcs-${night}-${exposure}.done ]]; then
-                                sprun ${ssh} ${desi_night} arcs \
-                                    --night ${night} \
-                                    --nersc ${pipeline_host} --nersc_queue realtime \
-                                    --nersc_maxnodes 25
-                                sprun desi_transfer_status --directory ${status_dir} --last arcs ${night} ${exposure}
-                            #
-                            # if night done run redshifts
-                            #
-                            elif [[ -f ${dest}/${night}/${exposure}/science-${night}-${exposure}.done ]]; then
-                                sprun ${ssh} ${desi_night} redshifts \
-                                    --night ${night} \
-                                    --nersc ${pipeline_host} --nersc_queue realtime \
-                                    --nersc_maxnodes 25
-                                sprun desi_transfer_status --directory ${status_dir} --last science ${night} ${exposure}
-                            else
-                                sprun desi_transfer_status --directory ${status_dir} ${night} ${exposure}
-                            fi
+                            for ddd in flats arcs science; do
+                                if [[ -f ${dest}/${night}/${exposure}/${ddd}-${night}-${exposure}.done ]]; then
+                                    dds=${ddd}
+                                    [[ "${ddd}" == "science" ]] && dds=redshifts
+                                    sprun ${ssh} ${desi_night} ${dds} \
+                                        --night ${night} \
+                                        --nersc ${pipeline_host} --nersc_queue realtime \
+                                        --nersc_maxnodes 25
+                                    sprun desi_transfer_status --directory ${status_dir} --last arcs ${night} ${exposure} ${ddd}
+                                fi
+                            done
                         else
                             info "${night}/${exposure} appears to be test data.  Skipping pipeline activation."
                         fi
                     else
                         error "Checksum problem detected for ${night}/${exposure}!"
-                        ${run_pipeline} && sprun desi_transfer_status --directory ${status_dir} --failure ${night} ${exposure}
+                        sprun desi_transfer_status --directory ${status_dir} --failure ${night} ${exposure} checksum
                     fi
                 elif [[ "${status}" == "done" ]]; then
                     #
@@ -187,7 +177,7 @@ while /bin/true; do
                     :
                 else
                     error "rsync problem detected for ${night}/${exposure}!"
-                    ${run_pipeline} && sprun desi_transfer_status --directory ${status_dir} --failure ${night} ${exposure}
+                    sprun desi_transfer_status --directory ${status_dir} --failure ${night} ${exposure} rsync
                 fi
             done
         else

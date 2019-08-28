@@ -62,30 +62,28 @@ class TestDaemon(unittest.TestCase):
             self.assertEqual(c[0].destination, os.environ['DESI_SPECTRO_DATA'])
             self.assertEqual(c[0].hpss, 'desi/spectro/data')
 
-    def test_PipelineCommand(self):
+    @patch('desitransfer.daemon.log')
+    def test_PipelineCommand(self, mock_log):
         """Test pipeline command generation.
         """
         dn = os.path.join(os.environ['HOME'], 'bin', 'wrap_desi_night.sh')
-        with patch('desitransfer.daemon.log') as m:
-            p = PipelineCommand('cori')
-            c = p.command('20200703', '12345678')
-            self.assertListEqual(c, ['ssh', '-q', 'cori', dn, 'update',
-                                     '--night', '20200703',
-                                     '--expid', '12345678',
-                                     '--nersc', 'cori',
-                                     '--nersc_queue', 'realtime',
-                                     '--nersc_maxnodes', '25'])
-        m.debug.assert_called_with(' '.join(c))
-        with patch('desitransfer.daemon.log') as m:
-            p = PipelineCommand('cori')
-            c = p.command('20200703', '12345678', 'science')
-            self.assertListEqual(c, ['ssh', '-q', 'cori', dn, 'redshifts',
-                                     '--night', '20200703',
-                                     '--expid', '12345678',
-                                     '--nersc', 'cori',
-                                     '--nersc_queue', 'realtime',
-                                     '--nersc_maxnodes', '25'])
-        m.debug.assert_called_with(' '.join(c))
+        p = PipelineCommand('cori')
+        c = p.command('20200703', '12345678')
+        self.assertListEqual(c, ['ssh', '-q', 'cori', dn, 'update',
+                                 '--night', '20200703',
+                                 '--expid', '12345678',
+                                 '--nersc', 'cori',
+                                 '--nersc_queue', 'realtime',
+                                 '--nersc_maxnodes', '25'])
+        mock_log.debug.assert_called_with(' '.join(c))
+        p = PipelineCommand('cori')
+        c = p.command('20200703', '12345678', 'science')
+        self.assertListEqual(c, ['ssh', '-q', 'cori', dn, 'redshifts',
+                                 '--night', '20200703',
+                                 '--nersc', 'cori',
+                                 '--nersc_queue', 'realtime',
+                                 '--nersc_maxnodes', '25'])
+        mock_log.debug.assert_called_with(' '.join(c))
 
     def test_options(self):
         """Test command-line arguments.
@@ -344,9 +342,9 @@ class TestDaemon(unittest.TestCase):
                 mock_cksum.assert_called_once_with('/desi/root/spectro/staging/raw/20190703/00000127/checksum-20190703-00000127.sha256sum')
                 mock_mv.assert_called_once_with('/desi/root/spectro/staging/raw/20190703/00000127', '/desi/root/spectro/data/20190703')
                 mock_popen.assert_has_calls([call(['/bin/ssh', '-q', 'cori', desi_night, 'update', '--night', '20190703', '--expid', '00000127', '--nersc', 'cori', '--nersc_queue', 'realtime', '--nersc_maxnodes', '25']),
-                                             call(['/bin/ssh', '-q', 'cori', desi_night, 'flats', '--night', '20190703', '--expid', '00000127', '--nersc', 'cori', '--nersc_queue', 'realtime', '--nersc_maxnodes', '25']),
-                                             call(['/bin/ssh', '-q', 'cori', desi_night, 'arcs', '--night', '20190703', '--expid', '00000127', '--nersc', 'cori', '--nersc_queue', 'realtime', '--nersc_maxnodes', '25']),
-                                             call(['/bin/ssh', '-q', 'cori', desi_night, 'redshifts', '--night', '20190703', '--expid', '00000127', '--nersc', 'cori', '--nersc_queue', 'realtime', '--nersc_maxnodes', '25'])])
+                                             call(['/bin/ssh', '-q', 'cori', desi_night, 'flats', '--night', '20190703', '--nersc', 'cori', '--nersc_queue', 'realtime', '--nersc_maxnodes', '25']),
+                                             call(['/bin/ssh', '-q', 'cori', desi_night, 'arcs', '--night', '20190703', '--nersc', 'cori', '--nersc_queue', 'realtime', '--nersc_maxnodes', '25']),
+                                             call(['/bin/ssh', '-q', 'cori', desi_night, 'redshifts', '--night', '20190703', '--nersc', 'cori', '--nersc_queue', 'realtime', '--nersc_maxnodes', '25'])])
             #
             # Shadow mode will trigger main code body
             #

@@ -87,6 +87,8 @@ class PipelineCommand(object):
              '--nersc', self.host,
              '--nersc_queue', self.queue,
              '--nersc_maxnodes', self.nodes]
+        if command != 'update':
+            c = c[:7] + c[9:]
         log.debug(' '.join(c))
         return c
 

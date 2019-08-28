@@ -10,11 +10,11 @@ $(function() {
             this.buttons = $("<div/>", {"class": "col-4"});
             this.table = $("<div/>", {"class": "col-8"});
         }
-        var N = Night, No = Night.prototype;
+        var N = Night, Np = Night.prototype;
         //
         // Add exposure, being careful not to add twice.
         //
-        No.addExposure = function(E) {
+        Np.addExposure = function(E) {
             var i = this.hasExposure(E.e);
             if (i == -1) {
                 this.exposures.push(E);
@@ -25,7 +25,7 @@ $(function() {
         //
         // If exposure already exists, return the index.
         //
-        No.hasExposure = function(e) {
+        Np.hasExposure = function(e) {
             for (var k = 0; k < this.exposures.length; k++) {
                 if (this.exposures[k].e == e) return k;
             }
@@ -34,7 +34,7 @@ $(function() {
         //
         // Night is successful if all exposures are successful.
         //
-        No.success = function() {
+        Np.success = function() {
             var s = Exposure.stages;
             for (var k = 0; k < this.exposures.length; k++) {
                 for (var l = 0; l < s.length; l++) {
@@ -55,7 +55,7 @@ $(function() {
         //
         // Complete construction of tables, etc.
         //
-        No.finish = function() {
+        Np.finish = function() {
             this.buttons.append(this.button_html());
             this.table.append(this.table_rows());
             this.div.append(this.buttons);
@@ -65,28 +65,26 @@ $(function() {
         //
         // Paragraph containing show/hide buttons.
         //
-        No.button_html = function() {
-            // var color = this.success() ? "btn-success" : "btn-danger";
+        Np.button_html = function() {
             var color = this.success();
-            var p =  "<p id=\"p" + this.n + "\"><strong>Night " + this.n + "</strong>&nbsp;" +
-                     "<button type=\"button\" class=\"btn " + color +
-                     " btn-sm\" id=\"show" + this.n +
-                     "\" style=\"display:inline;\" onclick=\"$('#t" + this.n +
-                     "').css('display', 'block');$('#hide" + this.n +
-                     "').css('display', 'inline');$('#show" + this.n +
-                     "').css('display', 'none');\">Show</button>" +
-                     "<button type=\"button\" class=\"btn " + color +
-                     " btn-sm\" id=\"hide" + this.n +
-                     "\" style=\"display:none;\" onclick=\"$('#t" + this.n +
-                     "').css('display', 'none');$('#show" + this.n +
-                     "').css('display', 'inline');$('#hide" + this.n +
-                     "').css('display', 'none');\">Hide</button></p>";
-            return p;
+            return "<p id=\"p" + this.n + "\"><strong>Night " + this.n + "</strong>&nbsp;" +
+                   "<button type=\"button\" class=\"btn " + color +
+                   " btn-sm\" id=\"show" + this.n +
+                   "\" style=\"display:inline;\" onclick=\"$('#t" + this.n +
+                   "').css('display', 'block');$('#hide" + this.n +
+                   "').css('display', 'inline');$('#show" + this.n +
+                   "').css('display', 'none');\">Show</button>" +
+                   "<button type=\"button\" class=\"btn " + color +
+                   " btn-sm\" id=\"hide" + this.n +
+                   "\" style=\"display:none;\" onclick=\"$('#t" + this.n +
+                   "').css('display', 'none');$('#show" + this.n +
+                   "').css('display', 'inline');$('#hide" + this.n +
+                   "').css('display', 'none');\">Hide</button></p>";
         };
         //
         // Table of individual exposures.
         //
-        No.table_rows = function() {
+        Np.table_rows = function() {
             var r = "<table id=\"t" + this.n + "\" class=\"table table-borderless table-sm\"style=\"display:none;\">" +
                     this.exposures[0].header() + "<tbody>";
             for (var k = 0; k < this.exposures.length; k++) {
@@ -116,13 +114,13 @@ $(function() {
             // this.c = this.status ? "bg-success" : "bg-danger";
             this.l = r[4].length > 0 ? " Last " + r[4] + " exposure." : "";
         }
-        var E = Exposure, Eo = Exposure.prototype;
+        var E = Exposure, Ep = Exposure.prototype;
         E.padding = 8;
         E.stages = ["rsync", "checksum", "pipeline", "backup"];
         //
         // Pad integers out to 8 characters.
         //
-        Eo.pad = function() {
+        Ep.pad = function() {
             var pe = ("" + this.e).split("");
             while (pe.length < Exposure.padding) pe.unshift("0");
             return pe.join("");
@@ -130,7 +128,7 @@ $(function() {
         //
         // Header for status table.
         //
-        Eo.header = function() {
+        Ep.header = function() {
             var h = "<thead><tr><th class=\"text-uppercase\">exposure</th>";
             for (var k = 0; k < Exposure.stages.length; k++) {
                 h += "<th class=\"text-uppercase\">" + Exposure.stages[k] + "</th>";
@@ -141,7 +139,7 @@ $(function() {
         //
         // Row in the status table.
         //
-        Eo.row = function() {
+        Ep.row = function() {
             var r = "<tr id=\"e" + this.toString() +"\">" +
                     "<td>" + this.pad() + "</td>";
             for (var k = 0; k < Exposure.stages.length; k++) {
@@ -160,7 +158,7 @@ $(function() {
         //
         // Add additional stage data to an existing exposure.
         //
-        Eo.addStage = function(stage) {
+        Ep.addStage = function(stage) {
             if (stage.n == this.n && stage.e == this.e) {
                 for (var k = 0; k < Exposure.stages.length; k++) {
                     var s = Exposure.stages[k]
@@ -185,7 +183,7 @@ $(function() {
         //
         // Format night/exposure.
         //
-        Eo.toString = function() {
+        Ep.toString = function() {
             return "" + this.n + "/" + this.pad();
         };
         return Exposure;
@@ -213,10 +211,6 @@ $(function() {
     // Main display function.
     //
     display = function() {
-        // if (typeof this.raw === "undefined") alert("this.raw undefined!");
-        // if (typeof this.nights === "undefined") alert("this.nights undefined!");
-        // if (typeof this.hasNight === "undefined") alert("this.hasNight undefined!");
-        // if (typeof this.display === "undefined") alert("this.display undefined!");
         $("#content").empty();
         var night;
         for (var k = 0; k < Status.raw.length; k++) {
