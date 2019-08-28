@@ -135,7 +135,7 @@ $(function() {
             for (var k = 0; k < Exposure.stages.length; k++) {
                 h += "<th class=\"text-uppercase\">" + Exposure.stages[k] + "</th>";
             }
-            h += "<tr><th class=\"text-uppercase\">comment</th></tr></thead>";
+            h += "<th class=\"text-uppercase\">comment</th></tr></thead>";
             return h;
         };
         //
