@@ -194,42 +194,42 @@ $(function() {
                 if (this.nights[k].n == n) return k;
             }
             return -1;
-        },
-        //
-        // Main display function.
-        //
-        display: function() {
-            // if (typeof this.raw === "undefined") alert("this.raw undefined!");
-            // if (typeof this.nights === "undefined") alert("this.nights undefined!");
-            // if (typeof this.hasNight === "undefined") alert("this.hasNight undefined!");
-            // if (typeof this.display === "undefined") alert("this.display undefined!");
-            $("#content").empty();
-            var night;
-            for (var k = 0; k < this.raw.length; k++) {
-                var n = this.raw[k][0];
-                if (this.hasNight(n) == -1) {
-                    //
-                    // Finish previous night
-                    //
-                    night.finish();
-                    //
-                    // Start a new night
-                    //
-                    night = new Night(n);
-                    this.nights.push(night);
-                }
-                //
-                // Add exposure to existing night.
-                //
-                var e = new Exposure(this.raw[k]);
-                night.addExposure(e);
-            }
-            //
-            // Finish the final night
-            //
-            night.finish();
         }
     };
-    $.getJSON("desi_transfer_status.json", {}, function(data) { Status.raw = data; }).always(Status.display);
+    //
+    // Main display function.
+    //
+    display = function() {
+        // if (typeof this.raw === "undefined") alert("this.raw undefined!");
+        // if (typeof this.nights === "undefined") alert("this.nights undefined!");
+        // if (typeof this.hasNight === "undefined") alert("this.hasNight undefined!");
+        // if (typeof this.display === "undefined") alert("this.display undefined!");
+        $("#content").empty();
+        var night;
+        for (var k = 0; k < Status.raw.length; k++) {
+            var n = Status.raw[k][0];
+            if (Status.hasNight(n) == -1) {
+                //
+                // Finish previous night
+                //
+                night.finish();
+                //
+                // Start a new night
+                //
+                night = new Night(n);
+                Status.nights.push(night);
+            }
+            //
+            // Add exposure to existing night.
+            //
+            var e = new Exposure(this.raw[k]);
+            night.addExposure(e);
+        }
+        //
+        // Finish the final night
+        //
+        night.finish();
+    };
+    $.getJSON("desi_transfer_status.json", {}, function(data) { Status.raw = data; }).always(display);
     return true;
 });
