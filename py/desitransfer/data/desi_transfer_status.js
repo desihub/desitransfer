@@ -35,14 +35,15 @@ $(function() {
         // Night is successful if all exposures are successful.
         //
         No.success = function() {
-            var s = "btn-warning";
-            for (var k = 0; k < this.exposures.length; k++) {
-                for (var l = 0; l < this.exposures[k].stages.length; l++) {
-                    if (!this.exposures[k].status[l].success) {
+            var e = this.exposures;
+            var s = Exposure.stages;
+            for (var k = 0; k < e.length; k++) {
+                for (var l = 0; l < s.length; l++) {
+                    if (!e[k].status[s[l]].success) {
                         //
                         // It's not successful, but is it complete?
                         //
-                        if (this.exposures[k].status[l].stamp > 0) {
+                        if (e[k].status[s[l]].stamp > 0) {
                             return "btn-danger";
                         } else {
                             return "btn-warning";
