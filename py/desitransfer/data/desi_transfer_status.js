@@ -222,7 +222,7 @@ $(function() {
             //
             // Add exposure to existing night.
             //
-            var e = new Exposure(this.raw[k]);
+            var e = new Exposure(Status.raw[k]);
             night.addExposure(e);
         }
         //
