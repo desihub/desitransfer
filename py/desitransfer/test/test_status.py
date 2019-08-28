@@ -75,40 +75,42 @@ class TestStatus(unittest.TestCase):
         # New directory.
         #
         d = '/desi/spectro/status'
-        with patch('desitransfer.status.log') as l:
-            with patch('os.makedirs') as m:
-                with patch('shutil.copy') as cp:
-                    with patch('shutil.copyfile') as cf:
-                        s = TransferStatus(d)
-        l.debug.assert_called_once_with("os.makedirs('%s')", d)
+        # with patch('desitransfer.status.log') as l:
+        with patch('os.makedirs') as m:
+            with patch('shutil.copy') as cp:
+                with patch('shutil.copyfile') as cf:
+                    s = TransferStatus(d)
+        # l.debug.assert_called_once_with("os.makedirs('%s')", d)
         m.assert_called_once_with(d)
         cp.assert_called_once_with(j, d)
         cf.assert_called_once_with(h, os.path.join(d, 'index.html'))
 
-    def test_TransferStatus_update(self):
+    @patch('time.time')
+    def test_TransferStatus_update(self, mock_time):
         """Test status reporting mechanism updates.
         """
+        mock_time.return_value = 1565300090
         st = [[20200703, 12345678, 'rsync', True, '', 1565300074664],
               [20200703, 12345677, 'rsync', True, '', 1565300073000]]
-        with patch('time.time') as t:
-            t.return_value = 1565300090
-            with TemporaryDirectory() as d:
-                js = os.path.join(d, 'desi_transfer_status.json')
-                with open(js, 'w') as f:
-                    json.dump(st, f, indent=None, separators=(',', ':'))
-                s = TransferStatus(d)
-                s.update('20200703', '12345679', 'checksum')
-                self.assertEqual(s.status[0], [20200703, 12345679, 'checksum', True, '', 1565300090000])
-                s.update('20200703', '12345680', 'rsync', last='science')
-                self.assertEqual(s.status[0], [20200703, 12345680, 'rsync', True, 'science', 1565300090000])
-                s.update('20200703', '12345681', 'pipeline')
-                self.assertEqual(s.status[0], [20200703, 12345681, 'pipeline', True, '', 1565300090000])
-                s.update('20200703', '12345681', 'pipeline', last='arcs')
-                self.assertEqual(s.status[0], [20200703, 12345681, 'pipeline', True, 'arcs', 1565300090000])
-                s.update('20200703', 'all', 'backup')
-                b = [i[3] for i in s.status if i[2] == 'backup']
-                self.assertTrue(all(b))
-                self.assertEqual(len(b), 5)
+        with TemporaryDirectory() as d:
+            js = os.path.join(d, 'desi_transfer_status.json')
+            with open(js, 'w') as f:
+                json.dump(st, f, indent=None, separators=(',', ':'))
+            s = TransferStatus(d)
+            s.update('20200703', '12345678', 'checksum')
+            self.assertEqual(s.status[0], [20200703, 12345678, 'checksum', True, '', 1565300090000])
+            s.update('20200703', '12345680', 'rsync')
+            self.assertEqual(s.status[0], [20200703, 12345680, 'rsync', True, '', 1565300090000])
+            s.update('20200703', '12345678', 'rsync', failure=True)
+            self.assertEqual(s.status[2], [20200703, 12345678, 'rsync', False, '', 1565300090000])
+            s.update('20200703', '12345681', 'pipeline')
+            self.assertEqual(s.status[0], [20200703, 12345681, 'pipeline', True, '', 1565300090000])
+            s.update('20200703', '12345681', 'pipeline', last='arcs')
+            self.assertEqual(s.status[0], [20200703, 12345681, 'pipeline', True, 'arcs', 1565300090000])
+            s.update('20200703', 'all', 'backup')
+            b = [i[3] for i in s.status if i[2] == 'backup']
+            self.assertTrue(all(b))
+            self.assertEqual(len(b), 4)
 
     def test_TransferStatus_find(self):
         """Test status search.

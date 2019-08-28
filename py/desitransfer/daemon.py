@@ -136,6 +136,13 @@ def _options():
 
 
 def _read_configuration():
+    """Placeholder for future configuration file parsing.
+
+    Returns
+    -------
+    :func:`tuple`
+        The configuration object and a list of configuration sections.
+    """
     ini = resource_filename('desitransfer', 'data/desi_transfer_daemon.ini')
     conf = ConfigParser(defaults=os.environ,
                         interpolation=ExtendedInterpolation())
