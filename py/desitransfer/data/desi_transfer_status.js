@@ -35,10 +35,22 @@ $(function() {
         // Night is successful if all exposures are successful.
         //
         No.success = function() {
+            var s = "btn-warning";
             for (var k = 0; k < this.exposures.length; k++) {
-                if (!this.exposures[k].status) return false;
+                for (var l = 0; l < this.exposures[k].stages.length; l++) {
+                    if (!this.exposures[k].status[l].success) {
+                        //
+                        // It's not successful, but is it complete?
+                        //
+                        if (this.exposures[k].status[l].stamp > 0) {
+                            return "btn-danger";
+                        } else {
+                            return "btn-warning";
+                        }
+                    }
+                }
             }
-            return true;
+            return "btn-success";
         };
         //
         // Complete construction of tables, etc.
@@ -54,7 +66,8 @@ $(function() {
         // Paragraph containing show/hide buttons.
         //
         No.button_html = function() {
-            var color = this.success() ? "btn-success" : "btn-danger";
+            // var color = this.success() ? "btn-success" : "btn-danger";
+            var color = this.success();
             var p =  "<p id=\"p" + this.n + "\">Night " + this.n + "&nbsp;" +
                      "<button type=\"button\" class=\"btn " + color +
                      " btn-sm\" id=\"show" + this.n +
@@ -118,11 +131,11 @@ $(function() {
         // Header for status table.
         //
         Eo.header = function() {
-            var h = "<thead><tr>";
+            var h = "<thead><tr><th class=\"text-uppercase\">exposure</th>";
             for (var k = 0; k < Exposure.stages.length; k++) {
-                h += "<th class=\"text-uppercase\">" + Exposure.stages + "</th>";
+                h += "<th class=\"text-uppercase\">" + Exposure.stages[k] + "</th>";
             }
-            h += "</tr></thead>";
+            h += "<tr><th class=\"text-uppercase\">comment</th></tr></thead>";
             return h;
         };
         //
