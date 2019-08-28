@@ -68,7 +68,7 @@ $(function() {
         No.button_html = function() {
             // var color = this.success() ? "btn-success" : "btn-danger";
             var color = this.success();
-            var p =  "<p id=\"p" + this.n + "\">Night " + this.n + "&nbsp;" +
+            var p =  "<p id=\"p" + this.n + "\"><strong>Night " + this.n + "</strong>&nbsp;" +
                      "<button type=\"button\" class=\"btn " + color +
                      " btn-sm\" id=\"show" + this.n +
                      "\" style=\"display:inline;\" onclick=\"$('#t" + this.n +
