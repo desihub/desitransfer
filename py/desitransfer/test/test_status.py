@@ -4,6 +4,7 @@
 """
 import json
 import os
+import sys
 import unittest
 from unittest.mock import patch
 from tempfile import TemporaryDirectory
@@ -33,9 +34,11 @@ class TestStatus(unittest.TestCase):
         """Test command-line arguments.
         """
         with patch.dict('os.environ', {'DESI_ROOT': '/desi'}):
-            options = _options('20190703', '12345678')
-            self.assertEqual(options.night, 20190703)
-            self.assertEqual(options.expid, 12345678)
+            with patch.object(sys, 'argv', ['desi_transfer_status', '20190703', '12345678', 'rsync']):
+                options = _options()
+                self.assertEqual(options.night, 20190703)
+                self.assertEqual(options.expid, '12345678')
+                self.assertEqual(options.stage, 'rsync')
 
     def test_TransferStatus_init(self):
         """Test status reporting mechanism setup.

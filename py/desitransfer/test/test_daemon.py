@@ -519,11 +519,13 @@ desi_spectro_data_20190702.tar.idx
                     f.write(fake_hsi2)
                 mock_empty.return_value = True
                 mock_getcwd.return_value = cscratch
+                mock_rm.side_effect = FileNotFoundError
                 backup_night(c[0], '20190703', mock_status, True)
                 mock_chdir.assert_has_calls([call('/desi/root/spectro/data'),
                                              call(cscratch)])
                 mock_log.info.assert_has_calls([call('No files appear to have changed in %s.', '20190703')])
                 mock_log.debug.assert_has_calls([call("os.remove('%s')", ls_file),
+                                                 call("Failed to remove %s because it didn't exist. That's OK.", ls_file),
                                                  call("os.chdir('%s')", '/desi/root/spectro/data'),
                                                  call('/usr/common/mss/bin/htar -cvhf desi/spectro/data/desi_spectro_data_20190703.tar -H crc:verify=all 20190703'),
                                                  call("os.chdir('%s')", cscratch)])
