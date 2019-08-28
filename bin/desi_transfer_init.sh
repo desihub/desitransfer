@@ -30,7 +30,7 @@ start() {
         echo "${kill_switch} detected, will not attempt to start ${PRGFILE}."
         return 0
     fi
-    if [[ -n "$(pgrep --full ${PRGFILE} 2> /dev/null)" ]]; then
+    if [[ -n "$(pgrep --list-full --full ${PRGFILE} 2> /dev/null | grep ${DESITRANSFER})" ]]; then
         echo "${THISHOST} ${PRGFILE} is already started."
         return 1
     fi
@@ -78,7 +78,7 @@ kill_it() {
 #
 #
 stop() {
-    if [[ -z $(pgrep --full ${PRGFILE} 2> /dev/null) ]]; then
+    if [[ -z "$(pgrep --list-full --full ${PRGFILE} 2> /dev/null | grep ${DESITRANSFER})" ]]; then
         echo "${THISHOST} ${PRGFILE} is not running."
         return 1
     fi
@@ -96,7 +96,7 @@ stop() {
 #
 #
 status() {
-    if [[ -n $(pgrep --full ${PRGFILE} 2> /dev/null) ]]; then
+    if [[ -n "$(pgrep --list-full --full ${PRGFILE} 2> /dev/null | grep ${DESITRANSFER})" ]]; then
         echo "${THISHOST} ${PRGFILE} is running."
         return 0
     else
