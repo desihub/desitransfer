@@ -212,7 +212,7 @@ $(function() {
                 //
                 // Finish previous night
                 //
-                night.finish();
+                if (Status.nights.length > 0) night.finish();
                 //
                 // Start a new night
                 //
