@@ -9,6 +9,7 @@ Change Log
   - Catch unexpected exceptions.
   - Update status reporting and display.
   - Don't include exposure number in "last" pipeline runs.
+  - Make sure other similarly-named processes don't interfere with daemon startup.
 
 .. _`#2`: https://github.com/desihub/desitransfer/pull/2
 
