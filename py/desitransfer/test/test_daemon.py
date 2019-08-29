@@ -47,6 +47,10 @@ class TestDaemon(unittest.TestCase):
         self.assertEqual(c[s[0]]['staging'], '/desi/root/spectro/staging/raw')
         self.assertEqual(c[s[0]+'::pipeline']['desi_night'],
                          os.path.join(os.environ['HOME'], 'bin', 'wrap_desi_night.sh'))
+        self.assertDictEqual(c[s[0]+'::pipeline'].getdict('commands'),
+                             {'science': 'redshifts'})
+        self.assertListEqual(c[s[0]].getlist('expected_files'),
+                             ['desi-{exposure}.fits.fz', 'fibermap-{exposure}.fits', 'guider-{exposure}.fits.fz'])
 
     def test_config(self):
         """Test transfer directory configuration.

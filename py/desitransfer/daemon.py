@@ -144,8 +144,11 @@ def _read_configuration():
         The configuration object and a list of configuration sections.
     """
     ini = resource_filename('desitransfer', 'data/desi_transfer_daemon.ini')
+    getlist = lambda x: x.split(',')
+    getdict = lambda x: dict([tuple(i.split(':')) for i in x.split(',')])
     conf = ConfigParser(defaults=os.environ,
-                        interpolation=ExtendedInterpolation())
+                        interpolation=ExtendedInterpolation(),
+                        converters={'list': getlist, 'dict': getdict})
     files = conf.read(ini)
     return conf, [s for s in conf.sections() if '::' not in s]
 
