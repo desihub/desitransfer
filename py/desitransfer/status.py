@@ -13,9 +13,10 @@ import sys
 import time
 from argparse import ArgumentParser
 from pkg_resources import resource_filename
+# from desiutil.log import get_logger
 
 
-log = None
+# log = None
 
 
 class TransferStatus(object):
@@ -32,7 +33,7 @@ class TransferStatus(object):
         self.json = os.path.join(self.directory, 'desi_transfer_status.json')
         self.status = list()
         if not os.path.exists(self.directory):
-            log.debug("os.makedirs('%s')", self.directory)
+            # log.debug("os.makedirs('%s')", self.directory)
             os.makedirs(self.directory)
             for ext in ('html', 'js'):
                 src = resource_filename('desitransfer',
@@ -69,18 +70,21 @@ class TransferStatus(object):
         """
         ts = int(time.time() * 1000)  # Convert to milliseconds for JS.
         i = int(night)
+        success = not failure
         if exposure == 'all':
-            rows = [[r[0], r[1], stage, not failure, last, ts]
-                    for r in self.status if r[0] == i]
+            unique_ie = frozenset([self.status[k][1] for k in self.find(i)])
+            rows = [[i, ie, stage, success, last, ts]
+                    for ie in unique_ie]
         else:
             ie = int(exposure)
-            r = [i, ie, stage, not failure, last, ts]
-            il = []
-            if last:
-                il = self.find(i, ie, stage)
+            r = [i, ie, stage, success, last, ts]
+            il = self.find(i, ie, stage)
             if il:
-                self.status[il[0]] = r
-                rows = []
+                update = ((ts >= self.status[il[0]][5]) and
+                          (success is not self.status[il[0]][3]))
+                if last or update:
+                    self.status[il[0]] = r
+                    rows = []
             else:
                 rows = [r, ]
         for row in rows:
@@ -120,13 +124,8 @@ class TransferStatus(object):
                     and r[1] == exposure and r[2] == stage]
 
 
-def _options(*args):
+def _options():
     """Parse command-line options for :command:`desi_transfer_status`.
-
-    Parameters
-    ----------
-    args : iterable
-        Arguments to the function will be parsed for testing purposes.
 
     Returns
     -------
@@ -149,13 +148,12 @@ def _options(*args):
                       help='Indicate that a certain set of exposures is complete.')
     prsr.add_argument('night', type=int, metavar='YYYYMMDD',
                       help="Night of observation.")
-    prsr.add_argument('expid', type=int, metavar='N',
-                      help="Exposure number.")
-    if len(args) > 0:
-        options = prsr.parse_args(args)
-    else:  # pragma: no cover
-        options = prsr.parse_args()
-    return options
+    prsr.add_argument('expid', metavar='EXPID',
+                      help="Exposure number, or 'all'.")
+    prsr.add_argument('stage',
+                      choices=['rsync', 'checksum', 'pipeline', 'backup'],
+                      help="Transfer stage.")
+    return prsr.parse_args()
 
 
 def main():
@@ -166,10 +164,10 @@ def main():
     :class:`int`
         An integer suitable for passing to :func:`sys.exit`.
     """
-    global log
+    # global log
     options = _options()
-    log = get_logger()
+    # log = get_logger()
     st = TransferStatus(options.directory)
-    st.update(options.night, options.expid, 'rsync',
+    st.update(options.night, options.expid, options.stage,
               options.failure, options.last)
     return 0

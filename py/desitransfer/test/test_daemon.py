@@ -62,30 +62,28 @@ class TestDaemon(unittest.TestCase):
             self.assertEqual(c[0].destination, os.environ['DESI_SPECTRO_DATA'])
             self.assertEqual(c[0].hpss, 'desi/spectro/data')
 
-    def test_PipelineCommand(self):
+    @patch('desitransfer.daemon.log')
+    def test_PipelineCommand(self, mock_log):
         """Test pipeline command generation.
         """
         dn = os.path.join(os.environ['HOME'], 'bin', 'wrap_desi_night.sh')
-        with patch('desitransfer.daemon.log') as m:
-            p = PipelineCommand('cori')
-            c = p.command('20200703', '12345678')
-            self.assertListEqual(c, ['ssh', '-q', 'cori', dn, 'update',
-                                     '--night', '20200703',
-                                     '--expid', '12345678',
-                                     '--nersc', 'cori',
-                                     '--nersc_queue', 'realtime',
-                                     '--nersc_maxnodes', '25'])
-        m.debug.assert_called_with(' '.join(c))
-        with patch('desitransfer.daemon.log') as m:
-            p = PipelineCommand('cori')
-            c = p.command('20200703', '12345678', 'science')
-            self.assertListEqual(c, ['ssh', '-q', 'cori', dn, 'redshifts',
-                                     '--night', '20200703',
-                                     '--expid', '12345678',
-                                     '--nersc', 'cori',
-                                     '--nersc_queue', 'realtime',
-                                     '--nersc_maxnodes', '25'])
-        m.debug.assert_called_with(' '.join(c))
+        p = PipelineCommand('cori')
+        c = p.command('20200703', '12345678')
+        self.assertListEqual(c, ['ssh', '-q', 'cori', dn, 'update',
+                                 '--night', '20200703',
+                                 '--expid', '12345678',
+                                 '--nersc', 'cori',
+                                 '--nersc_queue', 'realtime',
+                                 '--nersc_maxnodes', '25'])
+        mock_log.debug.assert_called_with(' '.join(c))
+        p = PipelineCommand('cori')
+        c = p.command('20200703', '12345678', 'science')
+        self.assertListEqual(c, ['ssh', '-q', 'cori', dn, 'redshifts',
+                                 '--night', '20200703',
+                                 '--nersc', 'cori',
+                                 '--nersc_queue', 'realtime',
+                                 '--nersc_maxnodes', '25'])
+        mock_log.debug.assert_called_with(' '.join(c))
 
     def test_options(self):
         """Test command-line arguments.
@@ -289,6 +287,7 @@ class TestDaemon(unittest.TestCase):
                 mock_log.warning.assert_has_calls([call('No links found, check connection.')])
 
     @patch('shutil.move')
+    @patch('os.chmod')
     @patch('os.makedirs')
     @patch('os.path.exists')
     @patch('os.path.isdir')
@@ -297,7 +296,7 @@ class TestDaemon(unittest.TestCase):
     @patch('desitransfer.daemon._popen')
     @patch('desitransfer.daemon.TransferStatus')
     @patch('desitransfer.daemon.log')
-    def test_transfer_exposure(self, mock_log, mock_status, mock_popen, mock_lock, mock_cksum, mock_isdir, mock_exists, mock_mkdir, mock_mv):
+    def test_transfer_exposure(self, mock_log, mock_status, mock_popen, mock_lock, mock_cksum, mock_isdir, mock_exists, mock_mkdir, mock_chmod, mock_mv):
         """Test transfer of a single exposure.
         """
         desi_night = os.path.join(os.environ['HOME'], 'bin', 'wrap_desi_night.sh')
@@ -336,12 +335,16 @@ class TestDaemon(unittest.TestCase):
                 mock_cksum.return_value = 0
                 transfer_exposure(c[0], options, '20190703/00000127', mock_status, pipeline)
                 mock_lock.assert_called_once_with('/desi/root/spectro/staging/raw/20190703/00000127', options.shadow)
+                mock_log.debug.assert_has_calls([call("os.makedirs('%s', exist_ok=True)", '/desi/root/spectro/data/20190703'),
+                                                 call("os.chmod('%s', 0o%o)", '/desi/root/spectro/data/20190703', 0o2750)])
+                mock_mkdir.assert_has_calls([call('/desi/root/spectro/data/20190703', exist_ok=True)])
+                mock_chmod.assert_called_once_with('/desi/root/spectro/data/20190703', 0o2750)
                 mock_cksum.assert_called_once_with('/desi/root/spectro/staging/raw/20190703/00000127/checksum-20190703-00000127.sha256sum')
                 mock_mv.assert_called_once_with('/desi/root/spectro/staging/raw/20190703/00000127', '/desi/root/spectro/data/20190703')
                 mock_popen.assert_has_calls([call(['/bin/ssh', '-q', 'cori', desi_night, 'update', '--night', '20190703', '--expid', '00000127', '--nersc', 'cori', '--nersc_queue', 'realtime', '--nersc_maxnodes', '25']),
-                                             call(['/bin/ssh', '-q', 'cori', desi_night, 'flats', '--night', '20190703', '--expid', '00000127', '--nersc', 'cori', '--nersc_queue', 'realtime', '--nersc_maxnodes', '25']),
-                                             call(['/bin/ssh', '-q', 'cori', desi_night, 'arcs', '--night', '20190703', '--expid', '00000127', '--nersc', 'cori', '--nersc_queue', 'realtime', '--nersc_maxnodes', '25']),
-                                             call(['/bin/ssh', '-q', 'cori', desi_night, 'redshifts', '--night', '20190703', '--expid', '00000127', '--nersc', 'cori', '--nersc_queue', 'realtime', '--nersc_maxnodes', '25'])])
+                                             call(['/bin/ssh', '-q', 'cori', desi_night, 'flats', '--night', '20190703', '--nersc', 'cori', '--nersc_queue', 'realtime', '--nersc_maxnodes', '25']),
+                                             call(['/bin/ssh', '-q', 'cori', desi_night, 'arcs', '--night', '20190703', '--nersc', 'cori', '--nersc_queue', 'realtime', '--nersc_maxnodes', '25']),
+                                             call(['/bin/ssh', '-q', 'cori', desi_night, 'redshifts', '--night', '20190703', '--nersc', 'cori', '--nersc_queue', 'realtime', '--nersc_maxnodes', '25'])])
             #
             # Shadow mode will trigger main code body
             #
@@ -374,6 +377,7 @@ class TestDaemon(unittest.TestCase):
                                                      call('20190703', '00000127', 'pipeline', last='arcs'),
                                                      call('20190703', '00000127', 'pipeline', last='science')])
                 mock_log.debug.assert_has_calls([call("os.makedirs('%s', exist_ok=True)", '/desi/root/spectro/data/20190703'),
+                                                 call("os.chmod('%s', 0o%o)", '/desi/root/spectro/data/20190703', 0o2750),
                                                  call("shutil.move('%s', '%s')", '/desi/root/spectro/staging/raw/20190703/00000127', '/desi/root/spectro/data/20190703')])
                 # mock_popen.assert_has_calls([call(['/bin/ssh', '-q', 'cori', 'wrap_desi_night.sh'])])
             #
@@ -513,11 +517,13 @@ desi_spectro_data_20190702.tar.idx
                     f.write(fake_hsi2)
                 mock_empty.return_value = True
                 mock_getcwd.return_value = cscratch
+                mock_rm.side_effect = FileNotFoundError
                 backup_night(c[0], '20190703', mock_status, True)
                 mock_chdir.assert_has_calls([call('/desi/root/spectro/data'),
                                              call(cscratch)])
                 mock_log.info.assert_has_calls([call('No files appear to have changed in %s.', '20190703')])
                 mock_log.debug.assert_has_calls([call("os.remove('%s')", ls_file),
+                                                 call("Failed to remove %s because it didn't exist. That's OK.", ls_file),
                                                  call("os.chdir('%s')", '/desi/root/spectro/data'),
                                                  call('/usr/common/mss/bin/htar -cvhf desi/spectro/data/desi_spectro_data_20190703.tar -H crc:verify=all 20190703'),
                                                  call("os.chdir('%s')", cscratch)])

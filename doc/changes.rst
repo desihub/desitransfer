@@ -5,7 +5,13 @@ Change Log
 0.2.2 (unreleased)
 ------------------
 
-* No changes yet.
+* Improvements based on operational testing (PR `#2`_).
+  - Catch unexpected exceptions.
+  - Update status reporting and display.
+  - Don't include exposure number in "last" pipeline runs.
+  - Make sure other similarly-named processes don't interfere with daemon startup.
+
+.. _`#2`: https://github.com/desihub/desitransfer/pull/2
 
 0.2.1 (2019-08-27)
 ------------------

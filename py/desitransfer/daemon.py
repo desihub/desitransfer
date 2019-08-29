@@ -15,6 +15,7 @@ import stat
 import subprocess as sub
 import sys
 import time
+import traceback
 from argparse import ArgumentParser
 from configparser import ConfigParser, ExtendedInterpolation
 from logging.handlers import RotatingFileHandler, SMTPHandler
@@ -86,6 +87,8 @@ class PipelineCommand(object):
              '--nersc', self.host,
              '--nersc_queue', self.queue,
              '--nersc_maxnodes', self.nodes]
+        if command != 'update':
+            c = c[:7] + c[9:]
         log.debug(' '.join(c))
         return c
 
@@ -133,6 +136,13 @@ def _options():
 
 
 def _read_configuration():
+    """Placeholder for future configuration file parsing.
+
+    Returns
+    -------
+    :func:`tuple`
+        The configuration object and a list of configuration sections.
+    """
     ini = resource_filename('desitransfer', 'data/desi_transfer_daemon.ini')
     conf = ConfigParser(defaults=os.environ,
                         interpolation=ExtendedInterpolation())
@@ -190,7 +200,8 @@ def _configure_log(debug, size=100000000, backups=100):
     if debug:
         log.setLevel(logging.DEBUG)
     email_from = os.environ['USER'] + '@' + getfqdn()
-    email_to = ['desi-data@desi.lbl.gov', ]
+    # email_to = ['desi-data@desi.lbl.gov', ]
+    email_to = ['baweaver@lbl.gov', ]
     handler2 = SMTPHandler('localhost', email_from, email_to,
                            'Critical error reported by desi_transfer_daemon!')
     fmt = """Greetings,
@@ -468,8 +479,10 @@ def transfer_exposure(d, options, link, status, pipeline):
             #
             if not os.path.isdir(destination_night):
                 log.debug("os.makedirs('%s', exist_ok=True)", destination_night)
+                log.debug("os.chmod('%s', 0o%o)", destination_night, dir_perm)
                 if not options.shadow:
                     os.makedirs(destination_night, exist_ok=True)
+                    os.chmod(destination_night, dir_perm)
             #
             # Move data into DESI_SPECTRO_DATA.
             #
@@ -574,7 +587,10 @@ def backup_night(d, night, status, test=False):
         if test:
             ls_file = ls_file.replace('.txt', '.shadow.txt')
         log.debug("os.remove('%s')", ls_file)
-        os.remove(ls_file)
+        try:
+            os.remove(ls_file)
+        except FileNotFoundError:
+            log.debug("Failed to remove %s because it didn't exist. That's OK.", ls_file)
         cmd = ['/usr/common/mss/bin/hsi', '-O', ls_file,
                'ls', '-l', d.hpss]
         _, out, err = _popen(cmd)
@@ -642,6 +658,9 @@ def main():
             return 0
         for d in transfer_directories:
             log.info('Looking for new data in %s.', d.source)
-            transfer_directory(d, options, pipeline)
+            try:
+                transfer_directory(d, options, pipeline)
+            except Exception as e:
+                log.critical("Exception detected in transfer of %s!\n\n%s", d.source, traceback.format_exc())
         time.sleep(options.sleep*60)
     return 0
