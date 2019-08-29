@@ -10,8 +10,7 @@ import unittest
 from tempfile import TemporaryDirectory
 from unittest.mock import call, patch, MagicMock
 from pkg_resources import resource_filename
-from ..daemon import (_configure_log, PipelineCommand,
-                      _options, TransferDaemon, _popen, log,
+from ..daemon import (_configure_log, _options, TransferDaemon, _popen, log,
                       check_exposure, verify_checksum,
                       lock_directory, unlock_directory, rsync_night,
                       transfer_directory, transfer_exposure,
@@ -57,22 +56,24 @@ class TestDaemon(unittest.TestCase):
                              ['desi-{exposure}.fits.fz', 'fibermap-{exposure}.fits', 'guider-{exposure}.fits.fz'])
 
     @patch('desitransfer.daemon.log')
-    def test_PipelineCommand(self, mock_log):
+    def test_TransferDaemon_pipeline(self, mock_log):
         """Test pipeline command generation.
         """
-        dn = os.path.join(os.environ['HOME'], 'bin', 'wrap_desi_night.sh')
-        p = PipelineCommand('cori')
-        c = p.command('20200703', '12345678')
-        self.assertListEqual(c, ['ssh', '-q', 'cori', dn, 'update',
+        with patch.dict('os.environ',
+                        {'DESI_ROOT': '/desi/root',
+                         'DESI_SPECTRO_DATA': '/desi/root/spectro/data'}):
+            d = TransferDaemon()
+        dn = d.conf['pipeline']['desi_night']
+        c = d.pipeline('20200703', '12345678')
+        self.assertListEqual(c, ['/bin/ssh', '-q', 'cori', dn, 'update',
                                  '--night', '20200703',
                                  '--expid', '12345678',
                                  '--nersc', 'cori',
                                  '--nersc_queue', 'realtime',
                                  '--nersc_maxnodes', '25'])
         mock_log.debug.assert_called_with(' '.join(c))
-        p = PipelineCommand('cori')
-        c = p.command('20200703', '12345678', 'science')
-        self.assertListEqual(c, ['ssh', '-q', 'cori', dn, 'redshifts',
+        c = d.pipeline('20200703', '12345678', 'science')
+        self.assertListEqual(c, ['/bin/ssh', '-q', 'cori', dn, 'redshifts',
                                  '--night', '20200703',
                                  '--nersc', 'cori',
                                  '--nersc_queue', 'realtime',
@@ -267,10 +268,8 @@ class TestDaemon(unittest.TestCase):
                 transfer = TransferDaemon()
                 c = transfer.directories
                 options = _options()
-                pipeline = PipelineCommand(transfer.conf['pipeline']['host'],
-                                           ssh=transfer.conf['pipeline']['ssh'])
                 mock_popen.return_value = ('0', links1, '')
-                transfer_directory(c[0], options, pipeline)
+                transfer_directory(c[0], options, transfer)
                 mock_status.assert_called_once_with(os.path.join(os.path.dirname(c[0].staging), 'status'))
                 mock_popen.assert_called_once_with(['/bin/ssh', '-q', 'dts', '/bin/find', c[0].source, '-type', 'l'])
                 mock_catchup.assert_called_once_with(c[0], '20190703', False)
@@ -279,7 +278,7 @@ class TestDaemon(unittest.TestCase):
                 # No links.
                 #
                 mock_popen.return_value = ('0', links2, '')
-                transfer_directory(c[0], options, pipeline)
+                transfer_directory(c[0], options, transfer)
                 mock_log.warning.assert_has_calls([call('No links found, check connection.')])
 
     @patch('shutil.move')
@@ -303,20 +302,18 @@ class TestDaemon(unittest.TestCase):
                 transfer = TransferDaemon()
                 c = transfer.directories
                 options = _options()
-                pipeline = PipelineCommand(transfer.conf['pipeline']['host'],
-                                           ssh=transfer.conf['pipeline']['ssh'])
                 #
                 # Already transferred
                 #
                 mock_isdir.return_value = True
-                transfer_exposure(c[0], options, '20190703/00000127', mock_status, pipeline)
+                transfer_exposure(c[0], options, '20190703/00000127', mock_status, transfer)
                 mock_log.debug.assert_has_calls([call('%s already transferred.', '/desi/root/spectro/staging/raw/20190703/00000127')])
                 #
                 # rsync error bypasses a lot of code.
                 #
                 mock_isdir.return_value = False
                 mock_popen.return_value = ('1', '', '')
-                transfer_exposure(c[0], options, '20190703/00000127', mock_status, pipeline)
+                transfer_exposure(c[0], options, '20190703/00000127', mock_status, transfer)
                 mock_log.debug.assert_has_calls([call("os.makedirs('%s', exist_ok=True)", '/desi/root/spectro/staging/raw/20190703')])
                 mock_mkdir.assert_called_once_with('/desi/root/spectro/staging/raw/20190703', exist_ok=True)
                 mock_popen.assert_called_once_with(['/bin/rsync', '--verbose', '--recursive',
@@ -331,7 +328,7 @@ class TestDaemon(unittest.TestCase):
                 mock_exists.return_value = True
                 mock_popen.return_value = ('0', '', '')
                 mock_cksum.return_value = 0
-                transfer_exposure(c[0], options, '20190703/00000127', mock_status, pipeline)
+                transfer_exposure(c[0], options, '20190703/00000127', mock_status, transfer)
                 mock_lock.assert_called_once_with('/desi/root/spectro/staging/raw/20190703/00000127', options.shadow)
                 mock_log.debug.assert_has_calls([call("os.makedirs('%s', exist_ok=True)", '/desi/root/spectro/data/20190703'),
                                                  call("os.chmod('%s', 0o%o)", '/desi/root/spectro/data/20190703', 0o2750)])
@@ -350,14 +347,12 @@ class TestDaemon(unittest.TestCase):
                 transfer = TransferDaemon()
                 c = transfer.directories
                 options = _options()
-                pipeline = PipelineCommand(transfer.conf['pipeline']['host'],
-                                           ssh=transfer.conf['pipeline']['ssh'])
                 #
                 # Not already transferred, checksum file does not exist.
                 #
                 mock_isdir.return_value = False
                 mock_exists.return_value = False
-                transfer_exposure(c[0], options, '20190703/00000127', mock_status, pipeline)
+                transfer_exposure(c[0], options, '20190703/00000127', mock_status, transfer)
                 mock_status.update.assert_has_calls([call('20190703', '00000127', 'rsync'),
                                                      call('20190703', '00000127', 'checksum', failure=True)])
                 mock_log.debug.assert_has_calls([call("%s does not exist, ignore checksum error.", '/desi/root/spectro/staging/raw/20190703/00000127')])
@@ -367,7 +362,7 @@ class TestDaemon(unittest.TestCase):
                 #
                 mock_exists.return_value = True
                 mock_cksum.return_value = 0
-                transfer_exposure(c[0], options, '20190703/00000127', mock_status, pipeline)
+                transfer_exposure(c[0], options, '20190703/00000127', mock_status, transfer)
                 mock_exists.assert_has_calls([call('/desi/root/spectro/data/20190703/00000127/flats-20190703-00000127.done'),
                                               call('/desi/root/spectro/data/20190703/00000127/arcs-20190703-00000127.done'),
                                               call('/desi/root/spectro/data/20190703/00000127/science-20190703-00000127.done')])
@@ -387,13 +382,11 @@ class TestDaemon(unittest.TestCase):
                 transfer = TransferDaemon()
                 c = transfer.directories
                 options = _options()
-                pipeline = PipelineCommand(transfer.conf['pipeline']['host'],
-                                           ssh=transfer.conf['pipeline']['ssh'])
                 mock_isdir.return_value = False
                 mock_exists.return_value = True
                 mock_popen.return_value = ('0', '', '')
                 mock_cksum.return_value = 0
-                transfer_exposure(c[0], options, '20190703/00000127', mock_status, pipeline)
+                transfer_exposure(c[0], options, '20190703/00000127', mock_status, transfer)
                 mock_log.info.assert_has_calls([call("%s/%s appears to be test data. Skipping pipeline activation.", '20190703', '00000127')])
 
     @patch('os.path.isdir')
@@ -416,12 +409,10 @@ class TestDaemon(unittest.TestCase):
                     transfer = TransferDaemon()
                     c = transfer.directories
                     options = _options()
-                    pipeline = PipelineCommand(transfer.conf['pipeline']['host'],
-                                               ssh=transfer.conf['pipeline']['ssh'])
                     mock_popen.return_value = ('0', '', '')
                     mock_cksum.return_value = 0
                     mock_isdir.return_value = False
-                    transfer_exposure(c[0], options, '20190703/00000127', mock_status, pipeline)
+                    transfer_exposure(c[0], options, '20190703/00000127', mock_status, transfer)
                     mock_log.warning.assert_has_calls([call("No checksum file for %s/%s!", '20190703', '00000127')])
                     mock_log.info.assert_has_calls([call("%s/%s appears to be test data. Skipping pipeline activation.", '20190703', '00000127')])
                     # mock_log.debug.assert_has_calls([call('%s already transferred.', desi_root + '/spectro/staging/raw/20190703/00000127')])

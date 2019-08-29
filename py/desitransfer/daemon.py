@@ -36,64 +36,6 @@ expected_files = ('desi-{exposure}.fits.fz',
                   'guider-{exposure}.fits.fz')
 
 
-class PipelineCommand(object):
-    """Simple object for generating pipeline commands.
-
-    Parameters
-    ----------
-    host : :class:`str`
-        Run the pipeline on this NERSC system.
-    ssh : :class:`str`, optional
-        SSH command to use.
-    queue : :class:`str`, optional
-        NERSC queue to use.
-    nodes : :class:`int`, optional
-        Value for the ``--nersc_maxnodes`` option.
-    """
-    desi_night = os.path.realpath(os.path.join(os.environ['HOME'],
-                                               'bin',
-                                               'wrap_desi_night.sh'))
-
-    def __init__(self, host, ssh='ssh', queue='realtime', nodes=25):
-        self.host = host
-        self.ssh = ssh
-        self.queue = queue
-        self.nodes = str(nodes)
-        return
-
-    def command(self, night, exposure, command='update'):
-        """Generate a ``desi_night`` command to pass to the pipeline.
-
-        Parameters
-        ----------
-        night : :class:`str`
-            Night of observation.
-        exposure : :class:`str`
-            Exposure number.
-        command : :class:`str`, optional
-            Specific command to pass to ``desi_night``.
-
-        Returns
-        -------
-        :class:`list`
-            A command suitable for passing to :class:`subprocess.Popen`.
-        """
-        cmd = command
-        if command == 'science':
-            cmd = 'redshifts'
-        c = [self.ssh, '-q', self.host,
-             self.desi_night, cmd,
-             '--night', night,
-             '--expid', exposure,
-             '--nersc', self.host,
-             '--nersc_queue', self.queue,
-             '--nersc_maxnodes', self.nodes]
-        if command != 'update':
-            c = c[:7] + c[9:]
-        log.debug(' '.join(c))
-        return c
-
-
 def _options():
     """Parse command-line options for :command:`desi_transfer_daemon`.
 
@@ -141,6 +83,46 @@ class TransferDaemon(object):
                                             self.conf[s]['destination'], self.conf[s]['hpss'])
                             for s in self.sections]
         return
+
+    def pipeline(self, night, exposure, command=None):
+        """Generate a ``desi_night`` command to pass to the pipeline.
+
+        Parameters
+        ----------
+        night : :class:`str`
+            Night of observation.
+        exposure : :class:`str`
+            Exposure number.
+        command : :class:`str`, optional
+            Specific command to pass to ``desi_night``.
+
+        Returns
+        -------
+        :class:`list`
+            A command suitable for passing to :class:`subprocess.Popen`.
+        """
+        rename = self.conf['pipeline'].getdict('commands')
+        if command is None:
+            cmd = self.conf['pipeline']['exposure']
+        else:
+            if command in rename:
+                cmd = rename[command]
+            else:
+                cmd = command
+        c = [self.conf['pipeline']['ssh'],
+             '-q',
+             self.conf['pipeline']['host'],
+             self.conf['pipeline']['desi_night'],
+             cmd,
+             '--night', night,
+             '--expid', exposure,
+             '--nersc', self.conf['pipeline']['host'],
+             '--nersc_queue', self.conf['pipeline']['queue'],
+             '--nersc_maxnodes', self.conf['pipeline']['nodes']]
+        if command is not None:
+            c = c[:7] + c[9:]
+        log.debug(' '.join(c))
+        return c
 
 
 def _popen(command):
@@ -358,7 +340,7 @@ def rsync_night(source, destination, night, test=False):
     lock_directory(os.path.join(destination, night), test)
 
 
-def transfer_directory(d, options, pipeline):
+def transfer_directory(d, options, transfer):
     """Data transfer operations for a single destination directory.
 
     Parameters
@@ -367,7 +349,7 @@ def transfer_directory(d, options, pipeline):
         Configuration for the destination directory.
     options : :class:`argparse.Namespace`
         The command-line options.
-    pipeline : :class:`desitransfer.daemon.PipelineCommand`
+    transfer : :class:`desitransfer.daemon.TransferDaemon`
         The pipeline command construction object.
     """
     status = TransferStatus(os.path.join(os.path.dirname(d.staging), 'status'))
@@ -379,7 +361,7 @@ def transfer_directory(d, options, pipeline):
     links = sorted([x for x in out.split('\n') if x])
     if links:
         for l in links:
-            transfer_exposure(d, options, l, status, pipeline)
+            transfer_exposure(d, options, l, status, transfer)
     else:
         log.warning('No links found, check connection.')
     #
@@ -396,7 +378,7 @@ def transfer_directory(d, options, pipeline):
         backup_night(d, yst, status, options.shadow)
 
 
-def transfer_exposure(d, options, link, status, pipeline):
+def transfer_exposure(d, options, link, status, transfer):
     """Data transfer operations for a single exposure.
 
     Parameters
@@ -409,7 +391,7 @@ def transfer_exposure(d, options, link, status, pipeline):
         The exposure path.
     status : :class:`desitransfer.status.TransferStatus`
         The status object associated with `d`.
-    pipeline : :class:`desitransfer.daemon.PipelineCommand`
+    transfer : :class:`desitransfer.daemon.TransferDaemon`
         The pipeline command construction object.
     """
     exposure = os.path.basename(link)
@@ -490,13 +472,13 @@ def transfer_exposure(d, options, link, status, pipeline):
                 #
                 # Run update
                 #
-                cmd = pipeline.command(night, exposure)
+                cmd = transfer.pipeline(night, exposure)
                 if not options.shadow:
                     _, out, err = _popen(cmd)
                 status.update(night, exposure, 'pipeline')
                 for k in ('flats', 'arcs', 'science'):
                     if os.path.exists(os.path.join(destination_exposure, '{0}-{1}-{2}.done'.format(k, night, exposure))):
-                        cmd = pipeline.command(night, exposure, command=k)
+                        cmd = transfer.pipeline(night, exposure, command=k)
                         if not options.shadow:
                             _, out, err = _popen(cmd)
                         status.update(night, exposure, 'pipeline', last=k)
@@ -643,8 +625,6 @@ def main():
     options = _options()
     _configure_log(options.debug)
     transfer = TransferDaemon()
-    pipeline = PipelineCommand(transfer.conf['pipeline']['host'],
-                               ssh=transfer.conf['pipeline']['ssh'])
     while True:
         log.info('Starting transfer loop.')
         if os.path.exists(options.kill):
@@ -653,7 +633,7 @@ def main():
         for d in transfer.directories:
             log.info('Looking for new data in %s.', d.source)
             try:
-                transfer_directory(d, options, pipeline)
+                transfer_directory(d, options, transfer)
             except Exception as e:
                 log.critical("Exception detected in transfer of %s!\n\n%s",
                              d.source, traceback.format_exc())
