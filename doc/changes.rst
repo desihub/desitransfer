@@ -2,7 +2,7 @@
 Change Log
 ==========
 
-0.2.2 (unreleased)
+0.2.2 (2019-08-29)
 ------------------
 
 * Improvements based on operational testing (PR `#2`_).
