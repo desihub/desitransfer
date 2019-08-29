@@ -336,7 +336,7 @@ class TestDaemon(unittest.TestCase):
                 transfer_exposure(c[0], options, '20190703/00000127', mock_status, pipeline)
                 mock_lock.assert_called_once_with('/desi/root/spectro/staging/raw/20190703/00000127', options.shadow)
                 mock_log.debug.assert_has_calls([call("os.makedirs('%s', exist_ok=True)", '/desi/root/spectro/data/20190703'),
-                                                         call("os.chmod('%s', 0o%o)", '/desi/root/spectro/data/20190703', 0o2750)])
+                                                 call("os.chmod('%s', 0o%o)", '/desi/root/spectro/data/20190703', 0o2750)])
                 mock_mkdir.assert_has_calls([call('/desi/root/spectro/data/20190703', exist_ok=True)])
                 mock_chmod.assert_called_once_with('/desi/root/spectro/data/20190703', 0o2750)
                 mock_cksum.assert_called_once_with('/desi/root/spectro/staging/raw/20190703/00000127/checksum-20190703-00000127.sha256sum')
