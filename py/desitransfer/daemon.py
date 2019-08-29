@@ -88,7 +88,45 @@ class TransferDaemon(object):
                                             self.conf[s].getlist('expected_files'),
                                             self.conf[s]['checksum_file'])
                             for s in self.sections]
+        self._configure_log(options.debug)
         return
+
+    def _configure_log(self, debug):
+        """Re-configure the default logger returned by ``desiutil.log``.
+
+        Parameters
+        ----------
+        debug : :class:`bool`
+            If ``True`` set the log level to ``DEBUG``.
+        """
+        global log
+        conf = self.conf['logging']
+        log = get_logger(timestamp=True)
+        h = log.parent.handlers[0]
+        handler = RotatingFileHandler(conf['filename'],
+                                      maxBytes=conf.getint('size'),
+                                      backupCount=conf.getint('backups'))
+        handler.setFormatter(h.formatter)
+        log.parent.removeHandler(h)
+        log.parent.addHandler(handler)
+        if debug:
+            log.setLevel(logging.DEBUG)
+        email_from = os.environ['USER'] + '@' + getfqdn()
+        handler2 = SMTPHandler('localhost', email_from, conf.getlist('to'),
+                               'Critical error reported by desi_transfer_daemon!')
+        fmt = """Greetings,
+
+At %(asctime)s, desi_transfer_daemon failed with this message:
+
+%(message)s
+
+Kia ora koutou,
+The DESI Collaboration Account
+"""
+        formatter2 = logging.Formatter(fmt, datefmt='%Y-%m-%d %H:%M:%S %Z')
+        handler2.setFormatter(formatter2)
+        handler2.setLevel(logging.CRITICAL)
+        log.parent.addHandler(handler2)
 
     def pipeline(self, night, exposure, command=None):
         """Generate a ``desi_night`` command to pass to the pipeline.
@@ -153,51 +191,6 @@ def _popen(command):
         terr.seek(0)
         err = terr.read()
     return (str(p.returncode), out.decode('utf-8'), err.decode('utf-8'))
-
-
-def _configure_log(debug, size=100000000, backups=100):
-    """Re-configure the default logger returned by ``desiutil.log``.
-
-    Parameters
-    ----------
-    debug : :class:`bool`
-        If ``True`` set the log level to ``DEBUG``.
-    size : :class:`int`, optional
-        Rotate log file after N bytes.
-    backups : :class:`int`, optional
-        Keep N old log files.
-    """
-    global log
-    log_filename = os.path.realpath(os.path.join(os.environ['DESI_ROOT'],
-                                                 'spectro', 'staging', 'logs',
-                                                 'desi_transfer_daemon.log'))
-    log = get_logger(timestamp=True)
-    h = log.parent.handlers[0]
-    handler = RotatingFileHandler(log_filename, maxBytes=size,
-                                  backupCount=backups)
-    handler.setFormatter(h.formatter)
-    log.parent.removeHandler(h)
-    log.parent.addHandler(handler)
-    if debug:
-        log.setLevel(logging.DEBUG)
-    email_from = os.environ['USER'] + '@' + getfqdn()
-    # email_to = ['desi-data@desi.lbl.gov', ]
-    email_to = ['baweaver@lbl.gov', ]
-    handler2 = SMTPHandler('localhost', email_from, email_to,
-                           'Critical error reported by desi_transfer_daemon!')
-    fmt = """Greetings,
-
-At %(asctime)s, desi_transfer_daemon failed with this message:
-
-%(message)s
-
-Kia ora koutou,
-The DESI Collaboration Account
-"""
-    formatter2 = logging.Formatter(fmt, datefmt='%Y-%m-%d %H:%M:%S %Z')
-    handler2.setFormatter(formatter2)
-    handler2.setLevel(logging.CRITICAL)
-    log.parent.addHandler(handler2)
 
 
 def check_exposure(destination, exposure, expected):
@@ -634,7 +627,6 @@ def main():
         An integer suitable for passing to :func:`sys.exit`.
     """
     options = _options()
-    _configure_log(options.debug)
     transfer = TransferDaemon(options)
     sleep = transfer.conf['common'].getint('sleep')
     while True:

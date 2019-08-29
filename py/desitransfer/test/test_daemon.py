@@ -11,7 +11,7 @@ import unittest
 from tempfile import TemporaryDirectory
 from unittest.mock import call, patch, MagicMock
 from pkg_resources import resource_filename
-from ..daemon import (_configure_log, _options, TransferDaemon, _popen, log,
+from ..daemon import (_options, TransferDaemon, _popen, log,
                       check_exposure, verify_checksum,
                       lock_directory, unlock_directory, rsync_night,
                       transfer_directory, transfer_exposure,
@@ -36,7 +36,18 @@ class TestDaemon(unittest.TestCase):
     def tearDown(self):
         pass
 
-    def test_TransferDaemon_init(self):
+    def test_options(self):
+        """Test command-line arguments.
+        """
+        with patch.object(sys, 'argv', ['desi_transfer_daemon', '--debug']):
+            options = _options()
+            self.assertTrue(options.debug)
+            self.assertEqual(options.kill,
+                             os.path.join(os.environ['HOME'],
+                                          'stop_desi_transfer'))
+
+    @patch.object(TransferDaemon, '_configure_log')
+    def test_TransferDaemon_init(self, mock_cl):
         """Test reading configuration file.
         """
         with patch.dict('os.environ',
@@ -45,6 +56,7 @@ class TestDaemon(unittest.TestCase):
             with patch.object(sys, 'argv', ['desi_transfer_daemon', '--debug']):
                 options = _options()
             d = TransferDaemon(options)
+        mock_cl.assert_called_once_with(True)
         self.assertEqual(d.sections, ['DESI_SPECTRO_DATA'])
         c = d.conf[d.sections[0]]
         self.assertEqual(c['destination'], '/desi/root/spectro/data')
@@ -58,7 +70,8 @@ class TestDaemon(unittest.TestCase):
         self.assertEqual(c.getlist('expected_files'),
                              ['desi-{exposure}.fits.fz', 'fibermap-{exposure}.fits', 'guider-{exposure}.fits.fz'])
 
-    def test_TransferDaemon_alternate_init(self):
+    @patch.object(TransferDaemon, '_configure_log')
+    def test_TransferDaemon_alternate_init(self, mock_cl):
         """Test reading configuration with an alternate file.
         """
         with TemporaryDirectory() as config:
@@ -85,7 +98,8 @@ class TestDaemon(unittest.TestCase):
                                  ['desi-{exposure}.fits.fz', 'fibermap-{exposure}.fits', 'guider-{exposure}.fits.fz'])
 
     @patch('desitransfer.daemon.log')
-    def test_TransferDaemon_pipeline(self, mock_log):
+    @patch.object(TransferDaemon, '_configure_log')
+    def test_TransferDaemon_pipeline(self, mock_cl, mock_log):
         """Test pipeline command generation.
         """
         with patch.dict('os.environ',
@@ -111,15 +125,23 @@ class TestDaemon(unittest.TestCase):
                                  '--nersc_maxnodes', '25'])
         mock_log.debug.assert_called_with(' '.join(c))
 
-    def test_options(self):
-        """Test command-line arguments.
+    @patch('desitransfer.daemon.SMTPHandler')
+    @patch('desitransfer.daemon.RotatingFileHandler')
+    @patch('desitransfer.daemon.get_logger')
+    def test_TransferDaemon_configure_log(self, gl, rfh, smtp):
+        """Test logging configuration.
         """
-        with patch.object(sys, 'argv', ['desi_transfer_daemon', '--debug']):
-            options = _options()
-            self.assertTrue(options.debug)
-            self.assertEqual(options.kill,
-                             os.path.join(os.environ['HOME'],
-                                          'stop_desi_transfer'))
+        ll = gl.return_value = MagicMock()
+        with patch.dict('os.environ',
+                        {'DESI_ROOT': '/desi/root',
+                         'DESI_SPECTRO_DATA': '/desi/root/spectro/data'}):
+            with patch.object(sys, 'argv', ['desi_transfer_daemon', '--debug']):
+                options = _options()
+            d = TransferDaemon(options)
+        rfh.assert_called_once_with('/desi/root/spectro/staging/logs/desi_transfer_daemon.log',
+                                    backupCount=100, maxBytes=100000000)
+        gl.assert_called_once_with(timestamp=True)
+        ll.setLevel.assert_called_once_with(logging.DEBUG)
 
     @patch('desitransfer.daemon.TemporaryFile')
     @patch('subprocess.Popen')
@@ -136,22 +158,9 @@ class TestDaemon(unittest.TestCase):
         mock_log.debug.assert_called_once_with('foo bar')
         mock_popen.assert_called_once_with(['foo', 'bar'], stdout=mock_file, stderr=mock_file)
 
-    @patch('desitransfer.daemon.SMTPHandler')
-    @patch('desitransfer.daemon.RotatingFileHandler')
-    @patch('desitransfer.daemon.get_logger')
-    def test_configure_log(self, gl, rfh, smtp):
-        """Test logging configuration.
-        """
-        ll = gl.return_value = MagicMock()
-        with patch.dict('os.environ', {'DESI_ROOT': '/desi'}):
-            _configure_log(True)
-        rfh.assert_called_once_with('/desi/spectro/staging/logs/desi_transfer_daemon.log',
-                                    backupCount=100, maxBytes=100000000)
-        gl.assert_called_once_with(timestamp=True)
-        ll.setLevel.assert_called_once_with(logging.DEBUG)
-
     @patch('os.path.exists')
-    def test_check_exposure(self, mock_exists):
+    @patch.object(TransferDaemon, '_configure_log')
+    def test_check_exposure(self, mock_cl, mock_exists):
         """Test detection of expected files.
         """
         mock_exists.return_value = True
@@ -286,7 +295,8 @@ class TestDaemon(unittest.TestCase):
     @patch('desitransfer.daemon._popen')
     @patch('desitransfer.daemon.TransferStatus')
     @patch('desitransfer.daemon.log')
-    def test_transfer_directory(self, mock_log, mock_status, mock_popen, mock_exposure, mock_yst, mock_dt, mock_catchup, mock_backup):
+    @patch.object(TransferDaemon, '_configure_log')
+    def test_transfer_directory(self, mock_cl, mock_log, mock_status, mock_popen, mock_exposure, mock_yst, mock_dt, mock_catchup, mock_backup):
         """Test transfer for an entire configured directory.
         """
         mock_yst.return_value = '20190703'
@@ -328,7 +338,8 @@ class TestDaemon(unittest.TestCase):
     @patch('desitransfer.daemon._popen')
     @patch('desitransfer.daemon.TransferStatus')
     @patch('desitransfer.daemon.log')
-    def test_transfer_exposure(self, mock_log, mock_status, mock_popen, mock_lock, mock_cksum, mock_isdir, mock_exists, mock_mkdir, mock_chmod, mock_mv):
+    @patch.object(TransferDaemon, '_configure_log')
+    def test_transfer_exposure(self, mock_cl, mock_log, mock_status, mock_popen, mock_lock, mock_cksum, mock_isdir, mock_exists, mock_mkdir, mock_chmod, mock_mv):
         """Test transfer of a single exposure.
         """
         desi_night = os.path.join(os.environ['HOME'], 'bin', 'wrap_desi_night.sh')
@@ -437,7 +448,8 @@ class TestDaemon(unittest.TestCase):
     @patch('desitransfer.daemon._popen')
     @patch('desitransfer.daemon.TransferStatus')
     @patch('desitransfer.daemon.log')
-    def test_transfer_exposure_real_files(self, mock_log, mock_status, mock_popen, mock_cksum, mock_isdir):
+    @patch.object(TransferDaemon, '_configure_log')
+    def test_transfer_exposure_real_files(self, mock_cl, mock_log, mock_status, mock_popen, mock_cksum, mock_isdir):
         """Test single exposure files with files that actually exist.
         """
         with TemporaryDirectory() as desi_root:
@@ -465,7 +477,8 @@ class TestDaemon(unittest.TestCase):
     @patch('os.path.exists')
     @patch('os.path.isdir')
     @patch('desitransfer.daemon.log')
-    def test_catchup_night(self, mock_log, mock_isdir, mock_exists, mock_popen, mock_rsync):
+    @patch.object(TransferDaemon, '_configure_log')
+    def test_catchup_night(self, mock_cl, mock_log, mock_isdir, mock_exists, mock_popen, mock_rsync):
         """Test morning catch-up pass.
         """
         r0 = """receiving incremental file list
@@ -517,7 +530,8 @@ total size is 118,417,836,324  speedup is 494,367.55
     @patch('os.remove')
     @patch('os.path.isdir')
     @patch('desitransfer.daemon.log')
-    def test_backup_night(self, mock_log, mock_isdir, mock_rm, mock_popen, mock_empty, mock_getcwd, mock_chdir, mock_status, mock_rsync):
+    @patch.object(TransferDaemon, '_configure_log')
+    def test_backup_night(self, mock_cl, mock_log, mock_isdir, mock_rm, mock_popen, mock_empty, mock_getcwd, mock_chdir, mock_status, mock_rsync):
         """Test HPSS backup of nights.
         """
         fake_hsi1 = """desi_spectro_data_20190703.tar
