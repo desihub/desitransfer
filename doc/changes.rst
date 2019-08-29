@@ -2,6 +2,12 @@
 Change Log
 ==========
 
+0.3.0 (unreleased)
+------------------
+
+* Unified configuration file.
+* Simplified passing of command-line options, configuration, etc.
+
 0.2.2 (2019-08-29)
 ------------------
 
