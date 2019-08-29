@@ -175,10 +175,45 @@ The DESI Collaboration Account
         for d in self.directories:
             log.info('Looking for new data in %s.', d.source)
             try:
-                transfer_directory(d, self)
+                self.directory(d)
             except Exception as e:
                 log.critical("Exception detected in transfer of %s!\n\n%s",
                              d.source, traceback.format_exc())
+
+    def directory(self, d):
+        """Data transfer operations for a single destination directory.
+
+        Parameters
+        ----------
+        d : :func:`collections.namedtuple`
+            Configuration for the destination directory.
+        """
+        status = TransferStatus(os.path.join(os.path.dirname(d.staging),
+                                             'status'))
+        #
+        # Find symlinks at KPNO.
+        #
+        cmd = [self.conf['pipeline']['ssh'], '-q', 'dts',
+               '/bin/find', d.source, '-type', 'l']
+        _, out, err = _popen(cmd)
+        links = sorted([x for x in out.split('\n') if x])
+        if links:
+            for l in links:
+                transfer_exposure(d, l, status, self)
+        else:
+            log.warning('No links found, check connection.')
+        #
+        # Check for delayed files.
+        #
+        yst = yesterday()
+        now = int(dt.datetime.utcnow().strftime('%H'))
+        if now >= self.conf['common'].getint('catchup'):
+            catchup_night(d, yst, self.test)
+        #
+        # Are any nights eligible for backup?
+        #
+        if now >= self.conf['common'].getint('backup'):
+            backup_night(d, yst, status, self.test)
 
 
 def _popen(command):
@@ -351,43 +386,6 @@ def rsync_night(source, destination, night, test=False):
     # Lock files.
     #
     lock_directory(os.path.join(destination, night), test)
-
-
-def transfer_directory(d, transfer):
-    """Data transfer operations for a single destination directory.
-
-    Parameters
-    ----------
-    d : :class:`desitransfer.common.DTSDir`
-        Configuration for the destination directory.
-    transfer : :class:`desitransfer.daemon.TransferDaemon`
-        The pipeline command construction object.
-    """
-    status = TransferStatus(os.path.join(os.path.dirname(d.staging), 'status'))
-    #
-    # Find symlinks at KPNO.
-    #
-    cmd = [transfer.conf['pipeline']['ssh'], '-q', 'dts',
-           '/bin/find', d.source, '-type', 'l']
-    _, out, err = _popen(cmd)
-    links = sorted([x for x in out.split('\n') if x])
-    if links:
-        for l in links:
-            transfer_exposure(d, l, status, transfer)
-    else:
-        log.warning('No links found, check connection.')
-    #
-    # Check for delayed files.
-    #
-    yst = yesterday()
-    now = int(dt.datetime.utcnow().strftime('%H'))
-    if now >= transfer.conf['common'].getint('catchup'):
-        catchup_night(d, yst, transfer.test)
-    #
-    # Are any nights eligible for backup?
-    #
-    if now >= transfer.conf['common'].getint('backup'):
-        backup_night(d, yst, status, transfer.test)
 
 
 def transfer_exposure(d, link, status, transfer):

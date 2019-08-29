@@ -14,7 +14,7 @@ from pkg_resources import resource_filename
 from ..daemon import (_options, TransferDaemon, _popen, log,
                       check_exposure, verify_checksum,
                       lock_directory, unlock_directory, rsync_night,
-                      transfer_directory, transfer_exposure,
+                      transfer_exposure,
                       catchup_night, backup_night)
 
 
@@ -143,7 +143,7 @@ class TestDaemon(unittest.TestCase):
         gl.assert_called_once_with(timestamp=True)
         ll.setLevel.assert_called_once_with(logging.DEBUG)
 
-    @patch('desitransfer.daemon.transfer_directory')
+    @patch.object(TransferDaemon, 'directory')
     @patch('desitransfer.daemon.log')
     @patch.object(TransferDaemon, '_configure_log')
     def test_TransferDaemon_transfer(self, mock_cl, mock_log, mock_dir):
@@ -158,7 +158,7 @@ class TestDaemon(unittest.TestCase):
         d.transfer()
         mock_log.info.assert_called_once_with('Looking for new data in %s.',
                                               d.directories[0].source)
-        mock_dir.assert_called_once_with(d.directories[0], d)
+        mock_dir.assert_called_once_with(d.directories[0])
         mock_dir.side_effect = Exception('Test Exception')
         d.transfer()
         try:
@@ -166,6 +166,47 @@ class TestDaemon(unittest.TestCase):
         except AttributeError:
             # Python 3.5 doesn't have this.
             pass
+
+    @patch('desitransfer.daemon.backup_night')
+    @patch('desitransfer.daemon.catchup_night')
+    @patch('desitransfer.daemon.dt')
+    @patch('desitransfer.daemon.yesterday')
+    @patch('desitransfer.daemon.transfer_exposure')
+    @patch('desitransfer.daemon._popen')
+    @patch('desitransfer.daemon.TransferStatus')
+    @patch('desitransfer.daemon.log')
+    @patch.object(TransferDaemon, '_configure_log')
+    def test_TransferDaemon_directory(self, mock_cl, mock_log, mock_status, mock_popen, mock_exposure, mock_yst, mock_dt, mock_catchup, mock_backup):
+        """Test transfer for an entire configured directory.
+        """
+        mock_yst.return_value = '20190703'
+        mock_dt.datetime.utcnow.return_value = datetime.datetime(2019, 7, 3, 21, 0, 0)
+        links1 = """20190702/00000123
+20190702/00000124
+20190703/00000125
+20190703/00000126
+20190703/00000127
+"""
+        links2 = "\n"
+        with patch.dict('os.environ',
+                        {'DESI_ROOT': '/desi/root',
+                         'DESI_SPECTRO_DATA': '/desi/root/spectro/data'}):
+            with patch.object(sys, 'argv', ['desi_transfer_daemon', '--debug']):
+                options = _options()
+            transfer = TransferDaemon(options)
+            c = transfer.directories
+            mock_popen.return_value = ('0', links1, '')
+            transfer.directory(c[0])
+            mock_status.assert_called_once_with(os.path.join(os.path.dirname(c[0].staging), 'status'))
+            mock_popen.assert_called_once_with(['/bin/ssh', '-q', 'dts', '/bin/find', c[0].source, '-type', 'l'])
+            mock_catchup.assert_called_once_with(c[0], '20190703', False)
+            mock_backup.assert_called_once_with(c[0], '20190703', mock_status(), False)
+            #
+            # No links.
+            #
+            mock_popen.return_value = ('0', links2, '')
+            transfer.directory(c[0])
+            mock_log.warning.assert_has_calls([call('No links found, check connection.')])
 
     @patch('desitransfer.daemon.TemporaryFile')
     @patch('subprocess.Popen')
@@ -310,47 +351,6 @@ class TestDaemon(unittest.TestCase):
         mock_log.debug.assert_called_with(' '.join(cmd))
         rsync_night('/source', '/destination', '20190703')
         mock_popen.assert_called_with(cmd)
-
-    @patch('desitransfer.daemon.backup_night')
-    @patch('desitransfer.daemon.catchup_night')
-    @patch('desitransfer.daemon.dt')
-    @patch('desitransfer.daemon.yesterday')
-    @patch('desitransfer.daemon.transfer_exposure')
-    @patch('desitransfer.daemon._popen')
-    @patch('desitransfer.daemon.TransferStatus')
-    @patch('desitransfer.daemon.log')
-    @patch.object(TransferDaemon, '_configure_log')
-    def test_transfer_directory(self, mock_cl, mock_log, mock_status, mock_popen, mock_exposure, mock_yst, mock_dt, mock_catchup, mock_backup):
-        """Test transfer for an entire configured directory.
-        """
-        mock_yst.return_value = '20190703'
-        mock_dt.datetime.utcnow.return_value = datetime.datetime(2019, 7, 3, 21, 0, 0)
-        links1 = """20190702/00000123
-20190702/00000124
-20190703/00000125
-20190703/00000126
-20190703/00000127
-"""
-        links2 = "\n"
-        with patch.dict('os.environ',
-                        {'DESI_ROOT': '/desi/root',
-                         'DESI_SPECTRO_DATA': '/desi/root/spectro/data'}):
-            with patch.object(sys, 'argv', ['desi_transfer_daemon', '--debug']):
-                options = _options()
-            transfer = TransferDaemon(options)
-            c = transfer.directories
-            mock_popen.return_value = ('0', links1, '')
-            transfer_directory(c[0], transfer)
-            mock_status.assert_called_once_with(os.path.join(os.path.dirname(c[0].staging), 'status'))
-            mock_popen.assert_called_once_with(['/bin/ssh', '-q', 'dts', '/bin/find', c[0].source, '-type', 'l'])
-            mock_catchup.assert_called_once_with(c[0], '20190703', False)
-            mock_backup.assert_called_once_with(c[0], '20190703', mock_status(), False)
-            #
-            # No links.
-            #
-            mock_popen.return_value = ('0', links2, '')
-            transfer_directory(c[0], transfer)
-            mock_log.warning.assert_has_calls([call('No links found, check connection.')])
 
     @patch('shutil.move')
     @patch('os.chmod')
