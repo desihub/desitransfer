@@ -160,7 +160,7 @@ while /bin/true; do
                                         --night ${night} \
                                         --nersc ${pipeline_host} --nersc_queue realtime \
                                         --nersc_maxnodes 25
-                                    sprun desi_transfer_status --directory ${status_dir} --last arcs ${night} ${exposure} ${ddd}
+                                    sprun desi_transfer_status --directory ${status_dir} --last ${ddd} ${night} ${exposure} pipeline
                                 fi
                             done
                         else
