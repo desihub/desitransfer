@@ -66,9 +66,9 @@ class TestDaemon(unittest.TestCase):
         self.assertEqual(d.conf['pipeline']['desi_night'],
                          os.path.join(os.environ['HOME'], 'bin', 'wrap_desi_night.sh'))
         self.assertEqual(d.conf['pipeline'].getdict('commands'),
-                             {'science': 'redshifts'})
+                         {'science': 'redshifts'})
         self.assertEqual(c.getlist('expected_files'),
-                             ['desi-{exposure}.fits.fz', 'fibermap-{exposure}.fits', 'guider-{exposure}.fits.fz'])
+                         ['desi-{exposure}.fits.fz', 'fibermap-{exposure}.fits', 'guider-{exposure}.fits.fz'])
 
     @patch.object(TransferDaemon, '_configure_log')
     def test_TransferDaemon_alternate_init(self, mock_cl):
@@ -93,9 +93,9 @@ class TestDaemon(unittest.TestCase):
             self.assertEqual(d.conf['pipeline']['desi_night'],
                              os.path.join(os.environ['HOME'], 'bin', 'wrap_desi_night.sh'))
             self.assertEqual(d.conf['pipeline'].getdict('commands'),
-                                 {'science': 'redshifts'})
+                             {'science': 'redshifts'})
             self.assertEqual(c.getlist('expected_files'),
-                                 ['desi-{exposure}.fits.fz', 'fibermap-{exposure}.fits', 'guider-{exposure}.fits.fz'])
+                             ['desi-{exposure}.fits.fz', 'fibermap-{exposure}.fits', 'guider-{exposure}.fits.fz'])
 
     @patch('desitransfer.daemon.log')
     @patch.object(TransferDaemon, '_configure_log')
@@ -161,7 +161,11 @@ class TestDaemon(unittest.TestCase):
         mock_dir.assert_called_once_with(d.directories[0], d)
         mock_dir.side_effect = Exception('Test Exception')
         d.transfer()
-        mock_log.critical.assert_called_once()
+        try:
+            mock_log.critical.assert_called_once()
+        except AttributeError:
+            # Python 3.5 doesn't have this.
+            pass
 
     @patch('desitransfer.daemon.TemporaryFile')
     @patch('subprocess.Popen')
@@ -408,9 +412,9 @@ class TestDaemon(unittest.TestCase):
                                      call(['/bin/ssh', '-q', 'cori', desi_night, 'flats', '--night', '20190703', '--nersc', 'cori', '--nersc_queue', 'realtime', '--nersc_maxnodes', '25']),
                                      call(['/bin/ssh', '-q', 'cori', desi_night, 'arcs', '--night', '20190703', '--nersc', 'cori', '--nersc_queue', 'realtime', '--nersc_maxnodes', '25']),
                                      call(['/bin/ssh', '-q', 'cori', desi_night, 'redshifts', '--night', '20190703', '--nersc', 'cori', '--nersc_queue', 'realtime', '--nersc_maxnodes', '25'])])
-            #
-            # Shadow mode will trigger main code body
-            #
+        #
+        # Shadow mode will trigger main code body
+        #
         with patch.dict('os.environ',
                         {'DESI_ROOT': '/desi/root',
                          'DESI_SPECTRO_DATA': '/desi/root/spectro/data'}):
