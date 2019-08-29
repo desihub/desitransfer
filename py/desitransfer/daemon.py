@@ -31,11 +31,6 @@ from .status import TransferStatus
 log = None
 
 
-expected_files = ('desi-{exposure}.fits.fz',
-                  'fibermap-{exposure}.fits',
-                  'guider-{exposure}.fits.fz')
-
-
 def _options():
     """Parse command-line options for :command:`desi_transfer_daemon`.
 
@@ -46,10 +41,8 @@ def _options():
     """
     desc = "Transfer DESI raw data files."
     prsr = ArgumentParser(prog=os.path.basename(sys.argv[0]), description=desc)
-    prsr.add_argument('-b', '--backup', metavar='H', type=int, default=20,
-                      help='UTC time in hours to trigger HPSS backups (default %(default)s:00 UTC). Disable this with an invalid hour, e.g. 30.')
-    prsr.add_argument('-c', '--catchup', metavar='H', type=int, default=14,
-                      help='UTC time in hours to look for delayed files (default %(default)s:00 UTC). Disable this with an invalid hour, e.g. 30.')
+    prsr.add_argument('-c', '--configuration', metavar='FILE',
+                      help="Read configuration from FILE.")
     prsr.add_argument('-d', '--debug', action='store_true',
                       help='Set log level to DEBUG.')
     prsr.add_argument('-k', '--kill', metavar='FILE',
@@ -57,8 +50,6 @@ def _options():
                       help="Exit the script when FILE is detected (default %(default)s).")
     prsr.add_argument('-P', '--no-pipeline', action='store_false', dest='pipeline',
                       help="Only transfer files, don't start the DESI pipeline.")
-    prsr.add_argument('-s', '--sleep', metavar='M', type=int, default=10,
-                      help='Sleep M minutes before checking for new data (default %(default)s minutes).')
     prsr.add_argument('-S', '--shadow', action='store_true',
                       help='Observe the actions of another data transfer script but do not make any changes.')
     return prsr.parse_args()
@@ -67,20 +58,35 @@ def _options():
 class TransferDaemon(object):
     """Manage data transfer configuration, options, and operations.
 
+    Parameters
+    ----------
+    options : :class:`argparse.Namespace`
+        The parsed command-line options.
     """
-    _directory = namedtuple('_directory', 'source, staging, destination, hpss')
+    _directory = namedtuple('_directory', 'source, staging, destination, hpss, expected, checksum')
+    _default_configuration = resource_filename('desitransfer', 'data/desi_transfer_daemon.ini')
 
-    def __init__(self):
-        self._ini = resource_filename('desitransfer', 'data/desi_transfer_daemon.ini')
+    def __init__(self, options):
+        if options.configuration is None:
+            self._ini = self._default_configuration
+        else:
+            self._ini = options.configuration
+        self.test = options.shadow
+        self.run = options.pipeline
         getlist = lambda x: x.split(',')
         getdict = lambda x: dict([tuple(i.split(':')) for i in x.split(',')])
         self.conf = ConfigParser(defaults=os.environ,
                                  interpolation=ExtendedInterpolation(),
                                  converters={'list': getlist, 'dict': getdict})
         files = self.conf.read(self._ini)
-        self.sections = [s for s in self.conf.sections() if s not in ('logging', 'pipeline')]
-        self.directories = [self._directory(self.conf[s]['source'], self.conf[s]['staging'],
-                                            self.conf[s]['destination'], self.conf[s]['hpss'])
+        # assert files[0] == self._ini
+        self.sections = [s for s in self.conf.sections() if s not in ('common', 'logging', 'pipeline')]
+        self.directories = [self._directory(self.conf[s]['source'],
+                                            self.conf[s]['staging'],
+                                            self.conf[s]['destination'],
+                                            self.conf[s]['hpss'],
+                                            self.conf[s].getlist('expected_files'),
+                                            self.conf[s]['checksum_file'])
                             for s in self.sections]
         return
 
@@ -194,7 +200,7 @@ The DESI Collaboration Account
     log.parent.addHandler(handler2)
 
 
-def check_exposure(destination, exposure):
+def check_exposure(destination, exposure, expected):
     """Ensure that all files associated with an exposure have arrived.
 
     Parameters
@@ -203,6 +209,8 @@ def check_exposure(destination, exposure):
         Delivery directory, typically ``DESI_SPECTRO_DATA/NIGHT``.
     exposure : :class:`str`
         Exposure number.
+    expected : :class:`list`
+        The list of files to check for.
 
     Returns
     -------
@@ -211,7 +219,7 @@ def check_exposure(destination, exposure):
     """
     return all([os.path.exists(os.path.join(destination,
                                             f.format(exposure=exposure)))
-                for f in expected_files])
+                for f in expected])
 
 
 def verify_checksum(checksum_file):
@@ -356,7 +364,8 @@ def transfer_directory(d, options, transfer):
     #
     # Find symlinks at KPNO.
     #
-    cmd = ['/bin/ssh', '-q', 'dts', '/bin/find', d.source, '-type', 'l']
+    cmd = [transfer.conf['pipeline']['ssh'], '-q', 'dts',
+           '/bin/find', d.source, '-type', 'l']
     _, out, err = _popen(cmd)
     links = sorted([x for x in out.split('\n') if x])
     if links:
@@ -369,12 +378,12 @@ def transfer_directory(d, options, transfer):
     #
     yst = yesterday()
     now = int(dt.datetime.utcnow().strftime('%H'))
-    if now >= options.catchup:
+    if now >= transfer.conf['common'].getint('catchup'):
         catchup_night(d, yst, options.shadow)
     #
     # Are any nights eligible for backup?
     #
-    if now >= options.backup:
+    if now >= transfer.conf['common'].getint('backup'):
         backup_night(d, yst, status, options.shadow)
 
 
@@ -432,7 +441,9 @@ def transfer_exposure(d, options, link, status, transfer):
         #
         # Verify checksums.
         #
-        checksum_file = os.path.join(staging_exposure, "checksum-{0}-{1}.sha256sum".format(night, exposure))
+
+        checksum_file = os.path.join(staging_exposure,
+                                     d.checksum.format(night=night, exposure=exposure))
         if os.path.exists(checksum_file):
             checksum_status = verify_checksum(checksum_file)
         elif not os.path.exists(staging_exposure):
@@ -468,7 +479,7 @@ def transfer_exposure(d, options, link, status, transfer):
             #
             # Is this a "realistic" exposure?
             #
-            if options.pipeline and check_exposure(destination_exposure, exposure):
+            if options.pipeline and check_exposure(destination_exposure, exposure, d.expected):
                 #
                 # Run update
                 #
@@ -624,7 +635,8 @@ def main():
     """
     options = _options()
     _configure_log(options.debug)
-    transfer = TransferDaemon()
+    transfer = TransferDaemon(options)
+    sleep = transfer.conf['common'].getint('sleep')
     while True:
         log.info('Starting transfer loop.')
         if os.path.exists(options.kill):
@@ -637,5 +649,5 @@ def main():
             except Exception as e:
                 log.critical("Exception detected in transfer of %s!\n\n%s",
                              d.source, traceback.format_exc())
-        time.sleep(options.sleep*60)
+        time.sleep(sleep*60)
     return 0
