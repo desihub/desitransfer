@@ -10,8 +10,8 @@ import unittest
 from tempfile import TemporaryDirectory
 from unittest.mock import call, patch, MagicMock
 from pkg_resources import resource_filename
-from ..daemon import (_config, _configure_log, PipelineCommand,
-                      _options, _read_configuration, _popen, log,
+from ..daemon import (_configure_log, PipelineCommand,
+                      _options, TransferDaemon, _popen, log,
                       check_exposure, verify_checksum,
                       lock_directory, unlock_directory, rsync_night,
                       transfer_directory, transfer_exposure,
@@ -36,35 +36,25 @@ class TestDaemon(unittest.TestCase):
     def tearDown(self):
         pass
 
-    def test_read_configuration(self):
+    def test_TransferDaemon_init(self):
         """Test reading configuration file.
         """
         with patch.dict('os.environ',
                         {'DESI_ROOT': '/desi/root',
                          'DESI_SPECTRO_DATA': '/desi/root/spectro/data'}):
-            c, s = _read_configuration()
-        self.assertEqual(c[s[0]]['destination'], '/desi/root/spectro/data')
-        self.assertEqual(c[s[0]]['staging'], '/desi/root/spectro/staging/raw')
-        self.assertEqual(c[s[0]+'::pipeline']['desi_night'],
+            d = TransferDaemon()
+        self.assertEqual(d.sections, ['DESI_SPECTRO_DATA'])
+        c = d.conf[d.sections[0]]
+        self.assertEqual(c['destination'], '/desi/root/spectro/data')
+        self.assertEqual(c['staging'], '/desi/root/spectro/staging/raw')
+        self.assertEqual(d.directories[0].destination, '/desi/root/spectro/data')
+        self.assertEqual(d.directories[0].staging, '/desi/root/spectro/staging/raw')
+        self.assertEqual(d.conf['pipeline']['desi_night'],
                          os.path.join(os.environ['HOME'], 'bin', 'wrap_desi_night.sh'))
-        self.assertDictEqual(c[s[0]+'::pipeline'].getdict('commands'),
+        self.assertEqual(d.conf['pipeline'].getdict('commands'),
                              {'science': 'redshifts'})
-        self.assertListEqual(c[s[0]].getlist('expected_files'),
+        self.assertEqual(c.getlist('expected_files'),
                              ['desi-{exposure}.fits.fz', 'fibermap-{exposure}.fits', 'guider-{exposure}.fits.fz'])
-
-    def test_config(self):
-        """Test transfer directory configuration.
-        """
-        with patch.dict('os.environ',
-                        {'DESI_ROOT': '/desi/root',
-                         'DESI_SPECTRO_DATA': '/desi/root/spectro/data'}):
-            c = _config()
-            self.assertEqual(c[0].source, '/data/dts/exposures/raw')
-            self.assertEqual(c[0].staging,
-                             os.path.join(os.environ['DESI_ROOT'],
-                                          'spectro', 'staging', 'raw'))
-            self.assertEqual(c[0].destination, os.environ['DESI_SPECTRO_DATA'])
-            self.assertEqual(c[0].hpss, 'desi/spectro/data')
 
     @patch('desitransfer.daemon.log')
     def test_PipelineCommand(self, mock_log):
@@ -274,9 +264,11 @@ class TestDaemon(unittest.TestCase):
                         {'DESI_ROOT': '/desi/root',
                          'DESI_SPECTRO_DATA': '/desi/root/spectro/data'}):
             with patch.object(sys, 'argv', ['desi_transfer_daemon', '--debug']):
-                c = _config()
+                transfer = TransferDaemon()
+                c = transfer.directories
                 options = _options()
-                pipeline = PipelineCommand(options.nersc, ssh=options.ssh)
+                pipeline = PipelineCommand(transfer.conf['pipeline']['host'],
+                                           ssh=transfer.conf['pipeline']['ssh'])
                 mock_popen.return_value = ('0', links1, '')
                 transfer_directory(c[0], options, pipeline)
                 mock_status.assert_called_once_with(os.path.join(os.path.dirname(c[0].staging), 'status'))
@@ -308,9 +300,11 @@ class TestDaemon(unittest.TestCase):
                         {'DESI_ROOT': '/desi/root',
                          'DESI_SPECTRO_DATA': '/desi/root/spectro/data'}):
             with patch.object(sys, 'argv', ['desi_transfer_daemon', '--debug']):
-                c = _config()
+                transfer = TransferDaemon()
+                c = transfer.directories
                 options = _options()
-                pipeline = PipelineCommand(options.nersc, ssh=options.ssh)
+                pipeline = PipelineCommand(transfer.conf['pipeline']['host'],
+                                           ssh=transfer.conf['pipeline']['ssh'])
                 #
                 # Already transferred
                 #
@@ -353,9 +347,11 @@ class TestDaemon(unittest.TestCase):
             # Shadow mode will trigger main code body
             #
             with patch.object(sys, 'argv', ['desi_transfer_daemon', '--debug', '--shadow']):
-                c = _config()
+                transfer = TransferDaemon()
+                c = transfer.directories
                 options = _options()
-                pipeline = PipelineCommand(options.nersc, ssh=options.ssh)
+                pipeline = PipelineCommand(transfer.conf['pipeline']['host'],
+                                           ssh=transfer.conf['pipeline']['ssh'])
                 #
                 # Not already transferred, checksum file does not exist.
                 #
@@ -388,9 +384,11 @@ class TestDaemon(unittest.TestCase):
             # No-pipeline mode.
             #
             with patch.object(sys, 'argv', ['desi_transfer_daemon', '--debug', '--no-pipeline']):
-                c = _config()
+                transfer = TransferDaemon()
+                c = transfer.directories
                 options = _options()
-                pipeline = PipelineCommand(options.nersc, ssh=options.ssh)
+                pipeline = PipelineCommand(transfer.conf['pipeline']['host'],
+                                           ssh=transfer.conf['pipeline']['ssh'])
                 mock_isdir.return_value = False
                 mock_exists.return_value = True
                 mock_popen.return_value = ('0', '', '')
@@ -415,9 +413,11 @@ class TestDaemon(unittest.TestCase):
                             {'DESI_ROOT': desi_root,
                              'DESI_SPECTRO_DATA': os.path.join(desi_root, 'spectro', 'data')}):
                 with patch.object(sys, 'argv', ['desi_transfer_daemon', '--debug', '--shadow']):
-                    c = _config()
+                    transfer = TransferDaemon()
+                    c = transfer.directories
                     options = _options()
-                    pipeline = PipelineCommand(options.nersc, ssh=options.ssh)
+                    pipeline = PipelineCommand(transfer.conf['pipeline']['host'],
+                                               ssh=transfer.conf['pipeline']['ssh'])
                     mock_popen.return_value = ('0', '', '')
                     mock_cksum.return_value = 0
                     mock_isdir.return_value = False
@@ -450,7 +450,8 @@ total size is 118,417,836,324  speedup is 494,367.55
                             {'CSCRATCH': cscratch,
                              'DESI_ROOT': '/desi/root',
                              'DESI_SPECTRO_DATA': '/desi/root/spectro/data'}):
-                c = _config()
+                transfer = TransferDaemon()
+                c = transfer.directories
                 mock_isdir.return_value = False
                 catchup_night(c[0], '20190703', True)
                 mock_isdir.assert_called_once_with('/desi/root/spectro/data/20190703')
@@ -494,7 +495,8 @@ desi_spectro_data_20190702.tar.idx
                             {'CSCRATCH': cscratch,
                              'DESI_ROOT': '/desi/root',
                              'DESI_SPECTRO_DATA': '/desi/root/spectro/data'}):
-                c = _config()
+                transfer = TransferDaemon()
+                c = transfer.directories
                 #
                 # No data
                 #

@@ -17,13 +17,14 @@ import sys
 import time
 import traceback
 from argparse import ArgumentParser
+from collections import namedtuple
 from configparser import ConfigParser, ExtendedInterpolation
 from logging.handlers import RotatingFileHandler, SMTPHandler
 from socket import getfqdn
 from tempfile import TemporaryFile
 from pkg_resources import resource_filename
 from desiutil.log import get_logger
-from .common import DTSDir, dir_perm, file_perm, rsync, yesterday, empty_rsync
+from .common import dir_perm, file_perm, rsync, yesterday, empty_rsync
 from .status import TransferStatus
 
 
@@ -93,16 +94,6 @@ class PipelineCommand(object):
         return c
 
 
-def _config():
-    """Wrap configuration so that module can be imported without
-    environment variables set.
-    """
-    return [DTSDir('/data/dts/exposures/raw',
-                   os.path.realpath(os.path.join(os.environ['DESI_ROOT'], 'spectro', 'staging', 'raw')),
-                   os.path.realpath(os.environ['DESI_SPECTRO_DATA']),
-                   'desi/spectro/data'), ]
-
-
 def _options():
     """Parse command-line options for :command:`desi_transfer_daemon`.
 
@@ -119,13 +110,9 @@ def _options():
                       help='UTC time in hours to look for delayed files (default %(default)s:00 UTC). Disable this with an invalid hour, e.g. 30.')
     prsr.add_argument('-d', '--debug', action='store_true',
                       help='Set log level to DEBUG.')
-    prsr.add_argument('-e', '--rsh', metavar='COMMAND', dest='ssh', default='/bin/ssh',
-                      help="Use COMMAND for remote shell access (default '%(default)s').")
     prsr.add_argument('-k', '--kill', metavar='FILE',
                       default=os.path.join(os.environ['HOME'], 'stop_desi_transfer'),
                       help="Exit the script when FILE is detected (default %(default)s).")
-    prsr.add_argument('-n', '--nersc', default='cori', metavar='NERSC_HOST',
-                      help="Trigger DESI pipeline on this NERSC system (default %(default)s).")
     prsr.add_argument('-P', '--no-pipeline', action='store_false', dest='pipeline',
                       help="Only transfer files, don't start the DESI pipeline.")
     prsr.add_argument('-s', '--sleep', metavar='M', type=int, default=10,
@@ -135,22 +122,25 @@ def _options():
     return prsr.parse_args()
 
 
-def _read_configuration():
-    """Placeholder for future configuration file parsing.
+class TransferDaemon(object):
+    """Manage data transfer configuration, options, and operations.
 
-    Returns
-    -------
-    :func:`tuple`
-        The configuration object and a list of configuration sections.
     """
-    ini = resource_filename('desitransfer', 'data/desi_transfer_daemon.ini')
-    getlist = lambda x: x.split(',')
-    getdict = lambda x: dict([tuple(i.split(':')) for i in x.split(',')])
-    conf = ConfigParser(defaults=os.environ,
-                        interpolation=ExtendedInterpolation(),
-                        converters={'list': getlist, 'dict': getdict})
-    files = conf.read(ini)
-    return conf, [s for s in conf.sections() if '::' not in s]
+    _directory = namedtuple('_directory', 'source, staging, destination, hpss')
+
+    def __init__(self):
+        self._ini = resource_filename('desitransfer', 'data/desi_transfer_daemon.ini')
+        getlist = lambda x: x.split(',')
+        getdict = lambda x: dict([tuple(i.split(':')) for i in x.split(',')])
+        self.conf = ConfigParser(defaults=os.environ,
+                                 interpolation=ExtendedInterpolation(),
+                                 converters={'list': getlist, 'dict': getdict})
+        files = self.conf.read(self._ini)
+        self.sections = [s for s in self.conf.sections() if s not in ('logging', 'pipeline')]
+        self.directories = [self._directory(self.conf[s]['source'], self.conf[s]['staging'],
+                                            self.conf[s]['destination'], self.conf[s]['hpss'])
+                            for s in self.sections]
+        return
 
 
 def _popen(command):
@@ -384,7 +374,7 @@ def transfer_directory(d, options, pipeline):
     #
     # Find symlinks at KPNO.
     #
-    cmd = [options.ssh, '-q', 'dts', '/bin/find', d.source, '-type', 'l']
+    cmd = ['/bin/ssh', '-q', 'dts', '/bin/find', d.source, '-type', 'l']
     _, out, err = _popen(cmd)
     links = sorted([x for x in out.split('\n') if x])
     if links:
@@ -652,18 +642,20 @@ def main():
     """
     options = _options()
     _configure_log(options.debug)
-    pipeline = PipelineCommand(options.nersc, ssh=options.ssh)
-    transfer_directories = _config()
+    transfer = TransferDaemon()
+    pipeline = PipelineCommand(transfer.conf['pipeline']['host'],
+                               ssh=transfer.conf['pipeline']['ssh'])
     while True:
         log.info('Starting transfer loop.')
         if os.path.exists(options.kill):
             log.info("%s detected, shutting down transfer daemon.", options.kill)
             return 0
-        for d in transfer_directories:
+        for d in transfer.directories:
             log.info('Looking for new data in %s.', d.source)
             try:
                 transfer_directory(d, options, pipeline)
             except Exception as e:
-                log.critical("Exception detected in transfer of %s!\n\n%s", d.source, traceback.format_exc())
+                log.critical("Exception detected in transfer of %s!\n\n%s",
+                             d.source, traceback.format_exc())
         time.sleep(options.sleep*60)
     return 0
