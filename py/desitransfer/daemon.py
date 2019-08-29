@@ -80,7 +80,8 @@ class TransferDaemon(object):
                                  converters={'list': getlist, 'dict': getdict})
         files = self.conf.read(self._ini)
         # assert files[0] == self._ini
-        self.sections = [s for s in self.conf.sections() if s not in ('common', 'logging', 'pipeline')]
+        self.sections = [s for s in self.conf.sections()
+                         if s not in ('common', 'logging', 'pipeline')]
         self.directories = [self._directory(self.conf[s]['source'],
                                             self.conf[s]['staging'],
                                             self.conf[s]['destination'],
@@ -167,6 +168,17 @@ The DESI Collaboration Account
             c = c[:7] + c[9:]
         log.debug(' '.join(c))
         return c
+
+    def transfer(self):
+        """Loop over and transfer all configured directories.
+        """
+        for d in self.directories:
+            log.info('Looking for new data in %s.', d.source)
+            try:
+                transfer_directory(d, self)
+            except Exception as e:
+                log.critical("Exception detected in transfer of %s!\n\n%s",
+                             d.source, traceback.format_exc())
 
 
 def _popen(command):
@@ -341,15 +353,13 @@ def rsync_night(source, destination, night, test=False):
     lock_directory(os.path.join(destination, night), test)
 
 
-def transfer_directory(d, options, transfer):
+def transfer_directory(d, transfer):
     """Data transfer operations for a single destination directory.
 
     Parameters
     ----------
     d : :class:`desitransfer.common.DTSDir`
         Configuration for the destination directory.
-    options : :class:`argparse.Namespace`
-        The command-line options.
     transfer : :class:`desitransfer.daemon.TransferDaemon`
         The pipeline command construction object.
     """
@@ -363,7 +373,7 @@ def transfer_directory(d, options, transfer):
     links = sorted([x for x in out.split('\n') if x])
     if links:
         for l in links:
-            transfer_exposure(d, options, l, status, transfer)
+            transfer_exposure(d, l, status, transfer)
     else:
         log.warning('No links found, check connection.')
     #
@@ -372,23 +382,21 @@ def transfer_directory(d, options, transfer):
     yst = yesterday()
     now = int(dt.datetime.utcnow().strftime('%H'))
     if now >= transfer.conf['common'].getint('catchup'):
-        catchup_night(d, yst, options.shadow)
+        catchup_night(d, yst, transfer.test)
     #
     # Are any nights eligible for backup?
     #
     if now >= transfer.conf['common'].getint('backup'):
-        backup_night(d, yst, status, options.shadow)
+        backup_night(d, yst, status, transfer.test)
 
 
-def transfer_exposure(d, options, link, status, transfer):
+def transfer_exposure(d, link, status, transfer):
     """Data transfer operations for a single exposure.
 
     Parameters
     ----------
     d : :class:`desitransfer.common.DTSDir`
         Configuration for the destination directory.
-    options : :class:`argparse.Namespace`
-        The command-line options.
     link : :class:`str`
         The exposure path.
     status : :class:`desitransfer.status.TransferStatus`
@@ -407,14 +415,14 @@ def transfer_exposure(d, options, link, status, transfer):
     #
     if not os.path.isdir(staging_night):
         log.debug("os.makedirs('%s', exist_ok=True)", staging_night)
-        if not options.shadow:
+        if not transfer.test:
             os.makedirs(staging_night, exist_ok=True)
     #
     # Has exposure already been transferred?
     #
     if not os.path.isdir(staging_exposure) and not os.path.isdir(destination_exposure):
         cmd = rsync(os.path.join(d.source, night, exposure), staging_exposure)
-        if options.shadow:
+        if transfer.test:
             log.debug(' '.join(cmd))
             rsync_status = '0'
         else:
@@ -430,7 +438,7 @@ def transfer_exposure(d, options, link, status, transfer):
         #
         # Check permissions.
         #
-        lock_directory(staging_exposure, options.shadow)
+        lock_directory(staging_exposure, transfer.test)
         #
         # Verify checksums.
         #
@@ -459,7 +467,7 @@ def transfer_exposure(d, options, link, status, transfer):
             if not os.path.isdir(destination_night):
                 log.debug("os.makedirs('%s', exist_ok=True)", destination_night)
                 log.debug("os.chmod('%s', 0o%o)", destination_night, dir_perm)
-                if not options.shadow:
+                if not transfer.test:
                     os.makedirs(destination_night, exist_ok=True)
                     os.chmod(destination_night, dir_perm)
             #
@@ -467,23 +475,23 @@ def transfer_exposure(d, options, link, status, transfer):
             #
             if not os.path.isdir(destination_exposure):
                 log.debug("shutil.move('%s', '%s')", staging_exposure, destination_night)
-                if not options.shadow:
+                if not transfer.test:
                     shutil.move(staging_exposure, destination_night)
             #
             # Is this a "realistic" exposure?
             #
-            if options.pipeline and check_exposure(destination_exposure, exposure, d.expected):
+            if transfer.run and check_exposure(destination_exposure, exposure, d.expected):
                 #
                 # Run update
                 #
                 cmd = transfer.pipeline(night, exposure)
-                if not options.shadow:
+                if not transfer.test:
                     _, out, err = _popen(cmd)
                 status.update(night, exposure, 'pipeline')
                 for k in ('flats', 'arcs', 'science'):
                     if os.path.exists(os.path.join(destination_exposure, '{0}-{1}-{2}.done'.format(k, night, exposure))):
                         cmd = transfer.pipeline(night, exposure, command=k)
-                        if not options.shadow:
+                        if not transfer.test:
                             _, out, err = _popen(cmd)
                         status.update(night, exposure, 'pipeline', last=k)
             else:
@@ -634,12 +642,6 @@ def main():
         if os.path.exists(options.kill):
             log.info("%s detected, shutting down transfer daemon.", options.kill)
             return 0
-        for d in transfer.directories:
-            log.info('Looking for new data in %s.', d.source)
-            try:
-                transfer_directory(d, options, transfer)
-            except Exception as e:
-                log.critical("Exception detected in transfer of %s!\n\n%s",
-                             d.source, traceback.format_exc())
+        transfer.transfer()
         time.sleep(sleep*60)
     return 0
