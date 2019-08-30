@@ -12,9 +12,8 @@ from tempfile import TemporaryDirectory
 from unittest.mock import call, patch, MagicMock
 from pkg_resources import resource_filename
 from ..daemon import (_options, TransferDaemon, _popen, log,
-                      check_exposure, verify_checksum,
-                      lock_directory, unlock_directory, rsync_night,
-                      transfer_exposure)
+                      verify_checksum, lock_directory, unlock_directory,
+                      rsync_night, transfer_exposure)
 
 
 class TestDaemon(unittest.TestCase):
@@ -370,24 +369,24 @@ desi_spectro_data_20190702.tar.idx
         mock_log.debug.assert_called_once_with('foo bar')
         mock_popen.assert_called_once_with(['foo', 'bar'], stdout=mock_file, stderr=mock_file)
 
-    @patch('os.path.exists')
-    @patch.object(TransferDaemon, '_configure_log')
-    def test_check_exposure(self, mock_cl, mock_exists):
-        """Test detection of expected files.
-        """
-        mock_exists.return_value = True
-        with patch.dict('os.environ',
-                        {'CSCRATCH': self.tmp.name,
-                         'DESI_ROOT': '/desi/root',
-                         'DESI_SPECTRO_DATA': '/desi/root/spectro/data'}):
-            with patch.object(sys, 'argv', ['desi_transfer_daemon', '--debug']):
-                options = _options()
-            transfer = TransferDaemon(options)
-        expected = transfer.directories[0].expected
-        self.assertTrue(check_exposure('/desi/20190703', 12345678, expected))
-        mock_exists.assert_has_calls([call('/desi/20190703/desi-12345678.fits.fz'),
-                                      call('/desi/20190703/fibermap-12345678.fits'),
-                                      call('/desi/20190703/guider-12345678.fits.fz')])
+    # @patch('os.path.exists')
+    # @patch.object(TransferDaemon, '_configure_log')
+    # def test_check_exposure(self, mock_cl, mock_exists):
+    #     """Test detection of expected files.
+    #     """
+    #     mock_exists.return_value = True
+    #     with patch.dict('os.environ',
+    #                     {'CSCRATCH': self.tmp.name,
+    #                      'DESI_ROOT': '/desi/root',
+    #                      'DESI_SPECTRO_DATA': '/desi/root/spectro/data'}):
+    #         with patch.object(sys, 'argv', ['desi_transfer_daemon', '--debug']):
+    #             options = _options()
+    #         transfer = TransferDaemon(options)
+    #     expected = transfer.directories[0].expected
+    #     self.assertTrue(check_exposure('/desi/20190703', 12345678, expected))
+    #     mock_exists.assert_has_calls([call('/desi/20190703/desi-12345678.fits.fz'),
+    #                                   call('/desi/20190703/fibermap-12345678.fits'),
+    #                                   call('/desi/20190703/guider-12345678.fits.fz')])
 
     def test_verify_checksum(self):
         """Test checksum verification.

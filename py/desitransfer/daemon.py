@@ -360,28 +360,6 @@ def _popen(command):
     return (str(p.returncode), out.decode('utf-8'), err.decode('utf-8'))
 
 
-def check_exposure(destination, exposure, expected):
-    """Ensure that all files associated with an exposure have arrived.
-
-    Parameters
-    ----------
-    destination : :class:`str`
-        Delivery directory, typically ``DESI_SPECTRO_DATA/NIGHT``.
-    exposure : :class:`str`
-        Exposure number.
-    expected : :class:`list`
-        The list of files to check for.
-
-    Returns
-    -------
-    :class:`bool`
-        ``True`` if all files have arrived.
-    """
-    return all([os.path.exists(os.path.join(destination,
-                                            f.format(exposure=exposure)))
-                for f in expected])
-
-
 def verify_checksum(checksum_file):
     """Verify checksums supplied with the raw data.
 
@@ -598,7 +576,10 @@ def transfer_exposure(d, link, status, transfer):
             #
             # Is this a "realistic" exposure?
             #
-            if transfer.run and check_exposure(destination_exposure, exposure, d.expected):
+            if (transfer.run and
+                all([os.path.exists(os.path.join(destination_exposure,
+                                                 f.format(exposure=exposure)))
+                     for f in d.expected])):
                 #
                 # Run update
                 #
