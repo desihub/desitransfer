@@ -200,7 +200,7 @@ The DESI Collaboration Account
         links = sorted([x for x in out.split('\n') if x])
         if links:
             for l in links:
-                transfer_exposure(d, l, status, self)
+                self.exposure(d, l, status)
         else:
             log.warning('No links found, check connection.')
         #
@@ -217,6 +217,125 @@ The DESI Collaboration Account
             s = self.backup(d, yst)
             if s:
                 status.update(yst, 'all', 'backup')
+
+    def exposure(self, d, link, status):
+        """Data transfer operations for a single exposure.
+
+        Parameters
+        ----------
+        d : :class:`desitransfer.common.DTSDir`
+            Configuration for the destination directory.
+        link : :class:`str`
+            The exposure path.
+        status : :class:`desitransfer.status.TransferStatus`
+            The status object associated with `d`.
+        """
+        exposure = os.path.basename(link)
+        night = os.path.basename(os.path.dirname(link))
+        staging_night = os.path.join(d.staging, night)
+        destination_night = os.path.join(d.destination, night)
+        staging_exposure = os.path.join(staging_night, exposure)
+        destination_exposure = os.path.join(destination_night, exposure)
+        #
+        # New night detected?
+        #
+        if not os.path.isdir(staging_night):
+            log.debug("os.makedirs('%s', exist_ok=True)", staging_night)
+            if not self.test:
+                os.makedirs(staging_night, exist_ok=True)
+        #
+        # Has exposure already been transferred?
+        #
+        if not os.path.isdir(staging_exposure) and not os.path.isdir(destination_exposure):
+            cmd = rsync(os.path.join(d.source, night, exposure), staging_exposure)
+            if self.test:
+                log.debug(' '.join(cmd))
+                rsync_status = '0'
+            else:
+                rsync_status, out, err = _popen(cmd)
+        else:
+            log.debug('%s already transferred.', staging_exposure)
+            rsync_status = 'done'
+        #
+        # Transfer complete.
+        #
+        if rsync_status == '0':
+            status.update(night, exposure, 'rsync')
+            #
+            # Check permissions.
+            #
+            lock_directory(staging_exposure, self.test)
+            #
+            # Verify checksums.
+            #
+
+            checksum_file = os.path.join(staging_exposure,
+                                         d.checksum.format(night=night, exposure=exposure))
+            if os.path.exists(checksum_file):
+                checksum_status = verify_checksum(checksum_file)
+            elif not os.path.exists(staging_exposure):
+                #
+                # This can happen in shadow mode.
+                #
+                log.debug("%s does not exist, ignore checksum error.", staging_exposure)
+                checksum_status = 1
+            else:
+                log.warning("No checksum file for %s/%s!", night, exposure)
+                checksum_status = 0
+            #
+            # Did we pass checksums?
+            #
+            if checksum_status == 0:
+                status.update(night, exposure, 'checksum')
+                #
+                # Set up DESI_SPECTRO_DATA.
+                #
+                if not os.path.isdir(destination_night):
+                    log.debug("os.makedirs('%s', exist_ok=True)", destination_night)
+                    log.debug("os.chmod('%s', 0o%o)", destination_night, dir_perm)
+                    if not self.test:
+                        os.makedirs(destination_night, exist_ok=True)
+                        os.chmod(destination_night, dir_perm)
+                #
+                # Move data into DESI_SPECTRO_DATA.
+                #
+                if not os.path.isdir(destination_exposure):
+                    log.debug("shutil.move('%s', '%s')", staging_exposure, destination_night)
+                    if not self.test:
+                        shutil.move(staging_exposure, destination_night)
+                #
+                # Is this a "realistic" exposure?
+                #
+                if (self.run and
+                    all([os.path.exists(os.path.join(destination_exposure,
+                                                     f.format(exposure=exposure)))
+                         for f in d.expected])):
+                    #
+                    # Run update
+                    #
+                    cmd = self.pipeline(night, exposure)
+                    if not self.test:
+                        _, out, err = _popen(cmd)
+                    status.update(night, exposure, 'pipeline')
+                    for k in ('flats', 'arcs', 'science'):
+                        if os.path.exists(os.path.join(destination_exposure, '{0}-{1}-{2}.done'.format(k, night, exposure))):
+                            cmd = self.pipeline(night, exposure, command=k)
+                            if not self.test:
+                                _, out, err = _popen(cmd)
+                            status.update(night, exposure, 'pipeline', last=k)
+                else:
+                    log.info("%s/%s appears to be test data. Skipping pipeline activation.", night, exposure)
+            else:
+                log.error("Checksum problem detected for %s/%s!", night, exposure)
+                status.update(night, exposure, 'checksum', failure=True)
+        elif rsync_status == 'done':
+            #
+            # Do nothing, successfully.
+            #
+            pass
+        else:
+            log.error('rsync problem detected!')
+            status.update(night, exposure, 'rsync', failure=True)
 
     def catchup(self, d, night):
         """Do a "catch-up" transfer to catch delayed files in the morning, rather than at noon.
@@ -484,128 +603,6 @@ def rsync_night(source, destination, night, test=False):
     # Lock files.
     #
     lock_directory(os.path.join(destination, night), test)
-
-
-def transfer_exposure(d, link, status, transfer):
-    """Data transfer operations for a single exposure.
-
-    Parameters
-    ----------
-    d : :class:`desitransfer.common.DTSDir`
-        Configuration for the destination directory.
-    link : :class:`str`
-        The exposure path.
-    status : :class:`desitransfer.status.TransferStatus`
-        The status object associated with `d`.
-    transfer : :class:`desitransfer.daemon.TransferDaemon`
-        The pipeline command construction object.
-    """
-    exposure = os.path.basename(link)
-    night = os.path.basename(os.path.dirname(link))
-    staging_night = os.path.join(d.staging, night)
-    destination_night = os.path.join(d.destination, night)
-    staging_exposure = os.path.join(staging_night, exposure)
-    destination_exposure = os.path.join(destination_night, exposure)
-    #
-    # New night detected?
-    #
-    if not os.path.isdir(staging_night):
-        log.debug("os.makedirs('%s', exist_ok=True)", staging_night)
-        if not transfer.test:
-            os.makedirs(staging_night, exist_ok=True)
-    #
-    # Has exposure already been transferred?
-    #
-    if not os.path.isdir(staging_exposure) and not os.path.isdir(destination_exposure):
-        cmd = rsync(os.path.join(d.source, night, exposure), staging_exposure)
-        if transfer.test:
-            log.debug(' '.join(cmd))
-            rsync_status = '0'
-        else:
-            rsync_status, out, err = _popen(cmd)
-    else:
-        log.debug('%s already transferred.', staging_exposure)
-        rsync_status = 'done'
-    #
-    # Transfer complete.
-    #
-    if rsync_status == '0':
-        status.update(night, exposure, 'rsync')
-        #
-        # Check permissions.
-        #
-        lock_directory(staging_exposure, transfer.test)
-        #
-        # Verify checksums.
-        #
-
-        checksum_file = os.path.join(staging_exposure,
-                                     d.checksum.format(night=night, exposure=exposure))
-        if os.path.exists(checksum_file):
-            checksum_status = verify_checksum(checksum_file)
-        elif not os.path.exists(staging_exposure):
-            #
-            # This can happen in shadow mode.
-            #
-            log.debug("%s does not exist, ignore checksum error.", staging_exposure)
-            checksum_status = 1
-        else:
-            log.warning("No checksum file for %s/%s!", night, exposure)
-            checksum_status = 0
-        #
-        # Did we pass checksums?
-        #
-        if checksum_status == 0:
-            status.update(night, exposure, 'checksum')
-            #
-            # Set up DESI_SPECTRO_DATA.
-            #
-            if not os.path.isdir(destination_night):
-                log.debug("os.makedirs('%s', exist_ok=True)", destination_night)
-                log.debug("os.chmod('%s', 0o%o)", destination_night, dir_perm)
-                if not transfer.test:
-                    os.makedirs(destination_night, exist_ok=True)
-                    os.chmod(destination_night, dir_perm)
-            #
-            # Move data into DESI_SPECTRO_DATA.
-            #
-            if not os.path.isdir(destination_exposure):
-                log.debug("shutil.move('%s', '%s')", staging_exposure, destination_night)
-                if not transfer.test:
-                    shutil.move(staging_exposure, destination_night)
-            #
-            # Is this a "realistic" exposure?
-            #
-            if (transfer.run and
-                all([os.path.exists(os.path.join(destination_exposure,
-                                                 f.format(exposure=exposure)))
-                     for f in d.expected])):
-                #
-                # Run update
-                #
-                cmd = transfer.pipeline(night, exposure)
-                if not transfer.test:
-                    _, out, err = _popen(cmd)
-                status.update(night, exposure, 'pipeline')
-                for k in ('flats', 'arcs', 'science'):
-                    if os.path.exists(os.path.join(destination_exposure, '{0}-{1}-{2}.done'.format(k, night, exposure))):
-                        cmd = transfer.pipeline(night, exposure, command=k)
-                        if not transfer.test:
-                            _, out, err = _popen(cmd)
-                        status.update(night, exposure, 'pipeline', last=k)
-            else:
-                log.info("%s/%s appears to be test data. Skipping pipeline activation.", night, exposure)
-        else:
-            log.error("Checksum problem detected for %s/%s!", night, exposure)
-            status.update(night, exposure, 'checksum', failure=True)
-    elif rsync_status == 'done':
-        #
-        # Do nothing, successfully.
-        #
-        pass
-    else:
-        log.error('rsync problem detected!')
-        status.update(night, exposure, 'rsync', failure=True)
 
 
 def main():
