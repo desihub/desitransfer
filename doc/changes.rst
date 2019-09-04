@@ -2,7 +2,7 @@
 Change Log
 ==========
 
-0.3.0 (unreleased)
+0.3.0 (2019-09-04)
 ------------------
 
 * Unified configuration file (PR `#3`_).
