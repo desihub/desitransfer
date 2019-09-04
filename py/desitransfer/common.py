@@ -10,10 +10,7 @@ import datetime as dt
 import os
 import re
 import stat
-from collections import namedtuple
 import pytz
-
-DTSDir = namedtuple('DTSDir', 'source, staging, destination, hpss')
 
 
 dir_perm = (stat.S_ISGID |

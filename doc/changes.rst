@@ -5,8 +5,11 @@ Change Log
 0.3.0 (unreleased)
 ------------------
 
-* Unified configuration file.
-* Simplified passing of command-line options, configuration, etc.
+* Unified configuration file (PR `#3`_).
+  - Simplified passing of command-line options, configuration, etc.
+  - Store state data in a first-class object.
+
+.. _`#3`: https://github.com/desihub/desitransfer/pull/3
 
 0.2.2 (2019-08-29)
 ------------------

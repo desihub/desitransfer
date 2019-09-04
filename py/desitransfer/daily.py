@@ -11,7 +11,7 @@ import subprocess as sub
 import sys
 import time
 from argparse import ArgumentParser
-from .common import DTSDir, dir_perm, file_perm, rsync, stamp
+from .common import dir_perm, file_perm, rsync, stamp
 
 
 class DailyDirectory(object):
