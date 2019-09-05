@@ -5,7 +5,7 @@ Change Log
 0.3.1 (unreleased)
 ------------------
 
-* No changes yet.
+* Only a ``desi`` file is needed to trigger the pipeline.
 
 0.3.0 (2019-09-04)
 ------------------
