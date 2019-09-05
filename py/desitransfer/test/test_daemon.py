@@ -70,8 +70,9 @@ class TestDaemon(unittest.TestCase):
                          os.path.join(os.environ['HOME'], 'bin', 'wrap_desi_night.sh'))
         self.assertEqual(d.conf['pipeline'].getdict('commands'),
                          {'science': 'redshifts'})
-        self.assertEqual(c.getlist('expected_files'),
-                         ['desi-{exposure}.fits.fz', 'fibermap-{exposure}.fits', 'guider-{exposure}.fits.fz'])
+        self.assertEqual(c.getlist('expected_files'), ['desi-{exposure}.fits.fz'])
+        # self.assertEqual(c.getlist('expected_files'),
+        #                  ['desi-{exposure}.fits.fz', 'fibermap-{exposure}.fits', 'guider-{exposure}.fits.fz'])
 
     @patch.object(TransferDaemon, '_configure_log')
     def test_TransferDaemon_alternate_init(self, mock_cl):
@@ -98,8 +99,9 @@ class TestDaemon(unittest.TestCase):
                          os.path.join(os.environ['HOME'], 'bin', 'wrap_desi_night.sh'))
         self.assertEqual(d.conf['pipeline'].getdict('commands'),
                          {'science': 'redshifts'})
-        self.assertEqual(c.getlist('expected_files'),
-                         ['desi-{exposure}.fits.fz', 'fibermap-{exposure}.fits', 'guider-{exposure}.fits.fz'])
+        self.assertEqual(c.getlist('expected_files'), ['desi-{exposure}.fits.fz'])
+        # self.assertEqual(c.getlist('expected_files'),
+        #                  ['desi-{exposure}.fits.fz', 'fibermap-{exposure}.fits', 'guider-{exposure}.fits.fz'])
 
     @patch('desitransfer.daemon.log')
     @patch.object(TransferDaemon, '_configure_log')
