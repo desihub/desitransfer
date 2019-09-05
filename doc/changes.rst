@@ -5,7 +5,9 @@ Change Log
 0.3.1 (unreleased)
 ------------------
 
-* Only a ``desi`` file is needed to trigger the pipeline.
+* Only a ``desi`` file is needed to trigger the pipeline (PR `#5`_).
+
+.. _`#5`: https://github.com/desihub/desitransfer/pull/5
 
 0.3.0 (2019-09-04)
 ------------------
