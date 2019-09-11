@@ -40,7 +40,6 @@ def _options():
         The parsed command-line options.
     """
     desc = "Transfer DESI raw data files."
-    # prsr = ArgumentParser(prog=os.path.basename(sys.argv[0]), description=desc)
     prsr = ArgumentParser(description=desc)
     prsr.add_argument('-c', '--configuration', metavar='FILE',
                       help="Read configuration from FILE.")

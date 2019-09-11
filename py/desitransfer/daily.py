@@ -12,6 +12,7 @@ import sys
 import time
 from argparse import ArgumentParser
 from .common import dir_perm, file_perm, rsync, stamp
+from . import __version__ as dtVersion
 
 
 class DailyDirectory(object):
@@ -40,6 +41,7 @@ class DailyDirectory(object):
         log = self.destination + '.log'
         cmd = rsync(self.source, self.destination)
         with open(log, 'ab') as l:
+            l.write(("DEBUG: desi_daily_transfer %s" % dtVersion).encode('utf-8'))
             l.write(("DEBUG: %s\n" % stamp()).encode('utf-8'))
             l.write(("DEBUG: %s\n" % ' '.join(cmd)).encode('utf-8'))
             l.flush()
@@ -90,7 +92,7 @@ def _options(*args):
         The parsed command-line options.
     """
     desc = "Transfer non-critical DESI data from KPNO to NERSC."
-    prsr = ArgumentParser(prog=os.path.basename(sys.argv[0]), description=desc)
+    prsr = ArgumentParser(description=desc)
     # prsr.add_argument('-b', '--backup', metavar='H', type=int, default=20,
     #                   help='UTC time in hours to trigger HPSS backups (default %(default)s:00 UTC).')
     # prsr.add_argument('-d', '--debug', action='store_true',
@@ -110,6 +112,8 @@ def _options(*args):
                       help='In daemon mode, sleep H hours before checking for new data (default %(default)s hours).')
     # prsr.add_argument('-S', '--shadow', action='store_true',
     #                   help='Observe the actions of another data transfer script but do not make any changes.')
+    prsr.add_argument('-V', '--version', action='version',
+                      version='%(prog)s {0}'.format(dtVersion))
     return prsr.parse_args()
 
 

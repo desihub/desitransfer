@@ -13,6 +13,7 @@ import sys
 import time
 from argparse import ArgumentParser
 from pkg_resources import resource_filename
+from . import __version__ as dtVersion
 # from desiutil.log import get_logger
 
 
@@ -132,9 +133,8 @@ def _options():
     :class:`argparse.Namespace`
         The parsed command-line options.
     """
-    desc = "Transfer DESI raw data files."
-    prsr = ArgumentParser(description='Update the status of DESI raw data transfers.',
-                          prog=os.path.basename(sys.argv[0]))
+    desc = 'Update the status of DESI raw data transfers.'
+    prsr = ArgumentParser(description=desc)
     prsr.add_argument('-d', '--directory', dest='directory', metavar='DIR',
                       default=os.path.join(os.environ['DESI_ROOT'],
                                            'spectro', 'staging', 'status'),
@@ -146,6 +146,8 @@ def _options():
     prsr.add_argument('-l', '--last', dest='last', default='',
                       choices=['flats', 'arcs', 'science'],
                       help='Indicate that a certain set of exposures is complete.')
+    prsr.add_argument('-V', '--version', action='version',
+                      version='%(prog)s {0}'.format(dtVersion))
     prsr.add_argument('night', type=int, metavar='YYYYMMDD',
                       help="Night of observation.")
     prsr.add_argument('expid', metavar='EXPID',
