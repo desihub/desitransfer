@@ -5,9 +5,11 @@ Change Log
 0.3.1 (unreleased)
 ------------------
 
+* Report version string in logs and on command line (PR `#6`_).
 * Only a ``desi`` file is needed to trigger the pipeline (PR `#5`_).
 
 .. _`#5`: https://github.com/desihub/desitransfer/pull/5
+.. _`#6`: https://github.com/desihub/desitransfer/pull/6
 
 0.3.0 (2019-09-04)
 ------------------

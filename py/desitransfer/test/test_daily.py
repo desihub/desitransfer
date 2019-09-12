@@ -7,7 +7,7 @@ import sys
 import unittest
 from unittest.mock import patch, call, mock_open
 from ..daily import _config, _options, DailyDirectory
-
+from .. import __version__ as dtVersion
 
 class TestDaily(unittest.TestCase):
     """Test desitransfer.daily.
@@ -65,6 +65,7 @@ class TestDaily(unittest.TestCase):
         d.transfer()
         mo.assert_has_calls([call('/dst/d0.log', 'ab'),
                              call().__enter__(),
+                             call().write(('DEBUG: desi_daily_transfer {}\n'.format(dtVersion)).encode('utf-8')),
                              call().write(b'DEBUG: 2019-07-03\n'),
                              call().write(b'DEBUG: /bin/rsync --verbose --recursive --copy-dirlinks --times --omit-dir-times dts:/src/d0/ /dst/d0/\n'),
                              call().flush(),

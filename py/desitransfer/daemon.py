@@ -26,7 +26,7 @@ from pkg_resources import resource_filename
 from desiutil.log import get_logger
 from .common import dir_perm, file_perm, rsync, yesterday, empty_rsync
 from .status import TransferStatus
-
+from . import __version__ as dtVersion
 
 log = None
 
@@ -40,7 +40,7 @@ def _options():
         The parsed command-line options.
     """
     desc = "Transfer DESI raw data files."
-    prsr = ArgumentParser(prog=os.path.basename(sys.argv[0]), description=desc)
+    prsr = ArgumentParser(description=desc)
     prsr.add_argument('-c', '--configuration', metavar='FILE',
                       help="Read configuration from FILE.")
     prsr.add_argument('-d', '--debug', action='store_true',
@@ -52,6 +52,8 @@ def _options():
                       help="Only transfer files, don't start the DESI pipeline.")
     prsr.add_argument('-S', '--shadow', action='store_true',
                       help='Observe the actions of another data transfer script but do not make any changes.')
+    prsr.add_argument('-V', '--version', action='version',
+                      version='%(prog)s {0}'.format(dtVersion))
     return prsr.parse_args()
 
 
@@ -617,9 +619,11 @@ def main():
     transfer = TransferDaemon(options)
     sleep = transfer.conf['common'].getint('sleep')
     while True:
-        log.info('Starting transfer loop.')
+        log.info('Starting transfer loop; desitransfer version = %s.',
+                 dtVersion)
         if os.path.exists(options.kill):
-            log.info("%s detected, shutting down transfer daemon.", options.kill)
+            log.info("%s detected, shutting down transfer daemon.",
+                     options.kill)
             return 0
         transfer.transfer()
         time.sleep(sleep*60)
