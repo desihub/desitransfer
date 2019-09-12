@@ -2,7 +2,7 @@
 Change Log
 ==========
 
-0.3.1 (unreleased)
+0.3.1 (2019-09-12)
 ------------------
 
 * Report version string in logs and on command line (PR `#6`_).
