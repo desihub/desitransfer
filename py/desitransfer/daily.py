@@ -41,7 +41,7 @@ class DailyDirectory(object):
         log = self.destination + '.log'
         cmd = rsync(self.source, self.destination)
         with open(log, 'ab') as l:
-            l.write(("DEBUG: desi_daily_transfer %s" % dtVersion).encode('utf-8'))
+            l.write(("DEBUG: desi_daily_transfer %s\n" % dtVersion).encode('utf-8'))
             l.write(("DEBUG: %s\n" % stamp()).encode('utf-8'))
             l.write(("DEBUG: %s\n" % ' '.join(cmd)).encode('utf-8'))
             l.flush()
