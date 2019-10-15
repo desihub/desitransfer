@@ -167,7 +167,11 @@ class TestDaemon(unittest.TestCase):
             d = TransferDaemon(options)
         mock_lock.return_value = True
         d.transfer()
-        mock_lock.assert_called_once()
+        try:
+            mock_lock.assert_called_once()
+        except AttributeError:
+            # Python 3.5 doesn't have this.
+            pass
         mock_lock.return_value = False
         d.transfer()
         mock_log.info.assert_called_once_with('Looking for new data in %s.',
