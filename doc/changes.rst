@@ -5,7 +5,10 @@ Change Log
 0.3.2 (unreleased)
 ------------------
 
-* No changes yet.
+* Inhibit transfers when checksums are being computed at KPNO (PR `#7`_).
+
+.. _`#7`: https://github.com/desihub/desitransfer/pull/7
+
 
 0.3.1 (2019-09-12)
 ------------------
