@@ -151,10 +151,11 @@ class TestDaemon(unittest.TestCase):
         gl.assert_called_once_with(timestamp=True)
         ll.setLevel.assert_called_once_with(logging.DEBUG)
 
+    @patch.object(TransferDaemon, 'checksum_lock')
     @patch.object(TransferDaemon, 'directory')
     @patch('desitransfer.daemon.log')
     @patch.object(TransferDaemon, '_configure_log')
-    def test_TransferDaemon_transfer(self, mock_cl, mock_log, mock_dir):
+    def test_TransferDaemon_transfer(self, mock_cl, mock_log, mock_dir, mock_lock):
         """Test loop over all configured directories.
         """
         with patch.dict('os.environ',
@@ -164,6 +165,14 @@ class TestDaemon(unittest.TestCase):
             with patch.object(sys, 'argv', ['desi_transfer_daemon', '--debug']):
                 options = _options()
             d = TransferDaemon(options)
+        mock_lock.return_value = True
+        d.transfer()
+        try:
+            mock_lock.assert_called_once()
+        except AttributeError:
+            # Python 3.5 doesn't have this.
+            pass
+        mock_lock.return_value = False
         d.transfer()
         mock_log.info.assert_called_once_with('Looking for new data in %s.',
                                               d.directories[0].source)
@@ -175,6 +184,25 @@ class TestDaemon(unittest.TestCase):
         except AttributeError:
             # Python 3.5 doesn't have this.
             pass
+
+    @patch('desitransfer.daemon._popen')
+    @patch('desitransfer.daemon.log')
+    @patch.object(TransferDaemon, '_configure_log')
+    def test_TransferDaemon_checksum_lock(self, mock_cl, mock_log, mock_popen):
+        """Test checksum locking mechanism.
+        """
+        with patch.dict('os.environ',
+                        {'CSCRATCH': self.tmp.name,
+                         'DESI_ROOT': '/desi/root',
+                         'DESI_SPECTRO_DATA': '/desi/root/spectro/data'}):
+            with patch.object(sys, 'argv', ['desi_transfer_daemon', '--debug']):
+                options = _options()
+            d = TransferDaemon(options)
+        mock_popen.return_value = ('0', '/tmp/checksum-running', '')
+        self.assertTrue(d.checksum_lock())
+        mock_log.info.assert_called_once_with('Checksums are being computed at KPNO.')
+        mock_popen.return_value = ('2', '', 'No such file.')
+        self.assertFalse(d.checksum_lock())
 
     @patch.object(TransferDaemon, 'backup')
     @patch.object(TransferDaemon, 'catchup')

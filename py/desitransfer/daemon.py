@@ -175,6 +175,8 @@ The DESI Collaboration Account
     def transfer(self):
         """Loop over and transfer all configured directories.
         """
+        if self.checksum_lock():
+            return
         for d in self.directories:
             log.info('Looking for new data in %s.', d.source)
             try:
@@ -182,6 +184,22 @@ The DESI Collaboration Account
             except Exception as e:
                 log.critical("Exception detected in transfer of %s!\n\n%s",
                              d.source, traceback.format_exc())
+
+    def checksum_lock(self):
+        """See if checksums are being computed at KPNO.
+
+        Returns
+        -------
+        :class:`bool`
+            ``True`` if checksums are being computed.
+        """
+        cmd = [self.conf['pipeline']['ssh'], '-q', 'dts',
+               '/bin/ls', self.conf['common']['checksum_lock']]
+        _, out, err = _popen(cmd)
+        if out:
+            log.info('Checksums are being computed at KPNO.')
+            return True
+        return False
 
     def directory(self, d):
         """Data transfer operations for a single destination directory.

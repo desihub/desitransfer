@@ -9,6 +9,7 @@ from unittest.mock import patch, call, mock_open
 from ..daily import _config, _options, DailyDirectory
 from .. import __version__ as dtVersion
 
+
 class TestDaily(unittest.TestCase):
     """Test desitransfer.daily.
     """
