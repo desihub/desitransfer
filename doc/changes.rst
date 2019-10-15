@@ -2,7 +2,7 @@
 Change Log
 ==========
 
-0.3.2 (unreleased)
+0.3.2 (2019-10-15)
 ------------------
 
 * Inhibit transfers when checksums are being computed at KPNO (PR `#7`_).
