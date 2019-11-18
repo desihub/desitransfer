@@ -26,8 +26,9 @@ nights=''
 fileType=desi
 testMode=/bin/false
 verboseMode=/bin/false
-while getopts hr:tv argname; do
+while getopts e:hn:T:tv argname; do
     case ${argname} in
+        e) extension=${OPTARG} ;;
         h) usage && exit 0 ;;
         n) nights=${OPTARG} ;;
         T) fileType=${OPTARG} ;;
