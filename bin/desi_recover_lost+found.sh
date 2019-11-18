@@ -19,21 +19,23 @@ function usage() {
 #
 # Get options
 #
+TRUE=/usr/bin/true
+FALSE=/usr/bin/false
 extension='.fits.fz'
 data=${DESI_SPECTRO_DATA}
 LF=${DESI_ROOT}/spectro/staging/lost+found
 nights=''
 fileType=desi
-testMode=/bin/false
-verboseMode=/bin/false
+testMode=${FALSE}
+verboseMode=${TRUE}
 while getopts e:hn:T:tv argname; do
     case ${argname} in
         e) extension=${OPTARG} ;;
         h) usage && exit 0 ;;
         n) nights=${OPTARG} ;;
         T) fileType=${OPTARG} ;;
-        t) testMode=/bin/true ;;
-        v) verboseMode=/bin/true ;;
+        t) testMode=${TRUE} ;;
+        v) verboseMode=${TRUE} ;;
         *)
             echo "Unknown option!" >&2
             usage
@@ -56,11 +58,13 @@ ${verboseMode} && echo "Searching: ${nights}"
 #
 for n in ${nights}; do
     night=${LF}/${n}
+    exposuresFound=${FALSE}
     for e in ${night}/*; do
         exposure=$(/usr/bin/basename ${e})
         filename=${e}/${fileType}-${exposure}${extension}
         if [[ -f ${filename} ]]; then
             ${verboseMode} && echo "Detected ${filename}"
+            exposuresFound=${TRUE}
             checksum=${e}/checksum-${n}-${exposure}.sha256sum
             if [[ -f ${checksum} ]]; then
                 ${verboseMode} && echo "Detected ${checksum}"
@@ -74,4 +78,8 @@ for n in ${nights}; do
             ${testMode} || /bin/mv ${e} ${data}/${n}
         fi
     done
+    if ${exposuresFound}; then
+        ${verboseMode} && echo "(cd ${data} && htar -cvf desi/spectro/data/desi_spectro_data_${n}.tar -H crc:verify=all ${n})"
+        ${testMode} || (cd ${data} && htar -cvf desi/spectro/data/desi_spectro_data_${n}.tar -H crc:verify=all ${n})
+    fi
 done
