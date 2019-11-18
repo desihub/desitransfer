@@ -59,13 +59,13 @@ for n in ${nights}; do
         exposure=$(/usr/bin/basename ${e})
         filename=${e}/${fileType}-${exposure}${extension}
         if [[ -f ${filename} ]]; then
-            ${verboseMode} && "Detected ${filename}"
+            ${verboseMode} && echo "Detected ${filename}"
         fi
         checksum=${e}/checksum-${n}-${exposure}.sha256sum
         if [[ -f ${checksum} ]]; then
-            ${verboseMode} && "Detected ${checksum}"
+            ${verboseMode} && echo "Detected ${checksum}"
         else
-            ${verboseMode} && "Creating ${checksum}"
+            ${verboseMode} && echo "Creating ${checksum}"
         fi
     done
 done
