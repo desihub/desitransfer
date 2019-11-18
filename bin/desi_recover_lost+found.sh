@@ -65,8 +65,13 @@ for n in ${nights}; do
             if [[ -f ${checksum} ]]; then
                 ${verboseMode} && echo "Detected ${checksum}"
             else
-                ${verboseMode} && echo "Creating ${checksum}"
+                # ${verboseMode} && echo "Creating ${checksum}"
+                cc=$(/usr/bin/basename ${checksum})
+                ${verboseMode} && echo "(cd ${e} && /usr/bin/sha256sum * > ${HOME}/${cc} && /bin/mv ${HOME}/${cc} . && /usr/bin/chmod 0440 ${cc})"
+                ${testMode} || (cd ${e} && /usr/bin/sha256sum * > ${HOME}/${cc} && /bin/mv ${HOME}/${cc} . && /usr/bin/chmod 0440 ${cc})
             fi
+            ${verboseMode} && echo /bin/mv ${e} ${data}/${n}
+            ${testMode} || /bin/mv ${e} ${data}/${n}
         fi
     done
 done
