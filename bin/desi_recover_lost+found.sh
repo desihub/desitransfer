@@ -60,12 +60,12 @@ for n in ${nights}; do
         filename=${e}/${fileType}-${exposure}${extension}
         if [[ -f ${filename} ]]; then
             ${verboseMode} && echo "Detected ${filename}"
-        fi
-        checksum=${e}/checksum-${n}-${exposure}.sha256sum
-        if [[ -f ${checksum} ]]; then
-            ${verboseMode} && echo "Detected ${checksum}"
-        else
-            ${verboseMode} && echo "Creating ${checksum}"
+            checksum=${e}/checksum-${n}-${exposure}.sha256sum
+            if [[ -f ${checksum} ]]; then
+                ${verboseMode} && echo "Detected ${checksum}"
+            else
+                ${verboseMode} && echo "Creating ${checksum}"
+            fi
         fi
     done
 done
