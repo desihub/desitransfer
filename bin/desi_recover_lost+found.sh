@@ -61,7 +61,7 @@ for n in ${nights}; do
         if [[ -f ${filename} ]]; then
             ${verboseMode} && "Detected ${filename}"
         fi
-        checksum=${e}/checksum-${night}-${exposure}.sha256sum
+        checksum=${e}/checksum-${n}-${exposure}.sha256sum
         if [[ -f ${checksum} ]]; then
             ${verboseMode} && "Detected ${checksum}"
         else
