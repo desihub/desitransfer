@@ -64,25 +64,24 @@ def _config():
     """Wrap configuration so that module can be imported without
     environment variables set.
     """
+    engineering = os.path.realpath(os.path.join(os.environ['DESI_ROOT'],
+                                                'engineering'))
+    spectro = os.path.realpath(os.path.join(os.environ['DESI_ROOT'],
+                                            'spectro'))
     return [DailyDirectory('/exposures/desi/sps',
-                           os.path.realpath(os.path.join(os.environ['DESI_ROOT'],
-                                                         'engineering', 'spectrograph',
-                                                         'sps'))),
-            DailyDirectory('/exposures/nightwatch',
-                           os.path.realpath(os.path.join(os.environ['DESI_ROOT'],
-                                                         'spectro', 'nightwatch',
-                                                         'kpno'))),
+                           os.path.join(engineering, 'spectrograph', 'sps')),
+            # DailyDirectory('/exposures/nightwatch',
+            #                os.path.join(spectro, 'nightwatch', 'kpno')),
             DailyDirectory('/data/dts/exposures/lost+found',
-                           os.path.realpath(os.path.join(os.environ['DESI_ROOT'],
-                                                         'spectro', 'staging',
-                                                         'lost+found'))),
-            DailyDirectory('/data/fxc',
-                           os.path.realpath(os.path.join(os.environ['DESI_ROOT'],
-                                                         'engineering', 'fxc'))),
+                           os.path.join(spectro, 'staging', 'lost+found')),
+            # DailyDirectory('/data/fxc',
+            #                os.path.join(engineering, 'fxc')),
+            DailyDirectory('/data/focalplane/logs/calib_logs',
+                           os.path.join(engineering, 'focalplane', 'logs', 'calib_logs')),
+            DailyDirectory('/data/focalplane/logs/xytest_data',
+                           os.path.join(engineering, 'focalplane', 'logs', 'xytest_data')),
             DailyDirectory('/data/fvc/data',
-                           os.path.realpath(os.path.join(os.environ['DESI_ROOT'],
-                                                         'engineering', 'fvc',
-                                                         'images')))]
+                           os.path.join(engineering, 'fvc', 'images'))]
 
 
 def _options(*args):
