@@ -72,14 +72,20 @@ for n in ${nights}; do
                 # ${verboseMode} && echo "Creating ${checksum}"
                 cc=$(/usr/bin/basename ${checksum})
                 ${verboseMode} && echo "(cd ${e} && /usr/bin/sha256sum * > ${HOME}/${cc} && /bin/mv ${HOME}/${cc} . && /usr/bin/chmod 0440 ${cc})"
-                ${testMode} || (cd ${e} && /usr/bin/sha256sum * > ${HOME}/${cc} && /bin/mv ${HOME}/${cc} . && /usr/bin/chmod 0440 ${cc})
+                ${testMode}    || (cd ${e} && /usr/bin/sha256sum * > ${HOME}/${cc} && /bin/mv ${HOME}/${cc} . && /usr/bin/chmod 0440 ${cc})
             fi
-            ${verboseMode} && echo /bin/mv ${e} ${data}/${n}
-            ${testMode} || /bin/mv ${e} ${data}/${n}
+            if [[ ! -d ${data}/${n} ]]; then
+                ${verboseMode} && echo /usr/bin/mkdir ${data}/${n}
+                ${testMode}    || /usr/bin/mkdir ${data}/${n}
+                ${verboseMode} && echo /usr/bin/chmod 2750 ${data}/${n}
+                ${testMode}    || /usr/bin/chmod 2750 ${data}/${n}
+            fi
+            ${verboseMode} && echo /usr/bin/mv ${e} ${data}/${n}
+            ${testMode}    || /usr/bin/mv ${e} ${data}/${n}
         fi
     done
     if ${exposuresFound}; then
         ${verboseMode} && echo "(cd ${data} && htar -cvf desi/spectro/data/desi_spectro_data_${n}.tar -H crc:verify=all ${n})"
-        ${testMode} || (cd ${data} && htar -cvf desi/spectro/data/desi_spectro_data_${n}.tar -H crc:verify=all ${n})
+        ${testMode}    || (cd ${data} && htar -cvf desi/spectro/data/desi_spectro_data_${n}.tar -H crc:verify=all ${n})
     fi
 done
