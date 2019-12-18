@@ -95,6 +95,24 @@ class TestDaily(unittest.TestCase):
                                      call('/dst/d0/d2', 0o2750),
                                      call('/dst/d0/d2/f4', 0o0440)])
 
+    @patch('subprocess.Popen')
+    @patch('builtins.open', new_callable=mock_open)
+    def test_apache(self, mo, mock_popen):
+        """Test granting apache/www permissions.
+        """
+        mock_popen().wait.return_value = 0
+        d = DailyDirectory('/src/d0', '/dst/d0')
+        d.apache()
+        mo.assert_has_calls([call('/dst/d0.log', 'ab'),
+                             call().__enter__(),
+                             call().write(b'DEBUG: fix_permissions.sh -a /dst/d0\n'),
+                             call().flush(),
+                             call().__exit__(None, None, None)])
+        mock_popen.assert_has_calls([call(),
+                                     call(['fix_permissions.sh', '-a', '/dst/d0'],
+                                          stdout=mo(), stderr=-2), 
+                                     call().wait()])
+
 
 def test_suite():
     """Allows testing of only this module with the command::
