@@ -29,6 +29,7 @@ class DailyDirectory(object):
     def __init__(self, source, destination):
         self.source = source
         self.destination = destination
+        self.log = self.destination + '.log'
 
     def transfer(self):
         """Data transfer operations for a single destination directory.
@@ -38,9 +39,8 @@ class DailyDirectory(object):
         :class:`int`
             The status returned by :command:`rsync`.
         """
-        log = self.destination + '.log'
         cmd = rsync(self.source, self.destination)
-        with open(log, 'ab') as l:
+        with open(self.log, 'ab') as l:
             l.write(("DEBUG: desi_daily_transfer %s\n" % dtVersion).encode('utf-8'))
             l.write(("DEBUG: %s\n" % stamp()).encode('utf-8'))
             l.write(("DEBUG: %s\n" % ' '.join(cmd)).encode('utf-8'))
@@ -49,6 +49,7 @@ class DailyDirectory(object):
             status = p.wait()
         if status == 0:
             self.lock()
+            s = self.apache()
         return status
 
     def lock(self):
@@ -59,23 +60,48 @@ class DailyDirectory(object):
             for f in filenames:
                 os.chmod(os.path.join(dirpath, f), file_perm)
 
+    def apache(self):
+        """Grant apache/www read access.
+
+        In theory this should not change any permissions set by
+        :meth:`~DailyDirectory.lock`.
+
+        Returns
+        -------
+        :class:`int`
+            The status returned by :command:`fix_permissions.sh`.
+        """
+        cmd = ['fix_permissions.sh', '-a', self.destination]
+        with open(self.log, 'ab') as l:
+            l.write(("DEBUG: %s\n" % ' '.join(cmd)).encode('utf-8'))
+            l.flush()
+            p = sub.Popen(cmd, stdout=l, stderr=sub.STDOUT)
+            status = p.wait()
+        return status
+
 
 def _config():
     """Wrap configuration so that module can be imported without
     environment variables set.
     """
+    engineering = os.path.realpath(os.path.join(os.environ['DESI_ROOT'],
+                                                'engineering'))
+    spectro = os.path.realpath(os.path.join(os.environ['DESI_ROOT'],
+                                            'spectro'))
     return [DailyDirectory('/exposures/desi/sps',
-                           os.path.realpath(os.path.join(os.environ['DESI_ROOT'],
-                                                         'engineering', 'spectrograph',
-                                                         'sps'))),
+                           os.path.join(engineering, 'spectrograph', 'sps')),
+            # DailyDirectory('/exposures/nightwatch',
+            #                os.path.join(spectro, 'nightwatch', 'kpno')),
             DailyDirectory('/data/dts/exposures/lost+found',
-                           os.path.realpath(os.path.join(os.environ['DESI_ROOT'],
-                                                         'spectro', 'staging',
-                                                         'lost+found'))),
+                           os.path.join(spectro, 'staging', 'lost+found')),
+            # DailyDirectory('/data/fxc',
+            #                os.path.join(engineering, 'fxc')),
+            DailyDirectory('/data/focalplane/logs/calib_logs',
+                           os.path.join(engineering, 'focalplane', 'logs', 'calib_logs')),
+            DailyDirectory('/data/focalplane/logs/xytest_data',
+                           os.path.join(engineering, 'focalplane', 'logs', 'xytest_data')),
             DailyDirectory('/data/fvc/data',
-                           os.path.realpath(os.path.join(os.environ['DESI_ROOT'],
-                                                         'engineering', 'fvc',
-                                                         'images')))]
+                           os.path.join(engineering, 'fvc', 'images'))]
 
 
 def _options(*args):

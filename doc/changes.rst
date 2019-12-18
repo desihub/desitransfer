@@ -5,7 +5,10 @@ Change Log
 0.3.3 (unreleased)
 ------------------
 
-* No changes yet.
+* Additional daily transfers; make sure daily transfers are readable by
+  apache/www (PR `#8`_).
+
+.. _`#8`: https://github.com/desihub/desitransfer/pull/8
 
 0.3.2 (2019-10-15)
 ------------------
