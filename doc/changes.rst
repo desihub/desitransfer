@@ -2,7 +2,7 @@
 Change Log
 ==========
 
-0.3.3 (unreleased)
+0.3.3 (2019-12-18)
 ------------------
 
 * Additional daily transfers; make sure daily transfers are readable by
