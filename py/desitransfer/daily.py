@@ -98,6 +98,8 @@ def _config():
             #                os.path.join(engineering, 'fxc')),
             DailyDirectory('/data/focalplane/logs/calib_logs',
                            os.path.join(engineering, 'focalplane', 'logs', 'calib_logs')),
+            DailyDirectory('/data/focalplane/logs/kpno',
+                           os.path.join(engineering, 'focalplane', 'logs', 'kpno')),
             DailyDirectory('/data/focalplane/logs/xytest_data',
                            os.path.join(engineering, 'focalplane', 'logs', 'xytest_data')),
             DailyDirectory('/data/fvc/data',
