@@ -1,0 +1,35 @@
+#!/usr/bin/env python
+from sys import exit
+import os
+import subprocess as sub
+import hpsspy.os as hpos
+
+def backup_times(path='desi/spectro/data'):
+    ls = hpos.listdir(path)
+    return dict([(os.path.splitext(.name)[0].split('_')[-1], f.st_mtime*1000)
+                 for f in ls if f.name.endswith('.tar')])
+
+
+def main():
+    bt = backup_times()
+    nights = os.listdir(os.environ['DESI_SPECTRO_DATA'])
+    status = list()
+    for night in nights:
+        exposures = os.listdir(os.path.join(os.environ['DESI_SPECTRO_DATA'], night))
+        for exp in exposures:
+            rt = int(os.stat(os.path.join(os.environ['DESI_SPECTRO_DATA'], night, exp)).st_mtime * 1000)
+            status.append([int(night), int(exp), 'rsync', True, '', rt])
+            status.append([int(night), int(exp), 'checksum', True, '', rt])
+            status.append([int(night), int(exp), 'backup', True, '', bt[night]])
+    status = sorted(status, key=lambda x: x[0]*10000000 + x[1], reverse=True)
+    with open('desi_transfer_status_restore.json', 'w') as j:
+        json.dump(status, j, indent=None, separators=(',', ':'))
+    return 0
+
+
+if __name__ == '__main__':
+    try:
+        foo = os.environ['HPSS_DIR']
+    except KeyError:
+        os.environ['HPSS_DIR'] = '/usr/common/mss'
+    exit(main())
