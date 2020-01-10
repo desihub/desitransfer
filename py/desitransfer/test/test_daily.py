@@ -110,7 +110,7 @@ class TestDaily(unittest.TestCase):
                              call().__exit__(None, None, None)])
         mock_popen.assert_has_calls([call(),
                                      call(['fix_permissions.sh', '-a', '/dst/d0'],
-                                          stdout=mo(), stderr=-2), 
+                                          stdout=mo(), stderr=-2),
                                      call().wait()])
 
 
