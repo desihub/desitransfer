@@ -2,7 +2,7 @@
 Change Log
 ==========
 
-0.3.4 (unreleased)
+0.3.4 (2020-01-10)
 ------------------
 
 * Guard against corrupted status JSON files; restore transfer status;
