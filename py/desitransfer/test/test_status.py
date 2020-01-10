@@ -101,7 +101,7 @@ class TestStatus(unittest.TestCase):
         mock_log.error.assert_called_once_with('Malformed JSON file detected: %s; saving original file as %s.',
                                                os.path.join(d, 'desi_transfer_status.json'),
                                                os.path.join(d, 'desi_transfer_status.json.bad'))
-        mock_log.debug.assert_called_once_with("shutil.copy('%s', '%s')",
+        mock_log.debug.assert_called_once_with("shutil.copy2('%s', '%s')",
                                                os.path.join(d, 'desi_transfer_status.json'),
                                                os.path.join(d, 'desi_transfer_status.json.bad'))
         mock_log.info.assert_called_once_with('Writing empty array to %s.',
@@ -121,8 +121,8 @@ class TestStatus(unittest.TestCase):
                                                  'desi_transfer_status.json'])
         mock_print.assert_has_calls([call('ERROR: Malformed JSON file detected: %s; saving original file as %s.' % (os.path.join(d, 'desi_transfer_status.json'),
                                                                                                                     os.path.join(d, 'desi_transfer_status.json.bad'))),
-                                     call("DEBUG: shutil.copy('%s', '%s')" % (os.path.join(d, 'desi_transfer_status.json'),
-                                                                              os.path.join(d, 'desi_transfer_status.json.bad'))),
+                                     call("DEBUG: shutil.copy2('%s', '%s')" % (os.path.join(d, 'desi_transfer_status.json'),
+                                                                               os.path.join(d, 'desi_transfer_status.json.bad'))),
                                      call("INFO: Writing empty array to %s." % (os.path.join(d, 'desi_transfer_status.json'),))])
 
     @patch('time.time')

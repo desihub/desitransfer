@@ -66,12 +66,12 @@ class TransferStatus(object):
             # If the status code is running stand-alone, the log object
             # will be None.
             print("ERROR: " + (m % (self.json, bad)))
-        m = "shutil.copy('%s', '%s')"
+        m = "shutil.copy2('%s', '%s')"
         try:
             log.debug(m, self.json, bad)
         except AttributeError:
             print("DEBUG: " + (m % (self.json, bad)))
-        shutil.copy(self.json, bad)
+        shutil.copy2(self.json, bad)
         m = "Writing empty array to %s."
         try:
             log.info(m, self.json)

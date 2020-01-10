@@ -4,7 +4,7 @@ Quick and dirty script to restore raw data transfer status.
 
 1. Obtain rsync time from modification time of exposure directory.
 2. Set checksum time to rsync time.
-3. Ignore pipeline time.
+3. Ignore pipeline time (as of early 2020).
 4. Obtain backup time from HPSS backup files.
 
 This script is deliberately kept separate from the package because it
