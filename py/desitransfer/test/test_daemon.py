@@ -135,10 +135,10 @@ class TestDaemon(unittest.TestCase):
     @patch('desitransfer.daemon.SMTPHandler')
     @patch('desitransfer.daemon.RotatingFileHandler')
     @patch('desitransfer.daemon.get_logger')
-    def test_TransferDaemon_configure_log(self, gl, rfh, smtp):
+    @patch('desitransfer.daemon.log')  # Needed to restore the module-level log object after test.
+    def test_TransferDaemon_configure_log(self, mock_log, gl, rfh, smtp):
         """Test logging configuration.
         """
-        ll = gl.return_value = MagicMock()
         with patch.dict('os.environ',
                         {'CSCRATCH': self.tmp.name,
                          'DESI_ROOT': '/desi/root',
@@ -149,7 +149,7 @@ class TestDaemon(unittest.TestCase):
         rfh.assert_called_once_with('/desi/root/spectro/staging/logs/desi_transfer_daemon.log',
                                     backupCount=100, maxBytes=100000000)
         gl.assert_called_once_with(timestamp=True)
-        ll.setLevel.assert_called_once_with(logging.DEBUG)
+        gl().setLevel.assert_called_once_with(logging.DEBUG)
 
     @patch.object(TransferDaemon, 'checksum_lock')
     @patch.object(TransferDaemon, 'directory')

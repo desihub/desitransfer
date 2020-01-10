@@ -5,7 +5,10 @@ Change Log
 0.3.4 (unreleased)
 ------------------
 
-* No changes yet.
+* Guard against corrupted status JSON files; restore transfer status;
+  additional daily transfers (PR `#10`_).
+
+.. _`#10`: https://github.com/desihub/desitransfer/pull/10
 
 0.3.3 (2019-12-18)
 ------------------
