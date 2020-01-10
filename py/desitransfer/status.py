@@ -14,10 +14,7 @@ import time
 from argparse import ArgumentParser
 from pkg_resources import resource_filename
 from . import __version__ as dtVersion
-# from desiutil.log import get_logger
-
-
-# log = None
+from .daemon import log
 
 
 class TransferStatus(object):
@@ -47,9 +44,41 @@ class TransferStatus(object):
             return
         try:
             with open(self.json) as j:
-                self.status = json.load(j)
+                try:
+                    self.status = json.load(j)
+                except json.JSONDecodeError:
+                    self._handle_malformed()
         except FileNotFoundError:
             pass
+        return
+
+    def _handle_malformed(self):
+        """Handle malformed JSON files.
+
+        This function will save the malformed file to a .bad file for
+        later analysis, and write an empty array to a new status file.
+        """
+        bad = self.json + '.bad'
+        m = "Malformed JSON file detected: %s; saving original file as %s."
+        try:
+            log.error(m, self.json, bad)
+        except AttributeError:
+            # If the status code is running stand-alone, the log object
+            # will be None.
+            print("ERROR: " + (m % (self.json, bad)))
+        m = "shutil.copy('%s', '%s')"
+        try:
+            log.debug(m, self.json, bad)
+        except AttributeError:
+            print("DEBUG: " + (m % (self.json, bad)))
+        shutil.copy(self.json, bad)
+        m = "Writing empty array to %s."
+        try:
+            log.info(m, self.json)
+        except AttributeError:
+            print("INFO: " + (m % (self.json,)))
+        with open(self.json, 'w') as j:
+            j.write('[]')
         return
 
     def update(self, night, exposure, stage, failure=False, last=''):
