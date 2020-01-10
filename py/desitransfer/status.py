@@ -121,6 +121,14 @@ class TransferStatus(object):
             self.status.insert(0, row)
         self.status = sorted(self.status, key=lambda x: x[0]*10000000 + x[1],
                              reverse=True)
+        #
+        # Copy the original file before modifying.
+        # This will overwrite any existing .bak file
+        #
+        try:
+            shutil.copy2(self.json, self.json + '.bak')
+        except FileNotFoundError:
+            pass
         with open(self.json, 'w') as j:
             json.dump(self.status, j, indent=None, separators=(',', ':'))
 

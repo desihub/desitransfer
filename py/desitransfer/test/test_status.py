@@ -138,6 +138,7 @@ class TestStatus(unittest.TestCase):
                 json.dump(st, f, indent=None, separators=(',', ':'))
             s = TransferStatus(d)
             s.update('20200703', '12345678', 'checksum')
+            self.assertTrue(os.path.exists(js + '.bak'))
             self.assertEqual(s.status[0], [20200703, 12345678, 'checksum', True, '', 1565300090000])
             s.update('20200703', '12345680', 'rsync')
             self.assertEqual(s.status[0], [20200703, 12345680, 'rsync', True, '', 1565300090000])
@@ -151,6 +152,35 @@ class TestStatus(unittest.TestCase):
             b = [i[3] for i in s.status if i[2] == 'backup']
             self.assertTrue(all(b))
             self.assertEqual(len(b), 4)
+
+    @patch('time.time')
+    def test_TransferStatus_update_empty(self, mock_time):
+        """Test status reporting mechanism updates (with no initial JSON file).
+        """
+        mock_time.return_value = 1565300090
+        # st = [[20200703, 12345678, 'rsync', True, '', 1565300074664],
+        #       [20200703, 12345677, 'rsync', True, '', 1565300073000]]
+        with TemporaryDirectory() as d:
+            js = os.path.join(d, 'desi_transfer_status.json')
+            # with open(js, 'w') as f:
+            #     json.dump(st, f, indent=None, separators=(',', ':'))
+            s = TransferStatus(d)
+            s.update('20200703', '12345678', 'checksum')
+            self.assertFalse(os.path.exists(js + '.bak'))
+            self.assertEqual(s.status[0], [20200703, 12345678, 'checksum', True, '', 1565300090000])
+            s.update('20200703', '12345680', 'rsync')
+            self.assertTrue(os.path.exists(js + '.bak'))
+            self.assertEqual(s.status[0], [20200703, 12345680, 'rsync', True, '', 1565300090000])
+            s.update('20200703', '12345678', 'checksum', failure=True)
+            self.assertEqual(s.status[1], [20200703, 12345678, 'checksum', False, '', 1565300090000])
+            s.update('20200703', '12345681', 'pipeline')
+            self.assertEqual(s.status[0], [20200703, 12345681, 'pipeline', True, '', 1565300090000])
+            s.update('20200703', '12345681', 'pipeline', last='arcs')
+            self.assertEqual(s.status[0], [20200703, 12345681, 'pipeline', True, 'arcs', 1565300090000])
+            s.update('20200703', 'all', 'backup')
+            b = [i[3] for i in s.status if i[2] == 'backup']
+            self.assertTrue(all(b))
+            self.assertEqual(len(b), 3)
 
     def test_TransferStatus_find(self):
         """Test status search.
