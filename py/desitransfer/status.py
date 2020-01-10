@@ -14,7 +14,6 @@ import time
 from argparse import ArgumentParser
 from pkg_resources import resource_filename
 from . import __version__ as dtVersion
-from .daemon import log
 
 
 class TransferStatus(object):
@@ -58,6 +57,7 @@ class TransferStatus(object):
         This function will save the malformed file to a .bad file for
         later analysis, and write an empty array to a new status file.
         """
+        from .daemon import log
         bad = self.json + '.bad'
         m = "Malformed JSON file detected: %s; saving original file as %s."
         try:

@@ -4,9 +4,10 @@
 """
 import json
 import os
+import shutil
 import sys
 import unittest
-from unittest.mock import patch
+from unittest.mock import patch, call
 from tempfile import TemporaryDirectory
 from pkg_resources import resource_filename
 from ..status import TransferStatus, _options
@@ -84,6 +85,45 @@ class TestStatus(unittest.TestCase):
         m.assert_called_once_with(d)
         cp.assert_called_once_with(j, d)
         cf.assert_called_once_with(h, os.path.join(d, 'index.html'))
+
+    @patch('desitransfer.daemon.log')
+    def test_TransferStatus_handle_malformed_with_log(self, mock_log):
+        """Test handling of malformed JSON files.
+        """
+        bad = resource_filename('desitransfer.test', 't/bad.json')
+        with TemporaryDirectory() as d:
+            shutil.copy(bad, os.path.join(d, 'desi_transfer_status.json'))
+            s = TransferStatus(d)
+            self.assertTrue(os.path.exists(os.path.join(d, 'desi_transfer_status.json.bad')))
+            self.assertListEqual(s.status, [])
+            self.assertListEqual(os.listdir(d), ['desi_transfer_status.json.bad',
+                                                 'desi_transfer_status.json'])
+        mock_log.error.assert_called_once_with('Malformed JSON file detected: %s; saving original file as %s.',
+                                               os.path.join(d, 'desi_transfer_status.json'),
+                                               os.path.join(d, 'desi_transfer_status.json.bad'))
+        mock_log.debug.assert_called_once_with("shutil.copy('%s', '%s')",
+                                               os.path.join(d, 'desi_transfer_status.json'),
+                                               os.path.join(d, 'desi_transfer_status.json.bad'))
+        mock_log.info.assert_called_once_with('Writing empty array to %s.',
+                                              os.path.join(d, 'desi_transfer_status.json'))
+
+    @patch('builtins.print')
+    def test_TransferStatus_handle_malformed_without_log(self, mock_print):
+        """Test handling of malformed JSON files (no log object).
+        """
+        bad = resource_filename('desitransfer.test', 't/bad.json')
+        with TemporaryDirectory() as d:
+            shutil.copy(bad, os.path.join(d, 'desi_transfer_status.json'))
+            s = TransferStatus(d)
+            self.assertTrue(os.path.exists(os.path.join(d, 'desi_transfer_status.json.bad')))
+            self.assertListEqual(s.status, [])
+            self.assertListEqual(os.listdir(d), ['desi_transfer_status.json.bad',
+                                                 'desi_transfer_status.json'])
+        mock_print.assert_has_calls([call('ERROR: Malformed JSON file detected: %s; saving original file as %s.' % (os.path.join(d, 'desi_transfer_status.json'),
+                                                                                                                    os.path.join(d, 'desi_transfer_status.json.bad'))),
+                                     call("DEBUG: shutil.copy('%s', '%s')" % (os.path.join(d, 'desi_transfer_status.json'),
+                                                                              os.path.join(d, 'desi_transfer_status.json.bad'))),
+                                     call("INFO: Writing empty array to %s." % (os.path.join(d, 'desi_transfer_status.json'),))])
 
     @patch('time.time')
     def test_TransferStatus_update(self, mock_time):
