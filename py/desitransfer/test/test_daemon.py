@@ -557,6 +557,7 @@ desi_spectro_data_20190702.tar.idx
             transfer = TransferDaemon(options)
         c = transfer.directories
         mock_isdir.return_value = True
+        mock_popen.return_value = ('0', '', '')
         s = transfer.backup(c[0], '20190703')
         self.assertTrue(s)
         mock_isdir.assert_called_once_with('/desi/root/spectro/data/20190703')
