@@ -462,7 +462,7 @@ The DESI Collaboration Account
                 #
                 # Issue HTAR command.
                 #
-                if options.tape:
+                if self.tape:
                     start_dir = os.getcwd()
                     log.debug("os.chdir('%s')", d.destination)
                     os.chdir(d.destination)
