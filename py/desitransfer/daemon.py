@@ -76,6 +76,7 @@ class TransferDaemon(object):
         else:
             self._ini = options.configuration
         self.test = options.shadow
+        self.tape = options.backup
         self.run = options.pipeline
         getlist = lambda x: x.split(',')
         getdict = lambda x: dict([tuple(i.split(':')) for i in x.split(',')])
@@ -429,14 +430,17 @@ The DESI Collaboration Account
                 log.debug("Failed to remove %s because it didn't exist. That's OK.", ls_file)
             cmd = ['/usr/common/mss/bin/hsi', '-O', ls_file,
                    'ls', '-l', d.hpss]
-            _, out, err = _popen(cmd)
+            if self.tape:
+                _, out, err = _popen(cmd)
+                with open(ls_file) as l:
+                    data = l.read()
+                backup_files = [l.split()[-1] for l in data.split('\n') if l]
+            else:
+                backup_files = []
+            backup_file = hpss_file + '_' + night + '.tar'
             #
             # Both a .tar and a .tar.idx file should be present.
             #
-            with open(ls_file) as l:
-                data = l.read()
-            backup_files = [l.split()[-1] for l in data.split('\n') if l]
-            backup_file = hpss_file + '_' + night + '.tar'
             if backup_file in backup_files and backup_file + '.idx' in backup_files:
                 log.debug("Backup of %s already complete.", night)
                 return False
@@ -458,19 +462,22 @@ The DESI Collaboration Account
                 #
                 # Issue HTAR command.
                 #
-                start_dir = os.getcwd()
-                log.debug("os.chdir('%s')", d.destination)
-                os.chdir(d.destination)
-                cmd = ['/usr/common/mss/bin/htar',
-                       '-cvhf', os.path.join(d.hpss, backup_file),
-                       '-H', 'crc:verify=all',
-                       night]
-                if self.test:
-                    log.debug(' '.join(cmd))
+                if options.tape:
+                    start_dir = os.getcwd()
+                    log.debug("os.chdir('%s')", d.destination)
+                    os.chdir(d.destination)
+                    cmd = ['/usr/common/mss/bin/htar',
+                           '-cvhf', os.path.join(d.hpss, backup_file),
+                           '-H', 'crc:verify=all',
+                           night]
+                    if self.test:
+                        log.debug(' '.join(cmd))
+                    else:
+                        _, out, err = _popen(cmd)
+                    log.debug("os.chdir('%s')", start_dir)
+                    os.chdir(start_dir)
                 else:
-                    _, out, err = _popen(cmd)
-                log.debug("os.chdir('%s')", start_dir)
-                os.chdir(start_dir)
+                    log.info('Tape backup disabled by user request.')
                 return True
         else:
             log.warning("No data from %s detected, skipping HPSS backup.", night)
