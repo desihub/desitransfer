@@ -9,8 +9,12 @@
 # Program or script you want to run
 PROGRAM=${DESITRANSFER}/bin/desi_transfer_daemon
 # Command line options for PRGFILE
-PRGOPTS="--no-pipeline"
-NICE="nice -n 19"
+if [[ -z "${NERSC_HOST}" ]]; then
+    PRGOPTS='--no-pipeline --no-backup --debug --shadow'
+else
+    PRGOPTS='--no-pipeline'
+fi
+NICE='nice -n 19'
 # LOCKDIR=${CSCRATCH}/run
 #
 # rm -rf ${LOCKDIR}; mkdir -p ${LOCKDIR}
@@ -55,7 +59,7 @@ start() {
 #
 kill_it() {
     local PRGFILE=$(basename $1)
-    local SIGNAL="SIGTERM"
+    local SIGNAL='SIGTERM'
     local PPLIST=$(pgrep --full ${PRGFILE} --delimiter ' ')
     for PID in ${PPLIST}; do
         local CHILDPIDS=$(pgrep --parent ${PID} --delimiter ' ')
@@ -66,7 +70,7 @@ kill_it() {
                 break
             fi
             sleep 2
-            echo -n "."
+            echo -n '.'
         done
     done
     #
