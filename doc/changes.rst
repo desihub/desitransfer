@@ -5,7 +5,7 @@ Change Log
 0.3.5 (unreleased)
 ------------------
 
-* No changes yet.
+* Support direct KPNO -> Tucson transfers when NERSC is shut down.
 
 0.3.4 (2020-01-10)
 ------------------

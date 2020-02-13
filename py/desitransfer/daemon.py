@@ -41,6 +41,8 @@ def _options():
     """
     desc = "Transfer DESI raw data files."
     prsr = ArgumentParser(description=desc)
+    prsr.add_argument('-B', '--no-backup', action='store_false', dest='backup',
+                      help="Skip NERSC HPSS backups.")
     prsr.add_argument('-c', '--configuration', metavar='FILE',
                       help="Read configuration from FILE.")
     prsr.add_argument('-d', '--debug', action='store_true',
