@@ -97,6 +97,11 @@ class TransferStatus(object):
         last : :class:`str`, optional
             Mark this exposure as the last of a given type for the night
             ('arcs', 'flats', 'science').
+
+        Returns
+        -------
+        :class:`int`
+            The number of updates performed.
         """
         ts = int(time.time() * 1000)  # Convert to milliseconds for JS.
         i = int(night)
@@ -115,6 +120,12 @@ class TransferStatus(object):
                 if last or update:
                     self.status[il[0]] = r
                     rows = []
+                else:
+                    #
+                    # Rare edge case: daemon is in shadow/test mode and there
+                    # are untransferred files.
+                    #
+                    return 0
             else:
                 rows = [r, ]
         for row in rows:
@@ -131,6 +142,10 @@ class TransferStatus(object):
             pass
         with open(self.json, 'w') as j:
             json.dump(self.status, j, indent=None, separators=(',', ':'))
+        r = len(rows)
+        if r == 0:
+            return 1
+        return r
 
     def find(self, night, exposure=None, stage=None):
         """Find status entries that match `night`, etc.

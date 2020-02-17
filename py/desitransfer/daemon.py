@@ -239,6 +239,7 @@ The DESI Collaboration Account
         if now >= self.conf['common'].getint('backup'):
             s = self.backup(d, yst)
             if s:
+                log.debug("status.update('%s', 'all', 'backup')", yst)
                 status.update(yst, 'all', 'backup')
 
     def exposure(self, d, link, status):
@@ -283,6 +284,7 @@ The DESI Collaboration Account
         # Transfer complete.
         #
         if rsync_status == '0':
+            log.debug("status.update('%s', '%s', 'rsync')", night, exposure)
             status.update(night, exposure, 'rsync')
             #
             # Check permissions.
@@ -309,6 +311,7 @@ The DESI Collaboration Account
             # Did we pass checksums?
             #
             if checksum_status == 0:
+                log.debug("status.update('%s', '%s', 'checksum')", night, exposure)
                 status.update(night, exposure, 'checksum')
                 #
                 # Set up DESI_SPECTRO_DATA.
@@ -339,17 +342,22 @@ The DESI Collaboration Account
                     cmd = self.pipeline(night, exposure)
                     if not self.test:
                         _, out, err = _popen(cmd)
+                    log.debug("status.update('%s', '%s', 'pipeline')", night, exposure)
                     status.update(night, exposure, 'pipeline')
                     for k in ('flats', 'arcs', 'science'):
-                        if os.path.exists(os.path.join(destination_exposure, '{0}-{1}-{2}.done'.format(k, night, exposure))):
+                        if os.path.exists(os.path.join(destination_exposure,
+                                                       '{0}-{1}-{2}.done'.format(k, night, exposure))):
                             cmd = self.pipeline(night, exposure, command=k)
                             if not self.test:
                                 _, out, err = _popen(cmd)
+                            log.debug("status.update('%s', '%s', 'pipeline', last='%s')",
+                                      night, exposure, k)
                             status.update(night, exposure, 'pipeline', last=k)
                 else:
                     log.info("%s/%s appears to be test data. Skipping pipeline activation.", night, exposure)
             else:
                 log.error("Checksum problem detected for %s/%s!", night, exposure)
+                log.debug("status.update('%s', '%s', 'checksum', failure=True)", night, exposure)
                 status.update(night, exposure, 'checksum', failure=True)
         elif rsync_status == 'done':
             #
@@ -358,6 +366,7 @@ The DESI Collaboration Account
             pass
         else:
             log.error('rsync problem detected!')
+            log.debug("status.update('%s', '%s', 'rsync', failure=True)", night, exposure)
             status.update(night, exposure, 'rsync', failure=True)
 
     def catchup(self, d, night):
