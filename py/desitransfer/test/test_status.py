@@ -96,8 +96,9 @@ class TestStatus(unittest.TestCase):
             s = TransferStatus(d)
             self.assertTrue(os.path.exists(os.path.join(d, 'desi_transfer_status.json.bad')))
             self.assertListEqual(s.status, [])
-            self.assertListEqual(os.listdir(d), ['desi_transfer_status.json.bad',
-                                                 'desi_transfer_status.json'])
+            self.assertSetEqual(frozenset(os.listdir(d)),
+                                frozenset(['desi_transfer_status.json.bad',
+                                           'desi_transfer_status.json']))
         mock_log.error.assert_called_once_with('Malformed JSON file detected: %s; saving original file as %s.',
                                                os.path.join(d, 'desi_transfer_status.json'),
                                                os.path.join(d, 'desi_transfer_status.json.bad'))
@@ -117,8 +118,9 @@ class TestStatus(unittest.TestCase):
             s = TransferStatus(d)
             self.assertTrue(os.path.exists(os.path.join(d, 'desi_transfer_status.json.bad')))
             self.assertListEqual(s.status, [])
-            self.assertListEqual(os.listdir(d), ['desi_transfer_status.json.bad',
-                                                 'desi_transfer_status.json'])
+            self.assertSetEqual(frozenset(os.listdir(d)),
+                                frozenset(['desi_transfer_status.json.bad',
+                                           'desi_transfer_status.json']))
         mock_print.assert_has_calls([call('ERROR: Malformed JSON file detected: %s; saving original file as %s.' % (os.path.join(d, 'desi_transfer_status.json'),
                                                                                                                     os.path.join(d, 'desi_transfer_status.json.bad'))),
                                      call("DEBUG: shutil.copy2('%s', '%s')" % (os.path.join(d, 'desi_transfer_status.json'),
@@ -137,18 +139,27 @@ class TestStatus(unittest.TestCase):
             with open(js, 'w') as f:
                 json.dump(st, f, indent=None, separators=(',', ':'))
             s = TransferStatus(d)
-            s.update('20200703', '12345678', 'checksum')
+            r = s.update('20200703', '12345678', 'checksum')
             self.assertTrue(os.path.exists(js + '.bak'))
+            self.assertEqual(r, 1)
             self.assertEqual(s.status[0], [20200703, 12345678, 'checksum', True, '', 1565300090000])
-            s.update('20200703', '12345680', 'rsync')
+            r = s.update('20200703', '12345680', 'rsync')
+            self.assertEqual(r, 1)
             self.assertEqual(s.status[0], [20200703, 12345680, 'rsync', True, '', 1565300090000])
-            s.update('20200703', '12345678', 'rsync', failure=True)
+            r = s.update('20200703', '12345678', 'rsync', failure=True)
+            self.assertEqual(r, 1)
             self.assertEqual(s.status[2], [20200703, 12345678, 'rsync', False, '', 1565300090000])
-            s.update('20200703', '12345681', 'pipeline')
+            r = s.update('20200703', '12345678', 'rsync', failure=True)
+            self.assertEqual(r, 0)
+            self.assertEqual(s.status[2], [20200703, 12345678, 'rsync', False, '', 1565300090000])
+            r = s.update('20200703', '12345681', 'pipeline')
+            self.assertEqual(r, 1)
             self.assertEqual(s.status[0], [20200703, 12345681, 'pipeline', True, '', 1565300090000])
-            s.update('20200703', '12345681', 'pipeline', last='arcs')
+            r = s.update('20200703', '12345681', 'pipeline', last='arcs')
+            self.assertEqual(r, 1)
             self.assertEqual(s.status[0], [20200703, 12345681, 'pipeline', True, 'arcs', 1565300090000])
-            s.update('20200703', 'all', 'backup')
+            r = s.update('20200703', 'all', 'backup')
+            self.assertEqual(r, 4)
             b = [i[3] for i in s.status if i[2] == 'backup']
             self.assertTrue(all(b))
             self.assertEqual(len(b), 4)
