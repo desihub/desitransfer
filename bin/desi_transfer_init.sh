@@ -25,7 +25,14 @@ PRGFILE=$(basename ${PROGRAM})
 THISHOST=$(hostname -s)
 #
 # The existence of this file will shut down data transfers.
+#
 kill_switch=${HOME}/stop_desi_transfer
+#
+# Determine the version of pgrep to select options.
+#
+PGREP_VERSION=$(pgrep -V | sed -r 's/[^0-9]+([0-9]+)\.([0-9]+)\.([0-9]+)[^0-9]+/\1\2/')
+PGREP_OPTIONS='-a -f'
+[[ ${PGREP_VERSION} == "32" ]] && PGREP_OPTIONS='-l -f'
 #
 #
 #
@@ -34,7 +41,7 @@ start() {
         echo "${kill_switch} detected, will not attempt to start ${PRGFILE}."
         return 0
     fi
-    if [[ -n "$(pgrep --list-full --full ${PRGFILE} 2> /dev/null | grep ${DESITRANSFER})" ]]; then
+    if [[ -n "$(pgrep ${PGREP_OPTIONS} ${PRGFILE} 2> /dev/null | grep ${DESITRANSFER})" ]]; then
         echo "${THISHOST} ${PRGFILE} is already started."
         return 1
     fi
@@ -60,9 +67,9 @@ start() {
 kill_it() {
     local PRGFILE=$(basename $1)
     local SIGNAL='SIGTERM'
-    local PPLIST=$(pgrep --full ${PRGFILE} --delimiter ' ')
+    local PPLIST=$(pgrep -f ${PRGFILE} -d ' ')
     for PID in ${PPLIST}; do
-        local CHILDPIDS=$(pgrep --parent ${PID} --delimiter ' ')
+        local CHILDPIDS=$(pgrep -P ${PID} -d ' ')
         echo killing ${PRGFILE} ${PID} child processes: ${CHILDPIDS}
         while true; do
             kill -s SIGTERM ${PID} ${CHILDPIDS} >& /dev/null
@@ -76,13 +83,13 @@ kill_it() {
     #
     # Save the big hammer for last.
     #
-    pkill --full --signal 9 ${PRGFILE}
+    pkill -f -9 ${PRGFILE}
 }
 #
 #
 #
 stop() {
-    if [[ -z "$(pgrep --list-full --full ${PRGFILE} 2> /dev/null | grep ${DESITRANSFER})" ]]; then
+    if [[ -z "$(pgrep ${PGREP_OPTIONS} ${PRGFILE} 2> /dev/null | grep ${DESITRANSFER})" ]]; then
         echo "${THISHOST} ${PRGFILE} is not running."
         return 1
     fi
@@ -100,7 +107,7 @@ stop() {
 #
 #
 status() {
-    if [[ -n "$(pgrep --list-full --full ${PRGFILE} 2> /dev/null | grep ${DESITRANSFER})" ]]; then
+    if [[ -n "$(pgrep ${PGREP_OPTIONS} ${PRGFILE} 2> /dev/null | grep ${DESITRANSFER})" ]]; then
         echo "${THISHOST} ${PRGFILE} is running."
         return 0
     else
