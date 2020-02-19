@@ -31,8 +31,13 @@ class DailyDirectory(object):
         self.destination = destination
         self.log = self.destination + '.log'
 
-    def transfer(self):
+    def transfer(self, apache=True):
         """Data transfer operations for a single destination directory.
+
+        Parameters
+        ----------
+        apache : :class:`bool`
+            If ``True`` set file ACLs for Apache httpd access.
 
         Returns
         -------
@@ -49,7 +54,8 @@ class DailyDirectory(object):
             status = p.wait()
         if status == 0:
             self.lock()
-            s = self.apache()
+            if apache:
+                s = self.apache()
         return status
 
     def lock(self):
@@ -121,6 +127,8 @@ def _options(*args):
     """
     desc = "Transfer non-critical DESI data from KPNO to NERSC."
     prsr = ArgumentParser(description=desc)
+    prsr.add_argument('-A', '--no-apache', action='store_false', dest='apache',
+                      help='Do not set ACL for Apache httpd access.')
     # prsr.add_argument('-b', '--backup', metavar='H', type=int, default=20,
     #                   help='UTC time in hours to trigger HPSS backups (default %(default)s:00 UTC).')
     # prsr.add_argument('-d', '--debug', action='store_true',
@@ -159,7 +167,7 @@ def main():
             print("INFO: %s detected, shutting down daily transfer script." % options.kill)
             return 0
         for d in _config():
-            status = d.transfer()
+            status = d.transfer(apache=options.apache)
             if status != 0:
                 print("ERROR: rsync problem detected for ${0.source} -> ${0.destination}!".format(d))
                 return status

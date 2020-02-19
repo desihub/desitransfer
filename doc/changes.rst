@@ -5,7 +5,9 @@ Change Log
 0.3.5 (unreleased)
 ------------------
 
-* Support direct KPNO -> Tucson transfers when NERSC is shut down.
+* Support direct KPNO to Tucson transfers when NERSC is shut down (PR `#11`_).
+
+.. _`#11`: https://github.com/desihub/desitransfer/pull/11
 
 0.3.4 (2020-01-10)
 ------------------
