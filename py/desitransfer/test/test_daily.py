@@ -45,6 +45,7 @@ class TestDaily(unittest.TestCase):
                           ['desi_daily_transfer', '--daemon', '--kill',
                            os.path.expanduser('~/stop_daily_transfer')]):
             options = _options()
+            self.assertTrue(options.apache)
             self.assertEqual(options.sleep, 24)
             self.assertTrue(options.daemon)
             self.assertEqual(options.kill,
