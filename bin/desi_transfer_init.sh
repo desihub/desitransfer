@@ -10,7 +10,7 @@
 PROGRAM=${DESITRANSFER}/bin/desi_transfer_daemon
 # Command line options for PRGFILE
 if [[ -z "${NERSC_HOST}" ]]; then
-    PRGOPTS='--no-pipeline --no-backup --shadow'
+    PRGOPTS='--no-pipeline --no-backup'
 else
     PRGOPTS='--no-pipeline'
 fi
