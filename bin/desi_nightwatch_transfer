@@ -10,12 +10,12 @@ Catchup on a specific night::
     NIGHT=20200124 && rsync -rlvt --exclude-from rsync-exclude.txt dts:/exposures/nightwatch/${NIGHT}/ /global/cfs/cdirs/desi/spectro/nightwatch/kpno/${NIGHT}/
 
 
-Typical startup sequence::
+Typical startup sequence (bash shell)::
 
     source /global/common/software/desi/desi_environment.sh datatran
     module load desitransfer
-    nohup ${DESITRANSFER}/bin/desi_nightwatch_transfer &
-    tail -f nohup.out
+    nohup nice -19 ${DESITRANSFER}/bin/desi_nightwatch_transfer &> ${DESI_ROOT}/spectro/nightwatch/sync/desi_nightwatch_transfer.log &
+    tail -f ${DESI_ROOT}/spectro/nightwatch/sync/desi_nightwatch_transfer.log
 
 """
 import os, sys, stat, time, glob, datetime, subprocess
@@ -69,7 +69,7 @@ def main():
         basedir = os.path.join(os.environ['DESI_ROOT'], 'spectro', 'nightwatch')
         kpnodir = os.path.join(basedir, 'kpno')
         syncdir = os.path.join(basedir, 'sync')
-        nightdir = os.path.join(kpnodir, night)
+        nightdir = os.path.join(kpnodir, str(night))
         cmd = "rsync -rlvt --exclude-from {0}/rsync-exclude.txt dts:/exposures/nightwatch/{1}/ {2}/".format(syncdir, night, nightdir)
 
         print('--- {} syncing {}'.format(time.asctime(), night))
