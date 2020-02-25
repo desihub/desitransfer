@@ -27,11 +27,12 @@ that the script is running.
 import logging
 import os
 import stat
+import subprocess as sub
 import time
 from argparse import ArgumentParser
 from logging.handlers import RotatingFileHandler, SMTPHandler
 from socket import getfqdn
-from subprocess import CalledProcessError
+from tempfile import TemporaryFile
 from desiutil.log import get_logger
 from .common import today
 # from .daemon import _popen
@@ -174,7 +175,7 @@ def main():
                 time.sleep(wait)
                 continue
 
-        except CalledProcessError:
+        except sub.CalledProcessError:
             errcount += 1
             log.error('Getting file list for %s; try again in %d minutes.', night, options.sleep)
             time.sleep(wait)
