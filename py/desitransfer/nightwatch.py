@@ -31,10 +31,11 @@ import subprocess as sub
 import time
 from argparse import ArgumentParser
 from logging.handlers import RotatingFileHandler, SMTPHandler
+from pkg_resources import resource_filename
 from socket import getfqdn
 from tempfile import TemporaryFile
 from desiutil.log import get_logger
-from .common import today
+from .common import rsync, today
 # from .daemon import _popen
 from . import __version__ as dtVersion
 
@@ -86,7 +87,7 @@ def _configure_log(debug):
     # conf = self.conf['logging']
     log = get_logger(timestamp=True)
     h = log.parent.handlers[0]
-    handler = RotatingFileHandler(os.path.join(os.environ['DESI_ROOT'], 'spectro', 'nightwatch', 'sync', 'desi_nightwatch_transfer.log'),
+    handler = RotatingFileHandler(os.path.join(os.environ['DESI_ROOT'], 'spectro', 'nightwatch', 'desi_nightwatch_transfer.log'),
                                   maxBytes=100000000,
                                   backupCount=100)
     handler.setFormatter(h.formatter)
@@ -147,6 +148,15 @@ def main():
     options = _options()
     errcount = 0
     wait = options.sleep*60
+    basedir = os.path.join(os.environ['DESI_ROOT'], 'spectro', 'nightwatch')
+    kpnodir = os.path.join(basedir, 'kpno')
+    # syncdir = os.path.join(basedir, 'sync')
+    exclude = resource_filename('desitransfer', 'data/desi_nightwatch_transfer_exclude.txt')
+    include = resource_filename('desitransfer', 'data/desi_nightwatch_transfer_include.txt')
+    with open(include) as i:
+        top_level_files = i.read().strip().split('\n')
+    log.debug(', '.join(top_level_files))
+    top_level_files_mode = stat.S_IRUSR | stat.S_IWUSR | stat.S_IRGRP | stat.S_IROTH
     _configure_log(options.debug)
     while True:
         log.info('Starting nightwatch transfer loop; desitransfer version = %s.',
@@ -157,46 +167,41 @@ def main():
             return 0
         night = today()
         t0 = time.time()
-
-        #- First check if there is any data for tonight yet
+        #
+        # First check if there is any data for tonight yet.
+        #
         log.info('Checking for nightwatch data from %s.', night)
         cmd = ['/bin/rsync', 'dts:/exposures/nightwatch/']
-        try:
-            _, results, _ = _popen(cmd)
-            found = False
-            for line in results.split('\n'):
-                if line.endswith(night):
-                    log.info(line)
-                    found = True
-                    break
-
-            if not found:
-                log.info('No nightwatch data found for %s; trying again in %d minutes.', night, options.sleep)
-                time.sleep(wait)
-                continue
-
-        except sub.CalledProcessError:
+        status, out, err = _popen(cmd)
+        found = False
+        if status != '0'
             errcount += 1
-            log.error('Getting file list for %s; try again in %d minutes.', night, options.sleep)
+            log.error('Getting file list for %s; trying again in %d minutes.', night, options.sleep)
             time.sleep(wait)
             continue
-
-        #- sync per-night directory
-        basedir = os.path.join(os.environ['DESI_ROOT'], 'spectro', 'nightwatch')
-        kpnodir = os.path.join(basedir, 'kpno')
-        syncdir = os.path.join(basedir, 'sync')
+        for line in out.split('\n'):
+            if line.endswith(night):
+                log.info(line)
+                found = True
+        if not found:
+            log.info('No nightwatch data found for %s; trying again in %d minutes.', night, options.sleep)
+            time.sleep(wait)
+            continue
+        #
+        # Sync per-night directory.
+        #
         nightdir = os.path.join(kpnodir, night)
-        cmd = ['/bin/rsync', '-rlvt', '--exclude-from',
-               os.path.join(syncdir, 'rsync-exclude.txt'),
-               'dts:/exposures/nightwatch/{0}/'.format(night),
-               '{0}/'.format(nightdir)]
+        cmd = rsync(os.path.join('/exposures/nightwatch', night), nightdir)
+        cmd.insert(cmd.index('--omit-dir-times') + 1, '--exclude-from')
+        cmd.insert(cmd.index('--exclude-from') + 1, exclude)
         log.info('Syncing %s.', night)
-        err, _, _ = _popen(cmd)
-        if err != '0':
+        status, out, err = _popen(cmd)
+        if status != '0':
             errcount += 1
             log.error('Syncing %s.', night)
-
-        #- Correct the permissions
+        #
+        # Correct the permissions.
+        #
         if options.apache:
             if os.path.exists(nightdir):
                 log.info('Fixing permissions for Apache.')
@@ -209,29 +214,33 @@ def main():
                 log.info('No data yet for night %s.', night)
         else:
             log.info("Skipping permission changes at user request.")
-
-        #- Sync the top level files; skip the logs
+        #
+        # Sync the top level files; skip the logs.
+        #
         log.info('Syncing top level html/js files.')
-        cmd = ['/bin/rsync', '-lvt', '--files-from',
-               os.path.join(syncdir, 'rsync-include.txt'),
+        cmd = ['/bin/rsync', '--verbose', '--links', '--times', '--files-from',
+               include,
                'dts:/exposures/nightwatch/',
                '{0}/'.format(kpnodir)]
-        err, _, _ = _popen(cmd)
-        if err != '0':
+        status, out, err = _popen(cmd)
+        if status != '0':
             errcount += 1
             log.error('Syncing top level html files.')
-
-        #- Hack: just add world read to those top level files since fix_permissions.sh
-        #- is recursive and we don't want to redo all nights
-        for filename in ['nights.html', 'nightlinks.js', 'qa-lastexp.html']:
-            mode = stat.S_IRUSR | stat.S_IWUSR | stat.S_IRGRP | stat.S_IROTH
-            os.chmod(os.path.join(kpnodir, filename), mode)
-
+        #
+        # Hack: just add world read to those top level files since fix_permissions.sh
+        # is recursive and we don't want to redo all nights.
+        #
+        for filename in top_level_files:
+            os.chmod(os.path.join(kpnodir, filename), top_level_files_mode)
+        #
+        # Check for accumulated errors.
+        #
         if errcount > 10:
             log.critical('Transfer error count exceeded, shutting down.')
             return 1
-
-        #- if that took less than 10 minutes, sleep a bit
+        #
+        # If all that took less than 10 minutes, sleep a bit.
+        #
         dt = time.time() - t0
         if dt < wait:
             log.info('Sleeping for a bit.')

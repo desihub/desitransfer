@@ -1,0 +1,3 @@
+*/preproc*.fits
+*/qsky-*.fits
+*/*.tmp
