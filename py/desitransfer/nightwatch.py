@@ -27,13 +27,14 @@ that the script is running.
 import logging
 import os
 import stat
-import subprocess
 import time
 from argparse import ArgumentParser
 from logging.handlers import RotatingFileHandler, SMTPHandler
 from socket import getfqdn
+from subprocess import CalledProcessError
 from desiutil.log import get_logger
 from .common import today
+from .daemon import _popen
 from . import __version__ as dtVersion
 
 
@@ -134,11 +135,11 @@ def main():
 
         #- First check if there is any data for tonight yet
         log.info('Checking for nightwatch data from %s.', night)
-        cmd = "rsync dts:/exposures/nightwatch/"
+        cmd = ['/bin/rsync', 'dts:/exposures/nightwatch/']
         try:
-            results = subprocess.check_output(cmd.split())
+            _, results, _ = _popen(cmd)
             found = False
-            for line in results.decode().split('\n'):
+            for line in results.split('\n'):
                 if line.endswith(night):
                     log.info(line)
                     found = True
@@ -149,7 +150,7 @@ def main():
                 time.sleep(wait)
                 continue
 
-        except subprocess.CalledProcessError:
+        except CalledProcessError:
             errcount += 1
             log.error('Getting file list for %s; try again in %d minutes.', night, options.sleep)
             time.sleep(wait)
@@ -160,12 +161,14 @@ def main():
         kpnodir = os.path.join(basedir, 'kpno')
         syncdir = os.path.join(basedir, 'sync')
         nightdir = os.path.join(kpnodir, night)
-        cmd = "rsync -rlvt --exclude-from {0}/rsync-exclude.txt dts:/exposures/nightwatch/{1}/ {2}/".format(syncdir, night, nightdir)
-
+        cmd = ['/bin/rsync', '-rlvt', '--exclude-from',
+               os.path.join(syncdir, 'rsync-exclude.txt'),
+               'dts:/exposures/nightwatch/{0}/'.format(night),
+               '{0}/'.format(nightdir)]
         log.info('Syncing %s.', night)
         log.debug(cmd)
-        err = subprocess.call(cmd.split())
-        if err != 0:
+        err, _, _ = _popen(cmd)
+        if err != '0':
             errcount += 1
             log.error('Syncing %s.', night)
 
@@ -173,10 +176,9 @@ def main():
         if options.apache:
             if os.path.exists(nightdir):
                 log.info('Fixing permissions for Apache.')
-                cmd = "fix_permissions.sh -a {}".format(nightdir)
-                log.debug(cmd)
-                err = subprocess.call(cmd.split())
-                if err != 0:
+                cmd = ['fix_permissions.sh', '-a', nightdir]
+                err, _, _ = _popen(cmd)
+                if err != '0':
                     errcount += 1
                     log.error('Fixing permissions for %s.', nightdir)
             else:
@@ -186,10 +188,12 @@ def main():
 
         #- Sync the top level files; skip the logs
         log.info('Syncing top level html/js files.')
-        cmd = "rsync -lvt --files-from {0}/rsync-include.txt dts:/exposures/nightwatch/ {1}/".format(syncdir, kpnodir)
-        log.debug(cmd)
-        err = subprocess.call(cmd.split())
-        if err != 0:
+        cmd = ['/bin/rsync', '-lvt', '--files-from',
+               os.path.join(syncdir, 'rsync-include.txt'),
+               'dts:/exposures/nightwatch/',
+               '{0}/'.format(kpnodir)]
+        err, _, _ = _popen(cmd)
+        if err != '0':
             errcount += 1
             log.error('Syncing top level html files.')
 
