@@ -146,8 +146,10 @@ def main():
         An integer suitable for passing to :func:`sys.exit`.
     """
     options = _options()
+    _configure_log(options.debug)
     errcount = 0
     wait = options.sleep*60
+    source = '/exposures/nightwatch'
     basedir = os.path.join(os.environ['DESI_ROOT'], 'spectro', 'nightwatch')
     kpnodir = os.path.join(basedir, 'kpno')
     # syncdir = os.path.join(basedir, 'sync')
@@ -157,7 +159,6 @@ def main():
         top_level_files = i.read().strip().split('\n')
     log.debug(', '.join(top_level_files))
     top_level_files_mode = stat.S_IRUSR | stat.S_IWUSR | stat.S_IRGRP | stat.S_IROTH
-    _configure_log(options.debug)
     while True:
         log.info('Starting nightwatch transfer loop; desitransfer version = %s.',
                  dtVersion)
@@ -171,7 +172,7 @@ def main():
         # First check if there is any data for tonight yet.
         #
         log.info('Checking for nightwatch data from %s.', night)
-        cmd = ['/bin/rsync', 'dts:/exposures/nightwatch/']
+        cmd = ['/bin/rsync', 'dts:{0}/'.format(source)]
         status, out, err = _popen(cmd)
         found = False
         if status != '0':
@@ -191,7 +192,7 @@ def main():
         # Sync per-night directory.
         #
         nightdir = os.path.join(kpnodir, night)
-        cmd = rsync(os.path.join('/exposures/nightwatch', night), nightdir)
+        cmd = rsync(os.path.join(source, night), nightdir)
         cmd.insert(cmd.index('--omit-dir-times') + 1, '--exclude-from')
         cmd.insert(cmd.index('--exclude-from') + 1, exclude)
         log.info('Syncing %s.', night)
@@ -220,7 +221,7 @@ def main():
         log.info('Syncing top level html/js files.')
         cmd = ['/bin/rsync', '--verbose', '--links', '--times', '--files-from',
                include,
-               'dts:/exposures/nightwatch/',
+               'dts:{0}/'.format(source),
                '{0}/'.format(kpnodir)]
         status, out, err = _popen(cmd)
         if status != '0':
