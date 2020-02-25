@@ -29,6 +29,8 @@ import stat
 import subprocess
 import time
 from argparse import ArgumentParser
+from logging.handlers import RotatingFileHandler, SMTPHandler
+from socket import getfqdn
 from desiutil.log import get_logger
 from .common import today
 from . import __version__ as dtVersion
