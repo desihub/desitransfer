@@ -24,6 +24,7 @@ Typical startup sequence (bash shell)::
 The above sequence is for starting by hand.  A cronjob on dtn01 should ensure
 that the script is running.
 """
+import logging
 import os
 import stat
 import subprocess
