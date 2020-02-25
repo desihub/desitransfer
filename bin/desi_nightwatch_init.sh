@@ -9,9 +9,9 @@ PRGDIR=$(dirname ${PROGRAM})
 # Command line options for PRGFILE
 #
 if [[ -z "${NERSC_HOST}" ]]; then
-    PRGOPTS='--no-pipeline --no-backup'
+    PRGOPTS='--debug --no-apache'
 else
-    PRGOPTS='--no-pipeline'
+    PRGOPTS='--debug'
 fi
 #
 # Common initialization code.
