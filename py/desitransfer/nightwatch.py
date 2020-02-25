@@ -11,15 +11,15 @@ Run as desi@dtn01.nersc.gov.
 
 Catchup on a specific night::
 
-    NIGHT=20200124 && rsync -rlvt --exclude-from ${DESI_ROOT}/spectro/nightwatch/sync/rsync-exclude.txt dts:/exposures/nightwatch/${NIGHT}/ /global/cfs/cdirs/desi/spectro/nightwatch/kpno/${NIGHT}/
+    NIGHT=20200124 && rsync -rlvt --exclude-from ${DESITRANSFER}/py/desitransfer/data/desi_nightwatch_transfer_exclude.txt dts:/exposures/nightwatch/${NIGHT}/ /global/cfs/cdirs/desi/spectro/nightwatch/kpno/${NIGHT}/
 
 
 Typical startup sequence (bash shell)::
 
     source /global/common/software/desi/desi_environment.sh datatran
     module load desitransfer
-    nohup nice -19 ${DESITRANSFER}/bin/desi_nightwatch_transfer &> ${DESI_ROOT}/spectro/nightwatch/sync/desi_nightwatch_transfer.log &
-    tail -f ${DESI_ROOT}/spectro/nightwatch/sync/desi_nightwatch_transfer.log
+    nohup nice -19 ${DESITRANSFER}/bin/desi_nightwatch_transfer &> /dev/null &
+    tail -f ${DESI_ROOT}/spectro/nightwatch/desi_nightwatch_transfer.log
 
 The above sequence is for starting by hand.  A cronjob on dtn01 should ensure
 that the script is running.
