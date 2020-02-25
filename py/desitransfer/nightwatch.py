@@ -232,6 +232,9 @@ def main():
         # is recursive and we don't want to redo all nights.
         #
         for filename in top_level_files:
+            log.debug("os.chmod('%s', 0o%o)",
+                      os.path.join(kpnodir, filename),
+                      top_level_files_mode)
             os.chmod(os.path.join(kpnodir, filename), top_level_files_mode)
         #
         # Check for accumulated errors.
