@@ -174,7 +174,7 @@ def main():
         cmd = ['/bin/rsync', 'dts:/exposures/nightwatch/']
         status, out, err = _popen(cmd)
         found = False
-        if status != '0'
+        if status != '0':
             errcount += 1
             log.error('Getting file list for %s; trying again in %d minutes.', night, options.sleep)
             time.sleep(wait)
@@ -206,8 +206,8 @@ def main():
             if os.path.exists(nightdir):
                 log.info('Fixing permissions for Apache.')
                 cmd = ['fix_permissions.sh', '-a', nightdir]
-                err, _, _ = _popen(cmd)
-                if err != '0':
+                status, out, err = _popen(cmd)
+                if status != '0':
                     errcount += 1
                     log.error('Fixing permissions for %s.', nightdir)
             else:
