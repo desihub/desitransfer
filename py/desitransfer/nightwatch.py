@@ -191,7 +191,6 @@ def main():
                'dts:/exposures/nightwatch/{0}/'.format(night),
                '{0}/'.format(nightdir)]
         log.info('Syncing %s.', night)
-        log.debug(cmd)
         err, _, _ = _popen(cmd)
         if err != '0':
             errcount += 1
