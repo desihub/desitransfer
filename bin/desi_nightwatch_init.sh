@@ -2,7 +2,7 @@
 #
 # Program or script you want to run
 #
-PROGRAM=${DESITRANSFER}/bin/desi_transfer_daemon
+PROGRAM=${DESITRANSFER}/bin/desi_nightwatch_transfer
 PRGFILE=$(basename ${PROGRAM})
 PRGDIR=$(dirname ${PROGRAM})
 #
