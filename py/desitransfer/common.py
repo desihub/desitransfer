@@ -85,3 +85,9 @@ def yesterday():
     """Yesterday's date in DESI "NIGHT" format, YYYYMMDD.
     """
     return (dt.datetime.now() - dt.timedelta(seconds=86400)).strftime('%Y%m%d')
+
+
+def today():
+    """Today's date in DESI "NIGHT" format, YYYYMMDD.
+    """
+    return (dt.datetime.now() - dt.timedelta(7/24+0.5)).strftime('%Y%m%d')

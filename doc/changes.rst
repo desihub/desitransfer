@@ -5,7 +5,10 @@ Change Log
 0.3.5 (unreleased)
 ------------------
 
-* No changes yet.
+* Support direct KPNO to Tucson transfers when NERSC is shut down (PR `#12`_).
+* Move nightwatch transfer script into this package.
+
+.. _`#12`: https://github.com/desihub/desitransfer/pull/12
 
 0.3.4 (2020-01-10)
 ------------------

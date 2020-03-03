@@ -41,6 +41,8 @@ def _options():
     """
     desc = "Transfer DESI raw data files."
     prsr = ArgumentParser(description=desc)
+    prsr.add_argument('-B', '--no-backup', action='store_false', dest='backup',
+                      help="Skip NERSC HPSS backups.")
     prsr.add_argument('-c', '--configuration', metavar='FILE',
                       help="Read configuration from FILE.")
     prsr.add_argument('-d', '--debug', action='store_true',
@@ -74,6 +76,7 @@ class TransferDaemon(object):
         else:
             self._ini = options.configuration
         self.test = options.shadow
+        self.tape = options.backup
         self.run = options.pipeline
         getlist = lambda x: x.split(',')
         getdict = lambda x: dict([tuple(i.split(':')) for i in x.split(',')])
@@ -236,6 +239,7 @@ The DESI Collaboration Account
         if now >= self.conf['common'].getint('backup'):
             s = self.backup(d, yst)
             if s:
+                log.debug("status.update('%s', 'all', 'backup')", yst)
                 status.update(yst, 'all', 'backup')
 
     def exposure(self, d, link, status):
@@ -280,6 +284,7 @@ The DESI Collaboration Account
         # Transfer complete.
         #
         if rsync_status == '0':
+            log.debug("status.update('%s', '%s', 'rsync')", night, exposure)
             status.update(night, exposure, 'rsync')
             #
             # Check permissions.
@@ -306,6 +311,7 @@ The DESI Collaboration Account
             # Did we pass checksums?
             #
             if checksum_status == 0:
+                log.debug("status.update('%s', '%s', 'checksum')", night, exposure)
                 status.update(night, exposure, 'checksum')
                 #
                 # Set up DESI_SPECTRO_DATA.
@@ -336,17 +342,22 @@ The DESI Collaboration Account
                     cmd = self.pipeline(night, exposure)
                     if not self.test:
                         _, out, err = _popen(cmd)
+                    log.debug("status.update('%s', '%s', 'pipeline')", night, exposure)
                     status.update(night, exposure, 'pipeline')
                     for k in ('flats', 'arcs', 'science'):
-                        if os.path.exists(os.path.join(destination_exposure, '{0}-{1}-{2}.done'.format(k, night, exposure))):
+                        if os.path.exists(os.path.join(destination_exposure,
+                                                       '{0}-{1}-{2}.done'.format(k, night, exposure))):
                             cmd = self.pipeline(night, exposure, command=k)
                             if not self.test:
                                 _, out, err = _popen(cmd)
+                            log.debug("status.update('%s', '%s', 'pipeline', last='%s')",
+                                      night, exposure, k)
                             status.update(night, exposure, 'pipeline', last=k)
                 else:
                     log.info("%s/%s appears to be test data. Skipping pipeline activation.", night, exposure)
             else:
                 log.error("Checksum problem detected for %s/%s!", night, exposure)
+                log.debug("status.update('%s', '%s', 'checksum', failure=True)", night, exposure)
                 status.update(night, exposure, 'checksum', failure=True)
         elif rsync_status == 'done':
             #
@@ -355,6 +366,7 @@ The DESI Collaboration Account
             pass
         else:
             log.error('rsync problem detected!')
+            log.debug("status.update('%s', '%s', 'rsync', failure=True)", night, exposure)
             status.update(night, exposure, 'rsync', failure=True)
 
     def catchup(self, d, night):
@@ -427,14 +439,17 @@ The DESI Collaboration Account
                 log.debug("Failed to remove %s because it didn't exist. That's OK.", ls_file)
             cmd = ['/usr/common/mss/bin/hsi', '-O', ls_file,
                    'ls', '-l', d.hpss]
-            _, out, err = _popen(cmd)
+            if self.tape:
+                _, out, err = _popen(cmd)
+                with open(ls_file) as l:
+                    data = l.read()
+                backup_files = [l.split()[-1] for l in data.split('\n') if l]
+            else:
+                backup_files = []
+            backup_file = hpss_file + '_' + night + '.tar'
             #
             # Both a .tar and a .tar.idx file should be present.
             #
-            with open(ls_file) as l:
-                data = l.read()
-            backup_files = [l.split()[-1] for l in data.split('\n') if l]
-            backup_file = hpss_file + '_' + night + '.tar'
             if backup_file in backup_files and backup_file + '.idx' in backup_files:
                 log.debug("Backup of %s already complete.", night)
                 return False
@@ -456,19 +471,22 @@ The DESI Collaboration Account
                 #
                 # Issue HTAR command.
                 #
-                start_dir = os.getcwd()
-                log.debug("os.chdir('%s')", d.destination)
-                os.chdir(d.destination)
-                cmd = ['/usr/common/mss/bin/htar',
-                       '-cvhf', os.path.join(d.hpss, backup_file),
-                       '-H', 'crc:verify=all',
-                       night]
-                if self.test:
-                    log.debug(' '.join(cmd))
+                if self.tape:
+                    start_dir = os.getcwd()
+                    log.debug("os.chdir('%s')", d.destination)
+                    os.chdir(d.destination)
+                    cmd = ['/usr/common/mss/bin/htar',
+                           '-cvhf', os.path.join(d.hpss, backup_file),
+                           '-H', 'crc:verify=all',
+                           night]
+                    if self.test:
+                        log.debug(' '.join(cmd))
+                    else:
+                        _, out, err = _popen(cmd)
+                    log.debug("os.chdir('%s')", start_dir)
+                    os.chdir(start_dir)
                 else:
-                    _, out, err = _popen(cmd)
-                log.debug("os.chdir('%s')", start_dir)
-                os.chdir(start_dir)
+                    log.info('Tape backup disabled by user request.')
                 return True
         else:
             log.warning("No data from %s detected, skipping HPSS backup.", night)

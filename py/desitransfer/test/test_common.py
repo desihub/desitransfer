@@ -6,7 +6,7 @@ import datetime
 import os
 import unittest
 from unittest.mock import patch
-from ..common import dir_perm, file_perm, empty_rsync, rsync, stamp, yesterday
+from ..common import dir_perm, file_perm, empty_rsync, rsync, stamp, yesterday, today
 
 
 class TestCommon(unittest.TestCase):
@@ -74,11 +74,20 @@ total size is 118,417,836,324  speedup is 494,367.55
 
     @patch('desitransfer.common.dt')
     def test_yesterday(self, mock_dt):
-        """Test timestamp.
+        """Test yesterday's date.
         """
         mock_dt.datetime.now.return_value = datetime.datetime(2019, 7, 3, 12, 0, 0)
         mock_dt.timedelta.return_value = datetime.timedelta(seconds=86400)
         y = yesterday()
+        self.assertEqual(y, '20190702')
+
+    @patch('desitransfer.common.dt')
+    def test_today(self, mock_dt):
+        """Test today's date.
+        """
+        mock_dt.datetime.now.return_value = datetime.datetime(2019, 7, 3, 5, 0, 0)
+        mock_dt.timedelta.return_value = datetime.timedelta(7/24+0.5)
+        y = today()
         self.assertEqual(y, '20190702')
 
 

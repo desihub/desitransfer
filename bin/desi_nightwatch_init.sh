@@ -2,16 +2,16 @@
 #
 # Program or script you want to run
 #
-PROGRAM=${DESITRANSFER}/bin/desi_transfer_daemon
+PROGRAM=${DESITRANSFER}/bin/desi_nightwatch_transfer
 PRGFILE=$(basename ${PROGRAM})
 PRGDIR=$(dirname ${PROGRAM})
 #
 # Command line options for PRGFILE
 #
 if [[ -z "${NERSC_HOST}" ]]; then
-    PRGOPTS='--no-pipeline --no-backup'
+    PRGOPTS='--debug --no-apache'
 else
-    PRGOPTS='--no-pipeline'
+    PRGOPTS='--debug'
 fi
 #
 # Common initialization code.

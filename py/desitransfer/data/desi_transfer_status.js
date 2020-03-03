@@ -38,14 +38,16 @@ $(function() {
             var s = Exposure.stages;
             for (var k = 0; k < this.exposures.length; k++) {
                 for (var l = 0; l < s.length; l++) {
-                    if (!this.exposures[k].stage[s[l]].success) {
-                        //
-                        // It's not successful, but is it complete?
-                        //
-                        if (this.exposures[k].stage[s[l]].stamp > 0) {
-                            return "btn-danger";
-                        } else {
-                            return "btn-warning";
+                    if (Exposure.display[l]) {
+                        if (!this.exposures[k].stage[s[l]].success) {
+                            //
+                            // It's not successful, but is it complete?
+                            //
+                            if (this.exposures[k].stage[s[l]].stamp > 0) {
+                                return "btn-danger";
+                            } else {
+                                return "btn-warning";
+                            }
                         }
                     }
                 }
@@ -117,6 +119,7 @@ $(function() {
         var E = Exposure, Ep = Exposure.prototype;
         E.padding = 8;
         E.stages = ["rsync", "checksum", "pipeline", "backup"];
+        E.display = [true, true, false, true];
         //
         // Pad integers out to 8 characters.
         //
@@ -131,7 +134,8 @@ $(function() {
         Ep.header = function() {
             var h = "<thead><tr><th class=\"text-uppercase\">exposure</th>";
             for (var k = 0; k < Exposure.stages.length; k++) {
-                h += "<th class=\"text-uppercase\">" + Exposure.stages[k] + "</th>";
+                if (Exposure.display[k])
+                    h += "<th class=\"text-uppercase\">" + Exposure.stages[k] + "</th>";
             }
             h += "<th class=\"text-uppercase\">comment</th></tr></thead>";
             return h;
@@ -143,14 +147,16 @@ $(function() {
             var r = "<tr id=\"e" + this.toString() +"\">" +
                     "<td>" + this.pad() + "</td>";
             for (var k = 0; k < Exposure.stages.length; k++) {
-                var c = "table-warning";
-                var stamp = "INCOMPLETE";
-                if (this.stage[Exposure.stages[k]].stamp != 0) {
-                    c = this.stage[Exposure.stages[k]].success ? "table-success" : "table-danger";
-                    var d = new Date(this.stage[Exposure.stages[k]].stamp);
-                    stamp = d.toISOString();
+                if (Exposure.display[k]) {
+                    var c = "table-warning";
+                    var stamp = "INCOMPLETE";
+                    if (this.stage[Exposure.stages[k]].stamp != 0) {
+                        c = this.stage[Exposure.stages[k]].success ? "table-success" : "table-danger";
+                        var d = new Date(this.stage[Exposure.stages[k]].stamp);
+                        stamp = d.toISOString();
+                    }
+                    r +=  "<td class=\"" + c + "\">" + stamp + "</td>";
                 }
-                r +=  "<td class=\"" + c + "\">" + stamp + "</td>";
             }
             r += "<td>" + this.l + "</td></tr>";
             return r;
