@@ -5,7 +5,7 @@ Change Log
 0.3.6 (unreleased)
 ------------------
 
-* No changes yet.
+* Support ICS-generated checksum files.
 
 0.3.5 (2020-03-03)
 ------------------
