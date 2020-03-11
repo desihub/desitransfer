@@ -222,6 +222,7 @@ $(function() {
     display = function() {
         $("#content").empty();
         var night;
+        Status.nights = [];
         var N_nights = 0;
         var N_display = 10;
         for (var k = 0; k < Status.raw.length; k++) {
