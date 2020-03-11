@@ -36,6 +36,7 @@ $(function() {
         //
         Np.success = function() {
             var s = Exposure.stages;
+            var r = "btn-success";
             for (var k = 0; k < this.exposures.length; k++) {
                 for (var l = 0; l < s.length; l++) {
                     if (Exposure.display[l]) {
@@ -43,16 +44,14 @@ $(function() {
                             //
                             // It's not successful, but is it complete?
                             //
-                            if (this.exposures[k].stage[s[l]].stamp > 0) {
+                            if (this.exposures[k].stage[s[l]].stamp > 0)
                                 return "btn-danger";
-                            } else {
-                                return "btn-warning";
-                            }
+                            r = "btn-warning";
                         }
                     }
                 }
             }
-            return "btn-success";
+            return r;
         };
         //
         // Complete construction of tables, etc.
