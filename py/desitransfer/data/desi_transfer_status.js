@@ -195,6 +195,10 @@ $(function() {
     })();
     var Status = {
         //
+        // Display status.
+        //
+        displayAll: false,
+        //
         // Raw data read from JSON file.
         //
         raw: [],
@@ -218,6 +222,8 @@ $(function() {
     display = function() {
         $("#content").empty();
         var night;
+        var N_nights = 0;
+        var N_display = 10;
         for (var k = 0; k < Status.raw.length; k++) {
             var n = Status.raw[k][0];
             if (Status.hasNight(n) == -1) {
@@ -230,6 +236,11 @@ $(function() {
                 //
                 night = new Night(n);
                 Status.nights.push(night);
+                N_nights += 1;
+                //
+                // Display 10
+                //
+                if (!Status.displayAll && N_nights >= N_display) break;
             }
             //
             // Add exposure to existing night.
@@ -242,6 +253,12 @@ $(function() {
         //
         night.finish();
     };
+    //
+    // Display Mode.
+    //
+    $(".displayMode").change(function() {
+        return Status.displayAll = $("input[name=displayMode]:checked").val() === "displayAll";
+    }).change(display);
     $.getJSON("desi_transfer_status.json", {}, function(data) { Status.raw = data; }).always(display);
     return true;
 });

@@ -23,6 +23,18 @@
             <div class="row">
                 <div class="col-12">
                     <h1>DESI Transfer Status</h1>
+                    <form>
+                        <fieldset><legend>Display Mode</legend>
+                            <div class="form-check form-check-inline">
+                                <input class="form-check-input displayMode" type="radio" name="displayMode" id="display10" value="display10" checked="checked" />
+                                <label class="form-check-label displayMode" for="display10">Display Last 10 Nights</label>
+                            </div>
+                            <div class="form-check form-check-inline">
+                                <input class="form-check-input displayMode" type="radio" name="displayMode" id="displayAll" value="displayAll" />
+                                <label class="form-check-label displayMode" for="displayAll">Display All Nights</label>
+                            </div>
+                        </fieldset>
+                    </form>
                 </div><!-- end class="col-12" -->
             </div><!-- end class="row" -->
             <div id="content"></div>
