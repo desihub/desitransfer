@@ -5,7 +5,9 @@ Change Log
 0.3.6 (unreleased)
 ------------------
 
-* Support ICS-generated checksum files.
+* Support ICS-generated checksum files (PR `#13`_).
+
+.. _`#13`: https://github.com/desihub/desitransfer/pull/13
 
 0.3.5 (2020-03-03)
 ------------------
