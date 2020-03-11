@@ -230,7 +230,10 @@ $(function() {
                 //
                 // Finish previous night
                 //
-                if (Status.nights.length > 0) night.finish();
+                if (Status.nights.length > 0) {
+                    night.finish();
+                    if (!Status.displayAll && N_nights >= N_display) break;
+                }
                 //
                 // Start a new night
                 //
@@ -243,15 +246,11 @@ $(function() {
             //
             var e = new Exposure(Status.raw[k]);
             night.addExposure(e);
-            //
-            // Display 10
-            //
-            if (!Status.displayAll && N_nights >= N_display) break;
         }
         //
         // Finish the final night
         //
-        night.finish();
+        if (Status.displayAll) night.finish();
     };
     //
     // Display Mode.
