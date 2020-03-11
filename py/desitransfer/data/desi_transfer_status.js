@@ -237,16 +237,16 @@ $(function() {
                 night = new Night(n);
                 Status.nights.push(night);
                 N_nights += 1;
-                //
-                // Display 10
-                //
-                if (!Status.displayAll && N_nights >= N_display) break;
             }
             //
             // Add exposure to existing night.
             //
             var e = new Exposure(Status.raw[k]);
             night.addExposure(e);
+            //
+            // Display 10
+            //
+            if (!Status.displayAll && N_nights >= N_display) break;
         }
         //
         // Finish the final night
