@@ -2,7 +2,6 @@
 #
 # This script is used to update the NOAO mirror.
 #
-# $Id: desisync.sh 130540 2020-03-04 22:15:29Z baweaver $
 function usage() {
     local execName=$(basename $0)
     (
@@ -30,11 +29,12 @@ set -o noglob
 # Top-level source and destination.
 #
 src=rsync://desi@app.desisync.dev-cattle.stable.spin.nersc.org:60023/desi
+# src=rsync://desi@data.desi.lbl.gov:60023/desi
 dst=/net/mss1/desi-stage
 #
 # Static data sets don't need to be updated as frequently.
 #
-static='protodesi spectro/redux/oak1'
+static='protodesi spectro/redux/oak1 spectro/redux/minisv2'
 #
 # Dynamic data sets may change daily.
 #
