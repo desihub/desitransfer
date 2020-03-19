@@ -36,6 +36,7 @@ $(function() {
         //
         Np.success = function() {
             var s = Exposure.stages;
+            var r = "btn-success";
             for (var k = 0; k < this.exposures.length; k++) {
                 for (var l = 0; l < s.length; l++) {
                     if (Exposure.display[l]) {
@@ -43,16 +44,14 @@ $(function() {
                             //
                             // It's not successful, but is it complete?
                             //
-                            if (this.exposures[k].stage[s[l]].stamp > 0) {
+                            if (this.exposures[k].stage[s[l]].stamp > 0)
                                 return "btn-danger";
-                            } else {
-                                return "btn-warning";
-                            }
+                            r = "btn-warning";
                         }
                     }
                 }
             }
-            return "btn-success";
+            return r;
         };
         //
         // Complete construction of tables, etc.
@@ -196,6 +195,10 @@ $(function() {
     })();
     var Status = {
         //
+        // Display status.
+        //
+        displayAll: false,
+        //
         // Raw data read from JSON file.
         //
         raw: [],
@@ -219,18 +222,25 @@ $(function() {
     display = function() {
         $("#content").empty();
         var night;
+        Status.nights = [];
+        var N_nights = 0;
+        var N_display = 10;
         for (var k = 0; k < Status.raw.length; k++) {
             var n = Status.raw[k][0];
             if (Status.hasNight(n) == -1) {
                 //
                 // Finish previous night
                 //
-                if (Status.nights.length > 0) night.finish();
+                if (Status.nights.length > 0) {
+                    night.finish();
+                    if (!Status.displayAll && N_nights >= N_display) break;
+                }
                 //
                 // Start a new night
                 //
                 night = new Night(n);
                 Status.nights.push(night);
+                N_nights += 1;
             }
             //
             // Add exposure to existing night.
@@ -241,8 +251,14 @@ $(function() {
         //
         // Finish the final night
         //
-        night.finish();
+        if (Status.displayAll) night.finish();
     };
+    //
+    // Display Mode.
+    //
+    $(".displayMode").change(function() {
+        return Status.displayAll = $("input[name=displayMode]:checked").val() === "displayAll";
+    }).change(display);
     $.getJSON("desi_transfer_status.json", {}, function(data) { Status.raw = data; }).always(display);
     return true;
 });

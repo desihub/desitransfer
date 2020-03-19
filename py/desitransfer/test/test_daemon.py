@@ -303,7 +303,7 @@ class TestDaemon(unittest.TestCase):
                                          call("os.chmod('%s', 0o%o)", '/desi/root/spectro/data/20190703', 0o2750)])
         mock_mkdir.assert_has_calls([call('/desi/root/spectro/data/20190703', exist_ok=True)])
         mock_chmod.assert_called_once_with('/desi/root/spectro/data/20190703', 0o2750)
-        mock_cksum.assert_called_once_with('/desi/root/spectro/staging/raw/20190703/00000127/checksum-20190703-00000127.sha256sum')
+        mock_cksum.assert_called_once_with('/desi/root/spectro/staging/raw/20190703/00000127/checksum-00000127.sha256sum')
         mock_mv.assert_called_once_with('/desi/root/spectro/staging/raw/20190703/00000127', '/desi/root/spectro/data/20190703')
         mock_popen.assert_has_calls([call(['/bin/ssh', '-q', 'cori', desi_night, 'update', '--night', '20190703', '--expid', '00000127', '--nersc', 'cori', '--nersc_queue', 'realtime', '--nersc_maxnodes', '25']),
                                      call(['/bin/ssh', '-q', 'cori', desi_night, 'flats', '--night', '20190703', '--nersc', 'cori', '--nersc_queue', 'realtime', '--nersc_maxnodes', '25']),
