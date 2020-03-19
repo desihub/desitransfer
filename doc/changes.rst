@@ -2,10 +2,12 @@
 Change Log
 ==========
 
-0.3.6 (unreleased)
+0.3.6 (2020-03-19)
 ------------------
 
 * Support ICS-generated checksum files (PR `#13`_).
+* Add Tucson transfer script.
+* Improvements to transfer status report.
 
 .. _`#13`: https://github.com/desihub/desitransfer/pull/13
 
