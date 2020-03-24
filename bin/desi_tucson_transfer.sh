@@ -28,8 +28,11 @@ set -o noglob
 #
 # Top-level source and destination.
 #
-src=rsync://desi@app.desisync.dev-cattle.stable.spin.nersc.org:60023/desi
-# src=rsync://desi@data.desi.lbl.gov:60023/desi
+if [[ -z "${DESISYNC_HOSTNAME}" ]]; then
+    echo "DESISYNC_HOSTNAME must be set!" >&2
+    exit 1
+fi
+src=rsync://${DESISYNC_HOSTNAME}/desi
 dst=/net/mss1/desi-stage
 #
 # Static data sets don't need to be updated as frequently.
