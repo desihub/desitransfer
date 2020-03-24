@@ -26,13 +26,8 @@ set -o noglob
 # set -o verbose
 # set -o xtrace
 #
-# Top-level source and destination.
+# Top-level destination.
 #
-if [[ -z "${DESISYNC_HOSTNAME}" ]]; then
-    echo "DESISYNC_HOSTNAME must be set!" >&2
-    exit 1
-fi
-src=rsync://${DESISYNC_HOSTNAME}/desi
 dst=/net/mss1/desi-stage
 #
 # Static data sets don't need to be updated as frequently.
@@ -60,6 +55,14 @@ while getopts d:e:hstv argname; do
     esac
 done
 shift $((OPTIND - 1))
+#
+# Top level source.
+#
+if [[ -z "${DESISYNC_HOSTNAME}" ]]; then
+    echo "DESISYNC_HOSTNAME must be set!" >&2
+    exit 1
+fi
+src=rsync://${DESISYNC_HOSTNAME}/desi
 #
 # Run rsync.
 #
