@@ -32,7 +32,7 @@ dst=/net/mss1/desi-stage
 #
 # Static data sets don't need to be updated as frequently.
 #
-static='protodesi spectro/redux/oak1 spectro/redux/minisv2'
+static='protodesi spectro/redux/andes spectro/redux/minisv2 spectro/redux/oak1'
 #
 # Dynamic data sets may change daily.
 #
