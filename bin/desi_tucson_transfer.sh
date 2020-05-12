@@ -26,15 +26,13 @@ set -o noglob
 # set -o verbose
 # set -o xtrace
 #
-# Top-level source and destination.
+# Top-level destination.
 #
-src=rsync://desi@app.desisync.dev-cattle.stable.spin.nersc.org:60023/desi
-# src=rsync://desi@data.desi.lbl.gov:60023/desi
 dst=/net/mss1/desi-stage
 #
 # Static data sets don't need to be updated as frequently.
 #
-static='protodesi spectro/redux/oak1 spectro/redux/minisv2'
+static='protodesi spectro/redux/andes spectro/redux/minisv2 spectro/redux/oak1'
 #
 # Dynamic data sets may change daily.
 #
@@ -57,6 +55,14 @@ while getopts d:e:hstv argname; do
     esac
 done
 shift $((OPTIND - 1))
+#
+# Top level source.
+#
+if [[ -z "${DESISYNC_HOSTNAME}" ]]; then
+    echo "DESISYNC_HOSTNAME must be set!" >&2
+    exit 1
+fi
+src=rsync://${DESISYNC_HOSTNAME}/desi
 #
 # Run rsync.
 #

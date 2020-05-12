@@ -5,7 +5,9 @@ Change Log
 0.3.7 (unreleased)
 ------------------
 
-* No changes yet.
+* Updates to Tucson transfer script (PR `#14`_).
+
+.. _`#14`: https://github.com/desihub/desitransfer/pull/14
 
 0.3.6 (2020-03-19)
 ------------------
