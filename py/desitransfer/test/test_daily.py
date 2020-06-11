@@ -106,11 +106,11 @@ class TestDaily(unittest.TestCase):
         d.apache()
         mo.assert_has_calls([call('/dst/d0.log', 'ab'),
                              call().__enter__(),
-                             call().write(b'DEBUG: fix_permissions.sh -a /dst/d0\n'),
+                             call().write(b'DEBUG: fix_permissions.sh /dst/d0\n'),
                              call().flush(),
                              call().__exit__(None, None, None)])
         mock_popen.assert_has_calls([call(),
-                                     call(['fix_permissions.sh', '-a', '/dst/d0'],
+                                     call(['fix_permissions.sh', '/dst/d0'],
                                           stdout=mo(), stderr=-2),
                                      call().wait()])
 
