@@ -77,7 +77,7 @@ class DailyDirectory(object):
         :class:`int`
             The status returned by :command:`fix_permissions.sh`.
         """
-        cmd = ['fix_permissions.sh', '-a', self.destination]
+        cmd = ['fix_permissions.sh', self.destination]
         with open(self.log, 'ab') as l:
             l.write(("DEBUG: %s\n" % ' '.join(cmd)).encode('utf-8'))
             l.flush()

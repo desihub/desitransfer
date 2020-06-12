@@ -6,8 +6,10 @@ Change Log
 ------------------
 
 * Updates to Tucson transfer script (PR `#14`_).
+* Remove Apache ACL option (PR `#15`_).
 
 .. _`#14`: https://github.com/desihub/desitransfer/pull/14
+.. _`#15`: https://github.com/desihub/desitransfer/pull/15
 
 0.3.6 (2020-03-19)
 ------------------

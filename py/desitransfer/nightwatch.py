@@ -205,8 +205,8 @@ def main():
         #
         if options.apache:
             if os.path.exists(nightdir):
-                log.info('Fixing permissions for Apache.')
-                cmd = ['fix_permissions.sh', '-a', nightdir]
+                log.info('Fixing permissions for DESI.')
+                cmd = ['fix_permissions.sh', nightdir]
                 status, out, err = _popen(cmd)
                 if status != '0':
                     errcount += 1
