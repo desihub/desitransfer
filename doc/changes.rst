@@ -2,7 +2,7 @@
 Change Log
 ==========
 
-0.3.7 (unreleased)
+0.3.7 (2020-06-11)
 ------------------
 
 * Updates to Tucson transfer script (PR `#14`_).
