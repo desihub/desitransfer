@@ -26,10 +26,6 @@ set -o noglob
 # set -o verbose
 # set -o xtrace
 #
-# Top-level destination.
-#
-dst=/net/mss1/desi-stage
-#
 # Static data sets don't need to be updated as frequently.
 #
 static='protodesi spectro/redux/andes spectro/redux/minisv2 spectro/redux/oak1'
@@ -40,6 +36,7 @@ dynamic='cmx datachallenge engineering spectro/data spectro/nightwatch/kpno spec
 #
 # Get options.
 #
+dst=''
 exclude=NONE
 test=false
 verbose=false
@@ -63,6 +60,17 @@ if [[ -z "${DESISYNC_HOSTNAME}" ]]; then
     exit 1
 fi
 src=rsync://${DESISYNC_HOSTNAME}/desi
+#
+# Check if top-level destination is set.
+#
+if [[ -z "${dst}" ]]; then
+    if [[ -z "${DESI_ROOT}" ]]; then
+        echo "DESI_ROOT must be set, or destination directory set on the command-line (-d DIR)!" >&2
+        exit 1
+    else
+        dst=${DESI_ROOT}
+    fi
+fi
 #
 # Run rsync.
 #
