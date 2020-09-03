@@ -109,5 +109,6 @@ for d in ${dynamic}; do
     else
         ${verbose} && echo ${rsync} ${inc} ${src}/${d}/ ${dst}/${d}/ >> ${l}
         ${test}    || ${rsync} ${inc} ${src}/${d}/ ${dst}/${d}/ >> ${l} 2>&1
+        [[ $? != 0 ]] && echo "rsync error detected for ${dst}/${d}/!  Check logs!" >&2
     fi
 done
