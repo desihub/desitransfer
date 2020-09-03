@@ -90,25 +90,31 @@ if [[ -f ${p} ]]; then
 fi
 echo $$ > ${p}
 #
-# Log file.
-#
-l=${log}/desi_tucson_transfer.log
-[[ -f ${l} ]] || /bin/touch ${l}
-#
 # Run rsync.
 #
 rsync="/usr/bin/rsync --archive --verbose --delete --delete-after --no-motd --password-file ${HOME}/.desi"
 for d in ${dynamic}; do
+    #
+    # Check for subdirectories to include.
+    #
     case ${d} in
-    #     spectro/nightwatch) inc="--include kpno/*** --exclude *" ;;
-    #     spectro/redux) inc="--include oak1/*** --include daily/*** --exclude *" ;;
+        # spectro/nightwatch) inc="--include kpno/*** --exclude *" ;;
+        # spectro/redux) inc="--include oak1/*** --include daily/*** --exclude *" ;;
         *) inc='' ;;
     esac
+    #
+    # Log file.
+    #
+    l=${log}/desi_tucson_transfer_$(/usr/bin/tr '/' '_').log
+    [[ -f ${l} ]] || /bin/touch ${l}
+    #
+    # rsync command.
+    #
     if [[ ${d} == ${exclude} ]]; then
         ${verbose} && echo "${exclude} skipped at user request." >> ${l}
     else
         ${verbose} && echo ${rsync} ${inc} ${src}/${d}/ ${dst}/${d}/ >> ${l}
-        ${test}    || ${rsync} ${inc} ${src}/${d}/ ${dst}/${d}/ >> ${l} 2>&1
-        [[ $? != 0 ]] && echo "rsync error detected for ${dst}/${d}/!  Check logs!" >&2
+        ${test}    || ${rsync} ${inc} ${src}/${d}/ ${dst}/${d}/ >> ${l} 2>&1 || \
+            echo "rsync error detected for ${dst}/${d}/!  Check logs!" >&2
     fi
 done
