@@ -105,7 +105,7 @@ for d in ${dynamic}; do
     #
     # Log file.
     #
-    l=${log}/desi_tucson_transfer_$(/usr/bin/tr '/' '_').log
+    l=${log}/desi_tucson_transfer_$(/usr/bin/tr '/' '_' <<<${d}).log
     [[ -f ${l} ]] || /bin/touch ${l}
     #
     # rsync command.
