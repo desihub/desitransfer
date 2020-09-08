@@ -169,7 +169,7 @@ def main():
         for d in _config():
             status = d.transfer(apache=options.apache)
             if status != 0:
-                print("ERROR: rsync problem detected for ${0.source} -> ${0.destination}!".format(d))
+                print("ERROR: rsync problem detected for {0.source} -> {0.destination}!".format(d))
                 return status
         if options.daemon:
             time.sleep(options.sleep*60*60)

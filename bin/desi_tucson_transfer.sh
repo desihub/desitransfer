@@ -5,13 +5,14 @@
 function usage() {
     local execName=$(basename $0)
     (
-    echo "${execName} [-d DIR] [-e DIR] [-h] [-s] [-t] [-v]"
+    echo "${execName} [-d DIR] [-e DIR] [-h] [-l DIR] [-s] [-t] [-v]"
     echo ""
     echo "Sync DESI data to Tucson mirror site."
     echo ""
     echo "-d DIR = Use DIR as destination directory."
     echo "-e DIR = Exclude DIR from sync."
     echo "    -h = Print this message and exit."
+    echo "-l DIR = Use DIR for log files."
     echo "    -s = Also sync static data sets."
     echo "    -t = Test mode.  Do not make any changes. Implies -v."
     echo "    -v = Verbose mode. Print extra information."
@@ -38,6 +39,7 @@ dynamic='cmx datachallenge engineering spectro/data spectro/nightwatch/kpno spec
 #
 dst=''
 exclude=NONE
+log=${HOME}/Documents/Logfiles
 test=false
 verbose=false
 while getopts d:e:hstv argname; do
@@ -45,6 +47,7 @@ while getopts d:e:hstv argname; do
         d) dst=${OPTARG} ;;
         e) exclude=${OPTARG} ;;
         h) usage; exit 0 ;;
+        l) log=${OPTARG} ;;
         s) dynamic="${dynamic} ${static}" ;;
         t) test=true; verbose=true ;;
         v) verbose=true ;;
@@ -72,19 +75,46 @@ if [[ -z "${dst}" ]]; then
     fi
 fi
 #
+# Pid file.
+#
+p=${log}/desi_tucson_transfer.pid
+if [[ -f ${p} ]]; then
+    pid=$(<${p})
+    comm=$(/bin/ps -q ${pid} -o comm=)
+    if [[ -n "${comm}" ]]; then
+        echo "Running process detected (${pid}=${comm}), exiting." >&2
+        exit 1
+    else
+        /bin/rm -f ${p}
+    fi
+fi
+echo $$ > ${p}
+#
 # Run rsync.
 #
 rsync="/usr/bin/rsync --archive --verbose --delete --delete-after --no-motd --password-file ${HOME}/.desi"
 for d in ${dynamic}; do
+    #
+    # Check for subdirectories to include.
+    #
     case ${d} in
-    #     spectro/nightwatch) inc="--include kpno/*** --exclude *" ;;
-    #     spectro/redux) inc="--include oak1/*** --include daily/*** --exclude *" ;;
+        # spectro/nightwatch) inc="--include kpno/*** --exclude *" ;;
+        # spectro/redux) inc="--include oak1/*** --include daily/*** --exclude *" ;;
         *) inc='' ;;
     esac
+    #
+    # Log file.
+    #
+    l=${log}/desi_tucson_transfer_$(/usr/bin/tr '/' '_' <<<${d}).log
+    [[ -f ${l} ]] || /bin/touch ${l}
+    #
+    # rsync command.
+    #
     if [[ ${d} == ${exclude} ]]; then
-        ${verbose} && echo "${exclude} skipped at user request."
+        ${verbose} && echo "${exclude} skipped at user request." >> ${l}
     else
-        ${verbose} && echo ${rsync} ${inc} ${src}/${d}/ ${dst}/${d}/
-        ${test}    || ${rsync} ${inc} ${src}/${d}/ ${dst}/${d}/
+        ${verbose} && echo ${rsync} ${inc} ${src}/${d}/ ${dst}/${d}/ >> ${l}
+        ${test}    || ${rsync} ${inc} ${src}/${d}/ ${dst}/${d}/ >> ${l} 2>&1 || \
+            echo "rsync error detected for ${dst}/${d}/!  Check logs!" >&2
     fi
 done

@@ -5,7 +5,9 @@ Change Log
 0.3.8 (unreleased)
 ------------------
 
-* No changes yet.
+* Better logging and error notification for NERSC - Tucson transfers (PR `#18`_).
+
+.. _`#18`: https://github.com/desihub/desitransfer/pull/18
 
 0.3.7 (2020-06-11)
 ------------------
