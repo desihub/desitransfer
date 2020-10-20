@@ -13,6 +13,7 @@ from unittest.mock import call, patch, MagicMock
 from pkg_resources import resource_filename
 from ..nightwatch import (_options, _popen, _configure_log)
 
+
 class TestNightwatch(unittest.TestCase):
     """Test desitransfer.nightwatch.
     """

@@ -96,7 +96,7 @@ def _configure_log(debug):
     if debug:
         log.setLevel(logging.DEBUG)
     email_from = os.environ['USER'] + '@' + getfqdn()
-    handler2 = SMTPHandler('localhost', email_from, ['baweaver@lbl.gov',],
+    handler2 = SMTPHandler('localhost', email_from, ['baweaver@lbl.gov', ],
                            'Critical error reported by desi_nightwatch_transfer!')
     fmt = """Greetings,
 
