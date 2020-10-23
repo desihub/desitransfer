@@ -6,8 +6,10 @@ Change Log
 ------------------
 
 * Better logging and error notification for NERSC - Tucson transfers (PR `#18`_).
+* Change wait time between raw data transfer to one minute (PR `#19`_).
 
 .. _`#18`: https://github.com/desihub/desitransfer/pull/18
+.. _`#19`: https://github.com/desihub/desitransfer/pull/19
 
 0.3.7 (2020-06-11)
 ------------------
