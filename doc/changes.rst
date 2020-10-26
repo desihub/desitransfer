@@ -2,7 +2,7 @@
 Change Log
 ==========
 
-0.3.8 (unreleased)
+0.3.8 (2020-10-26)
 ------------------
 
 * Better logging and error notification for NERSC - Tucson transfers (PR `#18`_).
