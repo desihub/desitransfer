@@ -37,6 +37,7 @@ class TestDaily(unittest.TestCase):
             self.assertEqual(c[0].source, '/exposures/desi/sps')
             self.assertEqual(c[0].destination, os.path.join(os.environ['DESI_ROOT'],
                                                             'engineering', 'spectrograph', 'sps'))
+            self.assertEqual(c[1].extra[0], '--exclude')
 
     def test_options(self):
         """Test command-line arguments.

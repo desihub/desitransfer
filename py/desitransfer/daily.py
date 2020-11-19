@@ -24,12 +24,15 @@ class DailyDirectory(object):
         Source directory.
     destination : :class:`str`
         Desitination directory.
+    extra : :class:`list`, optional
+        Extra :command:`rsync` arguments to splice into command.
     """
 
-    def __init__(self, source, destination):
+    def __init__(self, source, destination, extra=[]):
         self.source = source
         self.destination = destination
         self.log = self.destination + '.log'
+        self.extra = extra
 
     def transfer(self, apache=True):
         """Data transfer operations for a single destination directory.
@@ -45,6 +48,9 @@ class DailyDirectory(object):
             The status returned by :command:`rsync`.
         """
         cmd = rsync(self.source, self.destination)
+        if self.extra:
+            for i, e in enumerate(self.extra):
+                cmd.insert(cmd.index('--omit-dir-times') + 1 + i, e)
         with open(self.log, 'ab') as l:
             l.write(("DEBUG: desi_daily_transfer %s\n" % dtVersion).encode('utf-8'))
             l.write(("DEBUG: %s\n" % stamp()).encode('utf-8'))
@@ -96,8 +102,9 @@ def _config():
                                             'spectro'))
     return [DailyDirectory('/exposures/desi/sps',
                            os.path.join(engineering, 'spectrograph', 'sps')),
-            # DailyDirectory('/exposures/nightwatch',
-            #                os.path.join(spectro, 'nightwatch', 'kpno')),
+            DailyDirectory('/exposures/nightwatch',
+                           os.path.join(spectro, 'nightwatch', 'kpno'),
+                           extra=['--exclude', 'preproc*.fits']),
             DailyDirectory('/data/dts/exposures/lost+found',
                            os.path.join(spectro, 'staging', 'lost+found')),
             # DailyDirectory('/data/fxc',

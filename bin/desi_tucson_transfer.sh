@@ -29,11 +29,11 @@ set -o noglob
 #
 # Static data sets don't need to be updated as frequently.
 #
-static='protodesi public/ets spectro/redux/andes spectro/redux/minisv2 spectro/redux/oak1'
+static='protodesi public/epo public/ets spectro/redux/andes spectro/redux/minisv2 spectro/redux/oak1'
 #
 # Dynamic data sets may change daily.
 #
-dynamic='cmx datachallenge engineering spectro/data spectro/nightwatch/kpno spectro/redux/daily spectro/staging/lost+found sv target/catalogs target/cmx_files target/secondary'
+dynamic='cmx datachallenge engineering spectro/data spectro/nightwatch spectro/redux/daily spectro/staging/lost+found sv target/catalogs target/cmx_files target/secondary'
 #
 # Get options.
 #
@@ -98,7 +98,7 @@ for d in ${dynamic}; do
     # Check for subdirectories to include.
     #
     case ${d} in
-        # spectro/nightwatch) inc="--include kpno/*** --exclude *" ;;
+        spectro/nightwatch) inc="--exclude dev/*** --exclude preproc*.fits --exclude qsky*.fits --exclude *.tmp" ;;
         # spectro/redux) inc="--include oak1/*** --include daily/*** --exclude *" ;;
         *) inc='' ;;
     esac
