@@ -98,7 +98,7 @@ for d in ${dynamic}; do
     # Check for subdirectories to include.
     #
     case ${d} in
-        # spectro/nightwatch) inc="--exclude dev/*** --exclude preproc*.fits --exclude qsky*.fits --exclude *.tmp" ;;
+        # spectro/nightwatch) inc="--include kpno/*** --exclude *" ;;
         # spectro/redux) inc="--include oak1/*** --include daily/*** --exclude *" ;;
         *) inc='' ;;
     esac
