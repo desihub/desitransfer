@@ -6,7 +6,8 @@ import datetime
 import os
 import unittest
 from unittest.mock import patch
-from ..common import dir_perm, file_perm, empty_rsync, rsync, stamp, yesterday, today
+from tempfile import TemporaryDirectory
+from ..common import dir_perm, file_perm, empty_rsync, rsync, stamp, ensure_scratch, yesterday, today
 
 
 class TestCommon(unittest.TestCase):
@@ -22,10 +23,14 @@ class TestCommon(unittest.TestCase):
         pass
 
     def setUp(self):
-        pass
+        """Create a temporary directory to simulate CSCRATCH.
+        """
+        self.tmp = TemporaryDirectory()
 
     def tearDown(self):
-        pass
+        """Clean up temporary directory.
+        """
+        self.tmp.cleanup()
 
     def test_permissions(self):
         """Ensure that file and directory permissions do not change.
@@ -71,6 +76,19 @@ total size is 118,417,836,324  speedup is 494,367.55
         mock_dt.datetime.utcnow.return_value = datetime.datetime(2019, 7, 3, 12, 0, 0)
         s = stamp('US/Arizona')
         self.assertEqual(s, '2019-07-03 05:00:00 MST')
+
+    def test_ensure_scratch(self):
+        """Test ensure_scratch.
+        """
+        tmp = self.tmp.name
+        t = ensure_scratch(tmp, ['/foo', '/bar'])
+        self.assertEqual(t, tmp)
+        t = ensure_scratch('/foo', tmp)
+        self.assertEqual(t, tmp)
+        t = ensure_scratch('/foo', ['/bar', tmp])
+        self.assertEqual(t, tmp)
+        t = ensure_scratch('/foo', ['/bar', '/abcdefg', tmp])
+        self.assertEqual(t, tmp)
 
     @patch('desitransfer.common.dt')
     def test_yesterday(self, mock_dt):

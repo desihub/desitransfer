@@ -11,6 +11,7 @@ import subprocess as sub
 import sys
 import time
 from argparse import ArgumentParser
+from pkg_resources import resource_filename
 from .common import dir_perm, file_perm, rsync, stamp
 from . import __version__ as dtVersion
 
@@ -26,21 +27,24 @@ class DailyDirectory(object):
         Desitination directory.
     extra : :class:`list`, optional
         Extra :command:`rsync` arguments to splice into command.
+    dirlinks : :class:`bool`, optional
+        If ``True``, convert source links into linked directory.
     """
 
-    def __init__(self, source, destination, extra=[]):
+    def __init__(self, source, destination, extra=[], dirlinks=False):
         self.source = source
         self.destination = destination
         self.log = self.destination + '.log'
         self.extra = extra
+        self.dirlinks = dirlinks
 
-    def transfer(self, apache=True):
+    def transfer(self, permission=True):
         """Data transfer operations for a single destination directory.
 
         Parameters
         ----------
-        apache : :class:`bool`
-            If ``True`` set file ACLs for Apache httpd access.
+        permission : :class:`bool`, optional
+            If ``True``, set permissions for DESI collaboration access.
 
         Returns
         -------
@@ -48,6 +52,8 @@ class DailyDirectory(object):
             The status returned by :command:`rsync`.
         """
         cmd = rsync(self.source, self.destination)
+        if not self.dirlinks:
+            cmd[cmd.index('--copy-dirlinks')] = '--links'
         if self.extra:
             for i, e in enumerate(self.extra):
                 cmd.insert(cmd.index('--omit-dir-times') + 1 + i, e)
@@ -60,8 +66,8 @@ class DailyDirectory(object):
             status = p.wait()
         if status == 0:
             self.lock()
-            if apache:
-                s = self.apache()
+            if permission:
+                s = self.permission()
         return status
 
     def lock(self):
@@ -72,8 +78,8 @@ class DailyDirectory(object):
             for f in filenames:
                 os.chmod(os.path.join(dirpath, f), file_perm)
 
-    def apache(self):
-        """Grant apache/www read access.
+    def permission(self):
+        """Set permissions for DESI collaboration access.
 
         In theory this should not change any permissions set by
         :meth:`~DailyDirectory.lock`.
@@ -96,6 +102,8 @@ def _config():
     """Wrap configuration so that module can be imported without
     environment variables set.
     """
+    nightwatch_exclude = resource_filename('desitransfer',
+                                           'data/desi_nightwatch_transfer_exclude.txt')
     engineering = os.path.realpath(os.path.join(os.environ['DESI_ROOT'],
                                                 'engineering'))
     spectro = os.path.realpath(os.path.join(os.environ['DESI_ROOT'],
@@ -104,9 +112,10 @@ def _config():
                            os.path.join(engineering, 'spectrograph', 'sps')),
             DailyDirectory('/exposures/nightwatch',
                            os.path.join(spectro, 'nightwatch', 'kpno'),
-                           extra=['--exclude', 'preproc*.fits']),
+                           extra=['--exclude-from', nightwatch_exclude]),
             DailyDirectory('/data/dts/exposures/lost+found',
-                           os.path.join(spectro, 'staging', 'lost+found')),
+                           os.path.join(spectro, 'staging', 'lost+found'),
+                           dirlinks=True),
             # DailyDirectory('/data/fxc',
             #                os.path.join(engineering, 'fxc')),
             DailyDirectory('/data/focalplane/logs/calib_logs',
@@ -134,8 +143,6 @@ def _options(*args):
     """
     desc = "Transfer non-critical DESI data from KPNO to NERSC."
     prsr = ArgumentParser(description=desc)
-    prsr.add_argument('-A', '--no-apache', action='store_false', dest='apache',
-                      help='Do not set ACL for Apache httpd access.')
     # prsr.add_argument('-b', '--backup', metavar='H', type=int, default=20,
     #                   help='UTC time in hours to trigger HPSS backups (default %(default)s:00 UTC).')
     # prsr.add_argument('-d', '--debug', action='store_true',
@@ -149,8 +156,8 @@ def _options(*args):
                       help="Exit the script when FILE is detected (default %(default)s).")
     # prsr.add_argument('-n', '--nersc', default='cori', metavar='NERSC_HOST',
     #                   help="Trigger DESI pipeline on this NERSC system (default %(default)s).")
-    # prsr.add_argument('-P', '--no-pipeline', action='store_false', dest='pipeline',
-    #                   help="Only transfer files, don't start the DESI pipeline.")
+    prsr.add_argument('-P', '--no-permission', action='store_false', dest='permission',
+                      help='Do not set permissions for DESI collaboration access.')
     prsr.add_argument('-s', '--sleep', metavar='H', type=int, default=24,
                       help='In daemon mode, sleep H hours before checking for new data (default %(default)s hours).')
     # prsr.add_argument('-S', '--shadow', action='store_true',
@@ -174,7 +181,7 @@ def main():
             print("INFO: %s detected, shutting down daily transfer script." % options.kill)
             return 0
         for d in _config():
-            status = d.transfer(apache=options.apache)
+            status = d.transfer(permission=options.permission)
             if status != 0:
                 print("ERROR: rsync problem detected for {0.source} -> {0.destination}!".format(d))
                 return status
