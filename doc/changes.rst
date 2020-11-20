@@ -5,7 +5,12 @@ Change Log
 0.3.9 (unreleased)
 ------------------
 
-* No changes yet.
+* Deprecate continuous nightwatch transfers; nightwatch is now part of the
+  daily engineering transfer (PR `#21`_).
+* Allow alternate scratch directory to be chosen if :envvar:`CSCRATCH` is
+  unavailable (PR `#21`_).
+
+.. _`#21`: https://github.com/desihub/desitransfer/pull/21
 
 0.3.8 (2020-10-26)
 ------------------
