@@ -365,7 +365,7 @@ The DESI Collaboration Account
             #
             pass
         else:
-            log.error('rsync problem detected!')
+            log.error('rsync problem detected for %s/%s!', night, exposure)
             log.debug("status.update('%s', '%s', 'rsync', failure=True)", night, exposure)
             status.update(night, exposure, 'rsync', failure=True)
 

@@ -81,6 +81,30 @@ class TestDaily(unittest.TestCase):
 
     @patch('os.walk')
     @patch('os.chmod')
+    @patch('subprocess.Popen')
+    @patch('desitransfer.daily.stamp')
+    @patch('builtins.open', new_callable=mock_open)
+    def test_transfer_extra(self, mo, mock_stamp, mock_popen, mock_chmod, mock_walk):
+        """Test the transfer functions in DailyDirectory.transfer() with extra options.
+        """
+        mock_walk.return_value = [('/dst/d0', [], ['f1', 'f2'])]
+        mock_stamp.return_value = '2019-07-03'
+        mock_popen().wait.return_value = 0
+        d = DailyDirectory('/src/d0', '/dst/d0', extra=['--exclude-from', 'foo'])
+        d.transfer()
+        mo.assert_has_calls([call('/dst/d0.log', 'ab'),
+                             call().__enter__(),
+                             call().write(('DEBUG: desi_daily_transfer {}\n'.format(dtVersion)).encode('utf-8')),
+                             call().write(b'DEBUG: 2019-07-03\n'),
+                             call().write(b'DEBUG: /bin/rsync --verbose --recursive --links --times --omit-dir-times --exclude-from foo dts:/src/d0/ /dst/d0/\n'),
+                             call().flush(),
+                             call().__exit__(None, None, None)])
+        mock_walk.assert_called_once_with('/dst/d0')
+        mock_chmod.assert_has_calls([call('/dst/d0', 1512),
+                                     call('/dst/d0/f1', 288),
+                                     call('/dst/d0/f2', 288)])
+    @patch('os.walk')
+    @patch('os.chmod')
     def test_lock(self, mock_chmod, mock_walk):
         """Test the lock functions in DailyDirectory.lock().
         """
