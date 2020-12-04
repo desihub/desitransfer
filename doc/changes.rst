@@ -2,15 +2,17 @@
 Change Log
 ==========
 
-0.3.9 (unreleased)
+0.3.9 (2020-12-03)
 ------------------
 
 * Deprecate continuous nightwatch transfers; nightwatch is now part of the
   daily engineering transfer (PR `#21`_).
 * Allow alternate scratch directory to be chosen if :envvar:`CSCRATCH` is
   unavailable (PR `#21`_).
+* Ignore malformed symlinks in the raw data staging area (Issue `#22`_).
 
 .. _`#21`: https://github.com/desihub/desitransfer/pull/21
+.. _`#22`: https://github.com/desihub/desitransfer/issues/22
 
 0.3.8 (2020-10-26)
 ------------------
