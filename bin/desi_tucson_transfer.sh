@@ -29,7 +29,7 @@ set -o noglob
 #
 # Static data sets don't need to be updated as frequently.
 #
-static='protodesi public/ets spectro/redux/andes spectro/redux/minisv2 spectro/redux/oak1'
+static='protodesi public/epo public/ets spectro/redux/andes spectro/redux/minisv2 spectro/redux/oak1'
 #
 # Dynamic data sets may change daily.
 #

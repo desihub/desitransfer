@@ -81,6 +81,35 @@ def stamp(zone='US/Pacific'):
     return n.astimezone(tz).strftime('%Y-%m-%d %H:%M:%S %Z')
 
 
+def ensure_scratch(primary, alternate):
+    """Try an alternate temporary directory if the primary temporary directory
+    is unavilable.
+
+    Parameters
+    ----------
+    primary : :class:`str`
+        Primary temporary directory.
+    alternate : :class:`list`
+        A list of alternate directories.
+
+    Returns
+    -------
+    The first available temporary directory found.
+    """
+    if not isinstance(alternate, list):
+        alternate = [alternate]
+    try:
+        l = os.listdir(primary)
+    except FileNotFoundError:
+        for a in alternate:
+            try:
+                l = os.listdir(a)
+            except FileNotFoundError:
+                continue
+            return a
+    return primary
+
+
 def yesterday():
     """Yesterday's date in DESI "NIGHT" format, YYYYMMDD.
     """

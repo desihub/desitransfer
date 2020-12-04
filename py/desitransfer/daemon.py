@@ -24,7 +24,7 @@ from socket import getfqdn
 from tempfile import TemporaryFile
 from pkg_resources import resource_filename
 from desiutil.log import get_logger
-from .common import dir_perm, file_perm, rsync, yesterday, empty_rsync
+from .common import dir_perm, file_perm, rsync, yesterday, empty_rsync, ensure_scratch
 from .status import TransferStatus
 from . import __version__ as dtVersion
 
@@ -94,7 +94,7 @@ class TransferDaemon(object):
                                             self.conf[s].getlist('expected_files'),
                                             self.conf[s]['checksum_file'])
                             for s in self.sections]
-        self.scratch = self.conf['common']['scratch']
+        self.scratch = ensure_scratch(self.conf['common']['scratch'], self.conf['common']['alternate_scratch'].split(','))
         self._configure_log(options.debug)
         return
 
@@ -365,7 +365,7 @@ The DESI Collaboration Account
             #
             pass
         else:
-            log.error('rsync problem detected!')
+            log.error('rsync problem detected for %s/%s!', night, exposure)
             log.debug("status.update('%s', '%s', 'rsync', failure=True)", night, exposure)
             status.update(night, exposure, 'rsync', failure=True)
 

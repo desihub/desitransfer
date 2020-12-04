@@ -288,7 +288,7 @@ class TestDaemon(unittest.TestCase):
         mock_popen.assert_called_once_with(['/bin/rsync', '--verbose', '--recursive',
                                             '--copy-dirlinks', '--times', '--omit-dir-times',
                                             'dts:/data/dts/exposures/raw/20190703/00000127/', '/desi/root/spectro/staging/raw/20190703/00000127/'])
-        mock_log.error.assert_called_once_with('rsync problem detected!')
+        mock_log.error.assert_called_once_with('rsync problem detected for %s/%s!', '20190703', '00000127')
         mock_status.update.assert_called_once_with('20190703', '00000127', 'rsync', failure=True)
         #
         # Actually run the pipeline

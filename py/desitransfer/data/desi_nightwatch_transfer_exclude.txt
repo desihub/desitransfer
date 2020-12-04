@@ -1,3 +1,9 @@
-*/preproc*.fits
-*/qsky-*.fits
-*/*.tmp
+preproc*.fits
+qsky-*.fits
+*.tmp
+nightwatch.*
+nightwatch-debug.*
+nightwatch-webapp.*
+webapp.log
+redux
+test
