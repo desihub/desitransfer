@@ -225,6 +225,7 @@ class TestDaemon(unittest.TestCase):
 20190703/00000127
 """
         links2 = "\n"
+        links3 = "20190702/00000123.tmp\n20190702/0000012\n"
         with patch.dict('os.environ',
                         {'CSCRATCH': self.tmp.name,
                          'DESI_ROOT': '/desi/root',
@@ -247,6 +248,14 @@ class TestDaemon(unittest.TestCase):
         mock_popen.return_value = ('0', links2, '')
         transfer.directory(c[0])
         mock_log.warning.assert_has_calls([call('No links found, check connection.')])
+        #
+        # Malformed links.
+        #
+        mock_popen.return_value = ('0', links3, '')
+        transfer.directory(c[0])
+        mock_log.warning.assert_has_calls([call('No links found, check connection.'),
+                                           call('Malformed symlink detected: %s. Skipping.', '20190702/0000012'),
+                                           call('Malformed symlink detected: %s. Skipping.', '20190702/00000123.tmp')])
 
     @patch('shutil.move')
     @patch('os.chmod')

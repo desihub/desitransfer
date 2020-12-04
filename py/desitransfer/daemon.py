@@ -10,6 +10,7 @@ import datetime as dt
 import hashlib
 import logging
 import os
+import re
 import shutil
 import stat
 import subprocess as sub
@@ -67,6 +68,7 @@ class TransferDaemon(object):
     options : :class:`argparse.Namespace`
         The parsed command-line options.
     """
+    _link_re = re.compile(r'[0-9]{8}/[0-9]{8}$')
     _directory = namedtuple('_directory', 'source, staging, destination, hpss, expected, checksum')
     _default_configuration = resource_filename('desitransfer', 'data/desi_transfer_daemon.ini')
 
@@ -223,7 +225,10 @@ The DESI Collaboration Account
         links = sorted([x for x in out.split('\n') if x])
         if links:
             for l in links:
-                self.exposure(d, l, status)
+                if self._link_re.search(l) is None:
+                    log.warning("Malformed symlink detected: %s. Skipping.", l)
+                else:
+                    self.exposure(d, l, status)
         else:
             log.warning('No links found, check connection.')
         #
