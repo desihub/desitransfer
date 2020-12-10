@@ -5,7 +5,7 @@ Change Log
 0.3.10 (unreleased)
 -------------------
 
-* No changes yet.
+* Migrated from Travis CI to GitHub Actions.
 
 0.3.9 (2020-12-03)
 ------------------
