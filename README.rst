@@ -2,15 +2,17 @@
 desitransfer
 ============
 
-.. image:: https://img.shields.io/travis/desihub/desitransfer.svg
-    :target: https://travis-ci.org/desihub/desitransfer
-    :alt: Travis Build Status
+|Actions Status| |Coveralls Status| |Documentation Status|
 
-.. image:: https://coveralls.io/repos/github/desihub/desitransfer/badge.svg?branch=master
+.. |Actions Status| image:: https://github.com/desihub/desitransfer/workflows/CI/badge.svg
+    :target: https://github.com/desihub/desitransfer/actions
+    :alt: GitHub Actions CI Status
+
+.. |Coveralls Status| image:: https://coveralls.io/repos/github/desihub/desitransfer/badge.svg?branch=master
     :target: https://coveralls.io/github/desihub/desitransfer?branch=master
     :alt: Test Coverage Status
 
-.. image:: https://readthedocs.org/projects/desitransfer/badge/?version=latest
+.. |Documentation Status| image:: https://readthedocs.org/projects/desitransfer/badge/?version=latest
     :target: https://desitransfer.readthedocs.io/en/latest/
     :alt: Documentation Status
 
