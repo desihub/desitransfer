@@ -110,9 +110,9 @@ def _config():
                                             'spectro'))
     return [DailyDirectory('/exposures/desi/sps',
                            os.path.join(engineering, 'spectrograph', 'sps')),
-            DailyDirectory('/exposures/nightwatch',
-                           os.path.join(spectro, 'nightwatch', 'kpno'),
-                           extra=['--exclude-from', nightwatch_exclude]),
+            # DailyDirectory('/exposures/nightwatch',
+            #                os.path.join(spectro, 'nightwatch', 'kpno'),
+            #                extra=['--exclude-from', nightwatch_exclude]),
             DailyDirectory('/data/dts/exposures/lost+found',
                            os.path.join(spectro, 'staging', 'lost+found'),
                            dirlinks=True),
