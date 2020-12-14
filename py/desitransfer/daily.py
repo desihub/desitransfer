@@ -7,6 +7,7 @@ desitransfer.daily
 Entry point for :command:`desi_daily_transfer`.
 """
 import os
+import stat
 import subprocess as sub
 import sys
 import time
@@ -74,9 +75,12 @@ class DailyDirectory(object):
         """Make a directory read-only.
         """
         for dirpath, dirnames, filenames in os.walk(self.destination):
-            os.chmod(dirpath, dir_perm)
+            if stat.S_IMODE(os.stat(dirpath).st_mode) != dir_perm:
+                os.chmod(dirpath, dir_perm)
             for f in filenames:
-                os.chmod(os.path.join(dirpath, f), file_perm)
+                fpath = os.path.join(dirpath, f)
+                if stat.S_IMODE(os.stat(fpath).st_mode) != file_perm:
+                    os.chmod(fpath, file_perm)
 
     def permission(self):
         """Set permissions for DESI collaboration access.
