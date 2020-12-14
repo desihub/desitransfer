@@ -9,7 +9,7 @@ PRGDIR=$(dirname ${PROGRAM})
 # Command line options for PRGFILE
 #
 if [[ -z "${NERSC_HOST}" ]]; then
-    PRGOPTS='--debug --no-apache'
+    PRGOPTS='--debug --no-permission'
 else
     PRGOPTS='--debug'
 fi
