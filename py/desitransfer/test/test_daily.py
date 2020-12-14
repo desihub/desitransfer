@@ -5,7 +5,7 @@
 import os
 import sys
 import unittest
-from unittest.mock import patch, call, mock_open
+from unittest.mock import patch, call, mock_open, Mock
 from ..daily import _config, _options, DailyDirectory
 from .. import __version__ as dtVersion
 
@@ -55,14 +55,18 @@ class TestDaily(unittest.TestCase):
                                           'stop_daily_transfer'))
 
     @patch('os.walk')
+    @patch('os.stat')
     @patch('os.chmod')
     @patch('subprocess.Popen')
     @patch('desitransfer.daily.stamp')
     @patch('builtins.open', new_callable=mock_open)
-    def test_transfer(self, mo, mock_stamp, mock_popen, mock_chmod, mock_walk):
+    def test_transfer(self, mo, mock_stamp, mock_popen, mock_chmod, mock_stat, mock_walk):
         """Test the transfer functions in DailyDirectory.transfer().
         """
         mock_walk.return_value = [('/dst/d0', [], ['f1', 'f2'])]
+        mode = Mock()
+        mode.st_mode = 137
+        mock_stat.return_value = mode
         mock_stamp.return_value = '2019-07-03'
         mock_popen().wait.return_value = 0
         d = DailyDirectory('/src/d0', '/dst/d0')
@@ -80,14 +84,18 @@ class TestDaily(unittest.TestCase):
                                      call('/dst/d0/f2', 288)])
 
     @patch('os.walk')
+    @patch('os.stat')
     @patch('os.chmod')
     @patch('subprocess.Popen')
     @patch('desitransfer.daily.stamp')
     @patch('builtins.open', new_callable=mock_open)
-    def test_transfer_extra(self, mo, mock_stamp, mock_popen, mock_chmod, mock_walk):
+    def test_transfer_extra(self, mo, mock_stamp, mock_popen, mock_chmod, mock_stat, mock_walk):
         """Test the transfer functions in DailyDirectory.transfer() with extra options.
         """
         mock_walk.return_value = [('/dst/d0', [], ['f1', 'f2'])]
+        mode = Mock()
+        mode.st_mode = 137
+        mock_stat.return_value = mode
         mock_stamp.return_value = '2019-07-03'
         mock_popen().wait.return_value = 0
         d = DailyDirectory('/src/d0', '/dst/d0', extra=['--exclude-from', 'foo'])
@@ -105,13 +113,17 @@ class TestDaily(unittest.TestCase):
                                      call('/dst/d0/f2', 288)])
 
     @patch('os.walk')
+    @patch('os.stat')
     @patch('os.chmod')
-    def test_lock(self, mock_chmod, mock_walk):
+    def test_lock(self, mock_chmod, mock_stat, mock_walk):
         """Test the lock functions in DailyDirectory.lock().
         """
         mock_walk.return_value = [('/dst/d0', ['d1', 'd2'], ['f1', 'f2']),
                                   ('/dst/d0/d1', [], ['f3']),
                                   ('/dst/d0/d2', [], ['f4'])]
+        mode = Mock()
+        mode.st_mode = 137
+        mock_stat.return_value = mode
         d = DailyDirectory('/src/d0', '/dst/d0')
         d.lock()
         mock_walk.assert_called_once_with('/dst/d0')
