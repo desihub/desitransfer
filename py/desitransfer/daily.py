@@ -114,9 +114,9 @@ def _config():
                                             'spectro'))
     return [DailyDirectory('/exposures/desi/sps',
                            os.path.join(engineering, 'spectrograph', 'sps')),
-            # DailyDirectory('/exposures/nightwatch',
-            #                os.path.join(spectro, 'nightwatch', 'kpno'),
-            #                extra=['--exclude-from', nightwatch_exclude]),
+            DailyDirectory('/exposures/nightwatch',
+                           os.path.join(spectro, 'nightwatch', 'kpno'),
+                           extra=['--exclude-from', nightwatch_exclude]),
             DailyDirectory('/data/dts/exposures/lost+found',
                            os.path.join(spectro, 'staging', 'lost+found'),
                            dirlinks=True),
@@ -149,9 +149,9 @@ def _options(*args):
     prsr = ArgumentParser(description=desc)
     # prsr.add_argument('-b', '--backup', metavar='H', type=int, default=20,
     #                   help='UTC time in hours to trigger HPSS backups (default %(default)s:00 UTC).')
-    # prsr.add_argument('-d', '--debug', action='store_true',
-    #                   help='Set log level to DEBUG.')
-    prsr.add_argument('-d', '--daemon', action='store_true',
+    prsr.add_argument('-d', '--debug', action='store_true',
+                      help='Set log level to DEBUG.')
+    prsr.add_argument('-D', '--daemon', action='store_true',
                       help='Run in daemon mode.  If not specificed, the script will run once and exit.')
     # prsr.add_argument('-e', '--rsh', metavar='COMMAND', dest='ssh', default='/bin/ssh',
     #                   help="Use COMMAND for remote shell access (default '%(default)s').")
