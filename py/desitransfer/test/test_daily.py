@@ -43,16 +43,19 @@ class TestDaily(unittest.TestCase):
     def test_options(self):
         """Test command-line arguments.
         """
-        with patch.object(sys, 'argv',
-                          ['desi_daily_transfer', '--daemon', '--kill',
-                           os.path.expanduser('~/stop_daily_transfer')]):
-            options = _options()
-            self.assertTrue(options.permission)
-            self.assertEqual(options.sleep, 24)
-            self.assertTrue(options.daemon)
-            self.assertEqual(options.kill,
-                             os.path.join(os.environ['HOME'],
-                                          'stop_daily_transfer'))
+        with patch.dict('os.environ',
+                        {'DESI_ROOT': '/desi/root'}):
+            with patch.object(sys, 'argv',
+                              ['desi_daily_transfer', '--debug', '--kill',
+                               os.path.expanduser('~/stop_daily_transfer')]):
+                options = _options()
+                self.assertTrue(options.permission)
+                self.assertEqual(options.completion,
+                                 '/desi/root/spectro/staging/status/daily.txt')
+                self.assertTrue(options.debug)
+                self.assertEqual(options.kill,
+                                 os.path.join(os.environ['HOME'],
+                                              'stop_daily_transfer'))
 
     @patch('os.walk')
     @patch('os.stat')
