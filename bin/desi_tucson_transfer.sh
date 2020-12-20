@@ -20,7 +20,7 @@ function usage() {
     ) >&2
 }
 #
-# Disable glob expansion, bail out if anything goes wrong.
+# Disable glob expansion.
 #
 set -o noglob
 # set -o errexit
@@ -41,8 +41,8 @@ dynamic='cmx datachallenge engineering spectro/data spectro/nightwatch/kpno spec
 dst=''
 exclude=NONE
 log=${HOME}/Documents/Logfiles
-test=false
-verbose=false
+test=/bin/false
+verbose=/bin/false
 while getopts d:e:hstv argname; do
     case ${argname} in
         d) dst=${OPTARG} ;;
@@ -50,8 +50,8 @@ while getopts d:e:hstv argname; do
         h) usage; exit 0 ;;
         l) log=${OPTARG} ;;
         s) dynamic="${dynamic} ${static}" ;;
-        t) test=true; verbose=true ;;
-        v) verbose=true ;;
+        t) test=/bin/true; verbose=/bin/true ;;
+        v) verbose=/bin/true ;;
         *) usage; exit 1 ;;
     esac
 done
@@ -61,6 +61,10 @@ shift $((OPTIND - 1))
 #
 if [[ -z "${DESISYNC_HOSTNAME}" ]]; then
     echo "DESISYNC_HOSTNAME must be set!" >&2
+    exit 1
+fi
+if [[ -z "${DESISYNC_STATUS_URL}" ]]; then
+    echo "DESISYNC_STATUS_URL must be set!" >&2
     exit 1
 fi
 src=rsync://${DESISYNC_HOSTNAME}/desi
@@ -90,6 +94,13 @@ if [[ -f ${p} ]]; then
     fi
 fi
 echo $$ > ${p}
+#
+# Wait for daily KPNO -> NERSC transfer to finish.
+#
+until /usr/bin/wget -q -O ${HOME}/scratch/daily.txt ${DESISYNC_STATUS_URL}; do
+    ${verbose} && echo "Daily transfer incomplete, sleeping." >&2
+    /bin/sleep 15m
+done
 #
 # Run rsync.
 #
