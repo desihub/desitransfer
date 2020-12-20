@@ -67,6 +67,10 @@ if [[ -z "${DESISYNC_STATUS_URL}" ]]; then
     echo "DESISYNC_STATUS_URL must be set!" >&2
     exit 1
 fi
+if [[ -z "${CSCRATCH}" ]]; then
+    echo "CSCRATCH must be set!" >&2
+    exit 1
+fi
 src=rsync://${DESISYNC_HOSTNAME}/desi
 #
 # Check if top-level destination is set.
@@ -97,7 +101,7 @@ echo $$ > ${p}
 #
 # Wait for daily KPNO -> NERSC transfer to finish.
 #
-until /usr/bin/wget -q -O ${HOME}/scratch/daily.txt ${DESISYNC_STATUS_URL}; do
+until /usr/bin/wget -q -O ${CSCRATCH}/daily.txt ${DESISYNC_STATUS_URL}; do
     ${verbose} && echo "Daily transfer incomplete, sleeping." >&2
     /bin/sleep 15m
 done
