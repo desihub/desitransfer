@@ -205,5 +205,5 @@ def main():
         if options.debug:
             print("DEBUG: daily transfer complete at %s. Writing %s." % (stamp(), options.completion))
         with open(options.completion, 'w') as c:
-            c.write(stamp())
+            c.write(stamp() + "\n")
         return 0
