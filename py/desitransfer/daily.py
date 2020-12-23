@@ -7,6 +7,7 @@ desitransfer.daily
 Entry point for :command:`desi_daily_transfer`.
 """
 import os
+import stat
 import subprocess as sub
 import sys
 import time
@@ -74,9 +75,12 @@ class DailyDirectory(object):
         """Make a directory read-only.
         """
         for dirpath, dirnames, filenames in os.walk(self.destination):
-            os.chmod(dirpath, dir_perm)
+            if stat.S_IMODE(os.stat(dirpath).st_mode) != dir_perm:
+                os.chmod(dirpath, dir_perm)
             for f in filenames:
-                os.chmod(os.path.join(dirpath, f), file_perm)
+                fpath = os.path.join(dirpath, f)
+                if stat.S_IMODE(os.stat(fpath).st_mode) != file_perm:
+                    os.chmod(fpath, file_perm)
 
     def permission(self):
         """Set permissions for DESI collaboration access.
@@ -145,10 +149,13 @@ def _options(*args):
     prsr = ArgumentParser(description=desc)
     # prsr.add_argument('-b', '--backup', metavar='H', type=int, default=20,
     #                   help='UTC time in hours to trigger HPSS backups (default %(default)s:00 UTC).')
-    # prsr.add_argument('-d', '--debug', action='store_true',
-    #                   help='Set log level to DEBUG.')
-    prsr.add_argument('-d', '--daemon', action='store_true',
-                      help='Run in daemon mode.  If not specificed, the script will run once and exit.')
+    prsr.add_argument('-c', '--completion', metavar='FILE',
+                      default=os.path.join(os.environ['DESI_ROOT'], 'spectro', 'staging', 'status', 'daily.txt'),
+                      help='Signal completion of transfer via FILE (default %(default)s).')
+    prsr.add_argument('-d', '--debug', action='store_true',
+                      help='Set log level to DEBUG.')
+    # prsr.add_argument('-D', '--daemon', action='store_true',
+    #                   help='Run in daemon mode.  If not specificed, the script will run once and exit.')
     # prsr.add_argument('-e', '--rsh', metavar='COMMAND', dest='ssh', default='/bin/ssh',
     #                   help="Use COMMAND for remote shell access (default '%(default)s').")
     prsr.add_argument('-k', '--kill', metavar='FILE',
@@ -158,8 +165,8 @@ def _options(*args):
     #                   help="Trigger DESI pipeline on this NERSC system (default %(default)s).")
     prsr.add_argument('-P', '--no-permission', action='store_false', dest='permission',
                       help='Do not set permissions for DESI collaboration access.')
-    prsr.add_argument('-s', '--sleep', metavar='H', type=int, default=24,
-                      help='In daemon mode, sleep H hours before checking for new data (default %(default)s hours).')
+    # prsr.add_argument('-s', '--sleep', metavar='H', type=int, default=24,
+    #                   help='In daemon mode, sleep H hours before checking for new data (default %(default)s hours).')
     # prsr.add_argument('-S', '--shadow', action='store_true',
     #                   help='Observe the actions of another data transfer script but do not make any changes.')
     prsr.add_argument('-V', '--version', action='version',
@@ -176,6 +183,12 @@ def main():
         An integer suitable for passing to :func:`sys.exit`.
     """
     options = _options()
+    if options.debug:
+        print("DEBUG: os.remove('%s')" % options.completion)
+    try:
+        os.remove(options.completion)
+    except FileNotFoundError:
+        pass
     while True:
         if os.path.exists(options.kill):
             print("INFO: %s detected, shutting down daily transfer script." % options.kill)
@@ -185,7 +198,12 @@ def main():
             if status != 0:
                 print("ERROR: rsync problem detected for {0.source} -> {0.destination}!".format(d))
                 return status
-        if options.daemon:
-            time.sleep(options.sleep*60*60)
-        else:
-            return 0
+        # if options.daemon:
+        #     time.sleep(options.sleep*60*60)
+        # else:
+        #     return 0
+        if options.debug:
+            print("DEBUG: daily transfer complete at %s. Writing %s." % (stamp(), options.completion))
+        with open(options.completion, 'w') as c:
+            c.write(stamp() + "\n")
+        return 0

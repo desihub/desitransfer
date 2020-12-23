@@ -243,7 +243,7 @@ The DESI Collaboration Account
         #
         if now >= self.conf['common'].getint('backup'):
             s = self.backup(d, yst)
-            if s:
+            if s and self.tape:
                 log.debug("status.update('%s', 'all', 'backup')", yst)
                 status.update(yst, 'all', 'backup')
 

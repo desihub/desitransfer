@@ -53,8 +53,6 @@ def _options():
     """
     desc = "Transfer DESI nightwatch data files."
     prsr = ArgumentParser(description=desc)
-    prsr.add_argument('-A', '--no-apache', action='store_false', dest='apache',
-                      help='Do not set ACL for Apache httpd access.')
     # prsr.add_argument('-B', '--no-backup', action='store_false', dest='backup',
     #                   help="Skip NERSC HPSS backups.")
     # prsr.add_argument('-c', '--configuration', metavar='FILE',
@@ -64,11 +62,11 @@ def _options():
     prsr.add_argument('-k', '--kill', metavar='FILE',
                       default=os.path.join(os.environ['HOME'], 'stop_desi_transfer'),
                       help="Exit the script when FILE is detected (default %(default)s).")
-    # prsr.add_argument('-P', '--no-pipeline', action='store_false', dest='pipeline',
-    #                   help="Only transfer files, don't start the DESI pipeline.")
+    prsr.add_argument('-P', '--no-permission', action='store_false', dest='permission',
+                      help='Do not set permissions for DESI collaboration access.')
     # prsr.add_argument('-S', '--shadow', action='store_true',
     #                   help='Observe the actions of another data transfer script but do not make any changes.')
-    prsr.add_argument('-s', '--sleep', metavar='M', type=int, default=10,
+    prsr.add_argument('-s', '--sleep', metavar='M', type=int, default=1,
                       help='Sleep M minutes before checking for new data (default %(default)s minutes).')
     prsr.add_argument('-V', '--version', action='version',
                       version='%(prog)s {0}'.format(dtVersion))
@@ -203,7 +201,7 @@ def main():
         #
         # Correct the permissions.
         #
-        if options.apache:
+        if options.permission:
             if os.path.exists(nightdir):
                 log.info('Fixing permissions for DESI.')
                 cmd = ['fix_permissions.sh', nightdir]
