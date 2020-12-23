@@ -5,17 +5,18 @@
 function usage() {
     local execName=$(basename $0)
     (
-    echo "${execName} [-d DIR] [-e DIR] [-h] [-l DIR] [-s] [-t] [-v]"
+    echo "${execName} [-d DIR] [-e DIR] [-h] [-l DIR] [-s] [-S TIME] [-t] [-v]"
     echo ""
     echo "Sync DESI data to Tucson mirror site."
     echo ""
-    echo "-d DIR = Use DIR as destination directory."
-    echo "-e DIR = Exclude DIR from sync."
-    echo "    -h = Print this message and exit."
-    echo "-l DIR = Use DIR for log files."
-    echo "    -s = Also sync static data sets."
-    echo "    -t = Test mode.  Do not make any changes. Implies -v."
-    echo "    -v = Verbose mode. Print extra information."
+    echo " -d DIR = Use DIR as destination directory."
+    echo " -e DIR = Exclude DIR from sync."
+    echo "     -h = Print this message and exit."
+    echo " -l DIR = Use DIR for log files."
+    echo "     -s = Also sync static data sets."
+    echo "-S TIME = Sleep for TIME while waiting for daily transfer to finish."
+    echo "     -t = Test mode.  Do not make any changes. Implies -v."
+    echo "     -v = Verbose mode. Print extra information."
     echo ""
     ) >&2
 }
@@ -41,15 +42,18 @@ dynamic='cmx datachallenge engineering spectro/data spectro/nightwatch/kpno spec
 dst=''
 exclude=NONE
 log=${HOME}/Documents/Logfiles
+sleepTime=15m
+stampFormat='+%Y-%m-%dT%H:%M:S%z'
 test=/bin/false
 verbose=/bin/false
-while getopts d:e:hstv argname; do
+while getopts d:e:hsS:tv argname; do
     case ${argname} in
         d) dst=${OPTARG} ;;
         e) exclude=${OPTARG} ;;
         h) usage; exit 0 ;;
         l) log=${OPTARG} ;;
         s) dynamic="${dynamic} ${static}" ;;
+        S) sleepTime=${OPTARG} ;;
         t) test=/bin/true; verbose=/bin/true ;;
         v) verbose=/bin/true ;;
         *) usage; exit 1 ;;
@@ -101,9 +105,12 @@ echo $$ > ${p}
 #
 # Wait for daily KPNO -> NERSC transfer to finish.
 #
+l=${log}/desi_tucson_transfer.log
+[[ -f ${l} ]] || /bin/touch ${l}
 until /usr/bin/wget -q -O ${CSCRATCH}/daily.txt ${DESISYNC_STATUS_URL}; do
-    ${verbose} && echo "Daily transfer incomplete, sleeping." >&2
-    /bin/sleep 15m
+    stamp=$(/bin/date ${stampFormat})
+    ${verbose} && echo "DEBUG:${stamp}: Daily transfer incomplete, sleeping ${sleepTime}." >> ${l}
+    /bin/sleep ${sleepTime}
 done
 #
 # Run rsync.
@@ -126,10 +133,11 @@ for d in ${dynamic}; do
     #
     # rsync command.
     #
+    stamp=$(/bin/date ${stampFormat})
     if [[ ${d} == ${exclude} ]]; then
-        ${verbose} && echo "${exclude} skipped at user request." >> ${l}
+        ${verbose} && echo "DEBUG:${stamp}: ${exclude} skipped at user request." >> ${l}
     else
-        ${verbose} && echo ${rsync} ${inc} ${src}/${d}/ ${dst}/${d}/ >> ${l}
+        ${verbose} && echo "DEBUG:${stamp}: ${rsync} ${inc} ${src}/${d}/ ${dst}/${d}/" >> ${l}
         ${test}    || ${rsync} ${inc} ${src}/${d}/ ${dst}/${d}/ >> ${l} 2>&1 || \
             echo "rsync error detected for ${dst}/${d}/!  Check logs!" >&2
     fi
