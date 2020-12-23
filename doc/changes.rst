@@ -2,10 +2,15 @@
 Change Log
 ==========
 
-0.3.10 (unreleased)
--------------------
+0.4.0 (2020-12-23)
+------------------
 
 * Migrated from Travis CI to GitHub Actions.
+* Improve real-time nightwatch transfer for use when NERSC is unavailable;
+  better synchronization between daily engineering transfer and Tucson
+  mirror transfer (PR `#24`_).
+
+.. _`#24`: https://github.com/desihub/desitransfer/issues/24
 
 0.3.9 (2020-12-03)
 ------------------
