@@ -43,7 +43,7 @@ dst=''
 exclude=NONE
 log=${HOME}/Documents/Logfiles
 sleepTime=15m
-stampFormat='+%Y-%m-%dT%H:%M:S%z'
+stampFormat='+%Y-%m-%dT%H:%M:%S%z'
 test=/bin/false
 verbose=/bin/false
 while getopts d:e:hsS:tv argname; do
