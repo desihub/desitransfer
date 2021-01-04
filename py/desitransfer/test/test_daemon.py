@@ -290,14 +290,16 @@ class TestDaemon(unittest.TestCase):
         # rsync error bypasses a lot of code.
         #
         mock_isdir.return_value = False
-        mock_popen.return_value = ('1', '', '')
+        mock_popen.return_value = ('1', 'rsync', 'io error')
         transfer.exposure(c[0], '20190703/00000127', mock_status)
         mock_log.debug.assert_has_calls([call("os.makedirs('%s', exist_ok=True)", '/desi/root/spectro/staging/raw/20190703')])
         mock_mkdir.assert_called_once_with('/desi/root/spectro/staging/raw/20190703', exist_ok=True)
         mock_popen.assert_called_once_with(['/bin/rsync', '--verbose', '--recursive',
                                             '--copy-dirlinks', '--times', '--omit-dir-times',
                                             'dts:/data/dts/exposures/raw/20190703/00000127/', '/desi/root/spectro/staging/raw/20190703/00000127/'])
-        mock_log.error.assert_called_once_with('rsync problem detected for %s/%s!', '20190703', '00000127')
+        mock_log.critical.assert_called_once_with('rsync problem (status = %s) detected for %s/%s, check logs!', '1', '20190703', '00000127')
+        mock_log.error.assert_has_calls([call('rsync STDOUT = %s', 'rsync'),
+                                         call('rsync STDERR = %s', 'io error')])
         mock_status.update.assert_called_once_with('20190703', '00000127', 'rsync', failure=True)
         #
         # Actually run the pipeline
@@ -338,7 +340,7 @@ class TestDaemon(unittest.TestCase):
         mock_status.update.assert_has_calls([call('20190703', '00000127', 'rsync'),
                                              call('20190703', '00000127', 'checksum', failure=True)])
         mock_log.debug.assert_has_calls([call("%s does not exist, ignore checksum error.", '/desi/root/spectro/staging/raw/20190703/00000127')])
-        mock_log.error.assert_has_calls([call("Checksum problem detected for %s/%s!", '20190703', '00000127')])
+        mock_log.critical.assert_has_calls([call("Checksum problem detected for %s/%s, check logs!", '20190703', '00000127')])
         #
         # Not already transferred, checksum file does exist.
         #
@@ -722,6 +724,12 @@ desi_spectro_data_20190702.tar.idx
         mock_log.debug.assert_called_with(' '.join(cmd))
         rsync_night('/source', '/destination', '20190703')
         mock_popen.assert_called_with(cmd)
+        mock_popen.return_value = ('1', 'stdout', 'stderr')
+        rsync_night('/source', '/destination', '20190703')
+        mock_log.critical.assert_called_once_with('rsync problem (status = %s) detected on catch-up for %s, check logs!',
+                                                  '1', '20190703')
+        mock_log.error.assert_has_calls([call('rsync STDOUT = %s', 'stdout'),
+                                         call('rsync STDERR = %s', 'stderr')])
 
 
 def test_suite():

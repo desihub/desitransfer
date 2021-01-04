@@ -122,10 +122,10 @@ class TransferDaemon(object):
             log.setLevel(logging.DEBUG)
         email_from = os.environ['USER'] + '@' + getfqdn()
         handler2 = SMTPHandler('localhost', email_from, conf.getlist('to'),
-                               'Critical error reported by desi_transfer_daemon!')
+                               'Error reported by desi_transfer_daemon!')
         fmt = """Greetings,
 
-At %(asctime)s, desi_transfer_daemon failed with this message:
+At %(asctime)s, desi_transfer_daemon reported this serious error:
 
 %(message)s
 
@@ -360,7 +360,7 @@ The DESI Collaboration Account
                 else:
                     log.info("%s/%s appears to be test data. Skipping pipeline activation.", night, exposure)
             else:
-                log.error("Checksum problem detected for %s/%s!", night, exposure)
+                log.critical("Checksum problem detected for %s/%s, check logs!", night, exposure)
                 log.debug("status.update('%s', '%s', 'checksum', failure=True)", night, exposure)
                 status.update(night, exposure, 'checksum', failure=True)
         elif rsync_status == 'done':
@@ -369,7 +369,10 @@ The DESI Collaboration Account
             #
             pass
         else:
-            log.error('rsync problem detected for %s/%s!', night, exposure)
+            log.critical('rsync problem (status = %s) detected for %s/%s, check logs!',
+                         rsync_status, night, exposure)
+            log.error('rsync STDOUT = %s', out)
+            log.error('rsync STDERR = %s', err)
             log.debug("status.update('%s', '%s', 'rsync', failure=True)", night, exposure)
             status.update(night, exposure, 'rsync', failure=True)
 
@@ -643,8 +646,14 @@ def rsync_night(source, destination, night, test=False):
                 os.path.join(destination, night))
     if test:
         log.debug(' '.join(cmd))
+        rsync_status, out, err = '0', '', ''
     else:
         rsync_status, out, err = _popen(cmd)
+    if rsync_status != '0':
+        log.critical('rsync problem (status = %s) detected on catch-up for %s, check logs!',
+                     rsync_status, night)
+        log.error('rsync STDOUT = %s', out)
+        log.error('rsync STDERR = %s', err)
     #
     # Lock files.
     #
