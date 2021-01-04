@@ -626,7 +626,13 @@ desi_spectro_data_20190702.tar.idx
             with patch('desitransfer.daemon.log') as l:
                 o = verify_checksum(c)
         self.assertEqual(o, -1)
-        l.error.assert_has_calls([call("%s does not match the number of files!", c)])
+        l.error.assert_has_calls([call("%s lists %d file(s) that are not present!", c, 1)])
+        with patch('os.listdir') as mock_listdir:
+            mock_listdir.return_value = ['t.sha256sum', 'test_file_1.txt', 'test_file_2.txt', 'test_file_3.txt']
+            with patch('desitransfer.daemon.log') as l:
+                o = verify_checksum(c)
+        self.assertEqual(o, 1)
+        l.error.assert_has_calls([call("%d files are not listed in %s!", 1, c)])
         #
         # Bad list of files.
         #
@@ -648,8 +654,8 @@ desi_spectro_data_20190702.tar.idx
                     h.hexdigest.return_value = 'abcdef'
                     o = verify_checksum(c)
         self.assertEqual(o, 2)
-        l.error.assert_has_calls([call("Checksum mismatch for %s!", os.path.join(d, 'test_file_1.txt')),
-                                  call("Checksum mismatch for %s!", os.path.join(d, 'test_file_2.txt'))])
+        l.error.assert_has_calls([call("Checksum mismatch for %s in %s!", os.path.join(d, 'test_file_1.txt'), c),
+                                  call("Checksum mismatch for %s in %s!", os.path.join(d, 'test_file_2.txt'), c)])
 
     @patch('os.walk')
     @patch('os.chmod')
