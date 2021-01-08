@@ -81,13 +81,13 @@ total size is 118,417,836,324  speedup is 494,367.55
         """Test ensure_scratch.
         """
         tmp = self.tmp.name
-        t = ensure_scratch(tmp, ['/foo', '/bar'])
+        t = ensure_scratch([tmp, '/foo', '/bar'])
         self.assertEqual(t, tmp)
-        t = ensure_scratch('/foo', tmp)
+        t = ensure_scratch(['/foo', tmp])
         self.assertEqual(t, tmp)
-        t = ensure_scratch('/foo', ['/bar', tmp])
+        t = ensure_scratch(['/foo', '/bar', tmp])
         self.assertEqual(t, tmp)
-        t = ensure_scratch('/foo', ['/bar', '/abcdefg', tmp])
+        t = ensure_scratch(['/foo', '/bar', '/abcdefg', tmp])
         self.assertEqual(t, tmp)
 
     @patch('desitransfer.common.dt')

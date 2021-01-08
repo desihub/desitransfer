@@ -51,9 +51,7 @@ def _options():
     prsr.add_argument('-k', '--kill', metavar='FILE',
                       default=os.path.join(os.environ['HOME'], 'stop_desi_transfer'),
                       help="Exit the script when FILE is detected (default %(default)s).")
-    prsr.add_argument('-P', '--no-pipeline', action='store_false', dest='pipeline',
-                      help="Only transfer files, don't start the DESI pipeline.")
-    prsr.add_argument('-S', '--shadow', action='store_true',
+    prsr.add_argument('-t', '--test', action='store_true',
                       help='Observe the actions of another data transfer script but do not make any changes.')
     prsr.add_argument('-V', '--version', action='version',
                       version='%(prog)s {0}'.format(dtVersion))
@@ -69,7 +67,7 @@ class TransferDaemon(object):
         The parsed command-line options.
     """
     _link_re = re.compile(r'[0-9]{8}/[0-9]{8}$')
-    _directory = namedtuple('_directory', 'source, staging, destination, hpss, expected, checksum')
+    _directory = namedtuple('_directory', 'source, staging, destination, hpss, checksum')
     _default_configuration = resource_filename('desitransfer', 'data/desi_transfer_daemon.ini')
 
     def __init__(self, options):
@@ -77,9 +75,8 @@ class TransferDaemon(object):
             self._ini = self._default_configuration
         else:
             self._ini = options.configuration
-        self.test = options.shadow
+        self.test = options.test
         self.tape = options.backup
-        self.run = options.pipeline
         getlist = lambda x: x.split(',')
         getdict = lambda x: dict([tuple(i.split(':')) for i in x.split(',')])
         self.conf = ConfigParser(defaults=os.environ,
@@ -88,15 +85,14 @@ class TransferDaemon(object):
         files = self.conf.read(self._ini)
         # assert files[0] == self._ini
         self.sections = [s for s in self.conf.sections()
-                         if s not in ('common', 'logging', 'pipeline')]
+                         if s not in ('common', 'logging')]
         self.directories = [self._directory(self.conf[s]['source'],
                                             self.conf[s]['staging'],
                                             self.conf[s]['destination'],
                                             self.conf[s]['hpss'],
-                                            self.conf[s].getlist('expected_files'),
                                             self.conf[s]['checksum_file'])
                             for s in self.sections]
-        self.scratch = ensure_scratch(self.conf['common']['scratch'], self.conf['common']['alternate_scratch'].split(','))
+        self.scratch = ensure_scratch(self.conf['common'].getlist('scratch'))
         self._configure_log(options.debug)
         return
 
@@ -137,46 +133,6 @@ The DESI Collaboration Account
         handler2.setLevel(logging.CRITICAL)
         log.parent.addHandler(handler2)
 
-    def pipeline(self, night, exposure, command=None):
-        """Generate a ``desi_night`` command to pass to the pipeline.
-
-        Parameters
-        ----------
-        night : :class:`str`
-            Night of observation.
-        exposure : :class:`str`
-            Exposure number.
-        command : :class:`str`, optional
-            Specific command to pass to ``desi_night``.
-
-        Returns
-        -------
-        :class:`list`
-            A command suitable for passing to :class:`subprocess.Popen`.
-        """
-        rename = self.conf['pipeline'].getdict('commands')
-        if command is None:
-            cmd = self.conf['pipeline']['exposure']
-        else:
-            if command in rename:
-                cmd = rename[command]
-            else:
-                cmd = command
-        c = [self.conf['pipeline']['ssh'],
-             '-q',
-             self.conf['pipeline']['host'],
-             self.conf['pipeline']['desi_night'],
-             cmd,
-             '--night', night,
-             '--expid', exposure,
-             '--nersc', self.conf['pipeline']['host'],
-             '--nersc_queue', self.conf['pipeline']['queue'],
-             '--nersc_maxnodes', self.conf['pipeline']['nodes']]
-        if command is not None:
-            c = c[:7] + c[9:]
-        log.debug(' '.join(c))
-        return c
-
     def transfer(self):
         """Loop over and transfer all configured directories.
         """
@@ -198,7 +154,7 @@ The DESI Collaboration Account
         :class:`bool`
             ``True`` if checksums are being computed.
         """
-        cmd = [self.conf['pipeline']['ssh'], '-q', 'dts',
+        cmd = [self.conf['common']['ssh'], '-q', 'dts',
                '/bin/ls', self.conf['common']['checksum_lock']]
         _, out, err = _popen(cmd)
         if out:
@@ -219,7 +175,7 @@ The DESI Collaboration Account
         #
         # Find symlinks at KPNO.
         #
-        cmd = [self.conf['pipeline']['ssh'], '-q', 'dts',
+        cmd = [self.conf['common']['ssh'], '-q', 'dts',
                '/bin/find', d.source, '-type', 'l']
         _, out, err = _popen(cmd)
         links = sorted([x for x in out.split('\n') if x])
@@ -250,6 +206,9 @@ The DESI Collaboration Account
     def exposure(self, d, link, status):
         """Data transfer operations for a single exposure.
 
+        This method will unconditionally install an exposure directory
+        in the destination, regardless of any transfer or checksum errors.
+
         Parameters
         ----------
         d : :class:`desitransfer.common.DTSDir`
@@ -273,101 +232,34 @@ The DESI Collaboration Account
             if not self.test:
                 os.makedirs(staging_night, exist_ok=True)
         #
+        # Set up DESI_SPECTRO_DATA.
+        #
+        if not os.path.isdir(destination_night):
+            log.debug("os.makedirs('%s', exist_ok=True)", destination_night)
+            log.debug("os.chmod('%s', 0o%o)", destination_night, dir_perm)
+            if not self.test:
+                os.makedirs(destination_night, exist_ok=True)
+                os.chmod(destination_night, dir_perm)
+        #
         # Has exposure already been transferred?
         #
         if not os.path.isdir(staging_exposure) and not os.path.isdir(destination_exposure):
             cmd = rsync(os.path.join(d.source, night, exposure), staging_exposure)
+            log.debug(' '.join(cmd))
             if self.test:
-                log.debug(' '.join(cmd))
                 rsync_status = '0'
             else:
                 rsync_status, out, err = _popen(cmd)
         else:
             log.debug('%s already transferred.', staging_exposure)
-            rsync_status = 'done'
+            return
         #
         # Transfer complete.
         #
         if rsync_status == '0':
             log.debug("status.update('%s', '%s', 'rsync')", night, exposure)
-            status.update(night, exposure, 'rsync')
-            #
-            # Check permissions.
-            #
-            lock_directory(staging_exposure, self.test)
-            #
-            # Verify checksums.
-            #
-            checksum_file = os.path.join(staging_exposure,
-                                         d.checksum.format(night=night, exposure=exposure))
-            if os.path.exists(checksum_file):
-                checksum_status = verify_checksum(checksum_file)
-            elif not os.path.exists(staging_exposure):
-                #
-                # This can happen in shadow mode.
-                #
-                log.debug("%s does not exist, ignore checksum error.", staging_exposure)
-                checksum_status = 1
-            else:
-                log.warning("No checksum file for %s/%s!", night, exposure)
-                checksum_status = 0
-            #
-            # Did we pass checksums?
-            #
-            if checksum_status == 0:
-                log.debug("status.update('%s', '%s', 'checksum')", night, exposure)
-                status.update(night, exposure, 'checksum')
-                #
-                # Set up DESI_SPECTRO_DATA.
-                #
-                if not os.path.isdir(destination_night):
-                    log.debug("os.makedirs('%s', exist_ok=True)", destination_night)
-                    log.debug("os.chmod('%s', 0o%o)", destination_night, dir_perm)
-                    if not self.test:
-                        os.makedirs(destination_night, exist_ok=True)
-                        os.chmod(destination_night, dir_perm)
-                #
-                # Move data into DESI_SPECTRO_DATA.
-                #
-                if not os.path.isdir(destination_exposure):
-                    log.debug("shutil.move('%s', '%s')", staging_exposure, destination_night)
-                    if not self.test:
-                        shutil.move(staging_exposure, destination_night)
-                #
-                # Is this a "realistic" exposure?
-                #
-                if (self.run and
-                    all([os.path.exists(os.path.join(destination_exposure,
-                                                     f.format(exposure=exposure)))
-                         for f in d.expected])):
-                    #
-                    # Run update
-                    #
-                    cmd = self.pipeline(night, exposure)
-                    if not self.test:
-                        _, out, err = _popen(cmd)
-                    log.debug("status.update('%s', '%s', 'pipeline')", night, exposure)
-                    status.update(night, exposure, 'pipeline')
-                    for k in ('flats', 'arcs', 'science'):
-                        if os.path.exists(os.path.join(destination_exposure,
-                                                       '{0}-{1}-{2}.done'.format(k, night, exposure))):
-                            cmd = self.pipeline(night, exposure, command=k)
-                            if not self.test:
-                                _, out, err = _popen(cmd)
-                            log.debug("status.update('%s', '%s', 'pipeline', last='%s')",
-                                      night, exposure, k)
-                            status.update(night, exposure, 'pipeline', last=k)
-                else:
-                    log.info("%s/%s appears to be test data. Skipping pipeline activation.", night, exposure)
-            else:
-                log.critical("Checksum problem detected for %s/%s, check logs!", night, exposure)
-                log.debug("status.update('%s', '%s', 'checksum', failure=True)", night, exposure)
-                status.update(night, exposure, 'checksum', failure=True)
-        elif rsync_status == 'done':
-            #
-            # Do nothing, successfully.
-            #
-            pass
+            if not self.test:
+                status.update(night, exposure, 'rsync')
         else:
             log.critical('rsync problem (status = %s) detected for %s/%s, check logs!',
                          rsync_status, night, exposure)
@@ -375,6 +267,41 @@ The DESI Collaboration Account
             log.error('rsync STDERR = %s', err)
             log.debug("status.update('%s', '%s', 'rsync', failure=True)", night, exposure)
             status.update(night, exposure, 'rsync', failure=True)
+        #
+        # Check permissions.
+        #
+        log.debug("lock_directory('%s', %s)", staging_exposure, str(self.test))
+        lock_directory(staging_exposure, self.test)
+        #
+        # Verify checksums.
+        #
+        checksum_file = os.path.join(staging_exposure,
+                                     d.checksum.format(night=night, exposure=exposure))
+        log.debug("verify_checksum('%s')", checksum_file)
+        if not self.test:
+            if os.path.exists(checksum_file):
+                checksum_status = verify_checksum(checksum_file)
+                #
+                # Did we pass checksums?
+                #
+                if checksum_status == 0:
+                    log.debug("status.update('%s', '%s', 'checksum')", night, exposure)
+                    status.update(night, exposure, 'checksum')
+                else:
+                    log.critical("Checksum problem detected for %s/%s, check logs!", night, exposure)
+                    log.debug("status.update('%s', '%s', 'checksum', failure=True)", night, exposure)
+                    status.update(night, exposure, 'checksum', failure=True)
+            else:
+                log.warning("No checksum file for %s/%s!", night, exposure)
+                log.debug("status.update('%s', '%s', 'checksum', failure=True)", night, exposure)
+                status.update(night, exposure, 'checksum', failure=True)
+        #
+        # Move data into DESI_SPECTRO_DATA.
+        #
+        if not os.path.isdir(destination_exposure):
+            log.debug("shutil.move('%s', '%s')", staging_exposure, destination_night)
+            if not self.test:
+                shutil.move(staging_exposure, destination_night)
 
     def catchup(self, d, night):
         """Do a "catch-up" transfer to catch delayed files in the morning, rather than at noon.
@@ -397,7 +324,7 @@ The DESI Collaboration Account
             sync_file = os.path.join(self.scratch,
                                      'ketchup_{0}_{1}.txt'.format(ketchup_file, night))
             if self.test:
-                sync_file = sync_file.replace('.txt', '.shadow.txt')
+                sync_file = sync_file.replace('.txt', '.test.txt')
             if os.path.exists(sync_file):
                 log.debug("%s detected, catch-up transfer is done.", sync_file)
             else:
@@ -438,7 +365,7 @@ The DESI Collaboration Account
             hpss_file = d.hpss.replace('/', '_')
             ls_file = os.path.join(self.scratch, hpss_file + '.txt')
             if self.test:
-                ls_file = ls_file.replace('.txt', '.shadow.txt')
+                ls_file = ls_file.replace('.txt', '.test.txt')
             log.debug("os.remove('%s')", ls_file)
             try:
                 os.remove(ls_file)
