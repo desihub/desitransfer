@@ -205,7 +205,7 @@ def _options():
     prsr.add_argument('expid', metavar='EXPID',
                       help="Exposure number, or 'all'.")
     prsr.add_argument('stage',
-                      choices=['rsync', 'checksum', 'pipeline', 'backup'],
+                      choices=['rsync', 'checksum', 'backup'],
                       help="Transfer stage.")
     return prsr.parse_args()
 
