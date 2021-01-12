@@ -287,7 +287,10 @@ The DESI Collaboration Account
                 shutil.move(staging_exposure, destination_night)
 
     def checksum(self, checksum_file, status):
-        """Verify checksum associated with `exposure` and report status.
+        """Verify checksum associated with `checksum_file` and report status.
+
+        The status is reported via log messages and messages passed
+        to the `status` object, not via a return value.
 
         Parameters
         ----------
