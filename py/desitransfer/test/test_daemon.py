@@ -661,7 +661,8 @@ total size is 118,417,836,324  speedup is 494,367.55
         mock_rsync.assert_called_once_with('/data/dts/exposures/raw', '/desi/root/spectro/data', '20190703', False)
         mock_log.warning.assert_has_calls([call('New files detected in %s!', '20190703')])
         mock_log.debug.assert_has_calls([call("verify_checksum('%s')", '/desi/root/spectro/data/20190703/00001234/checksum-00001234.sha256sum'),
-                                         call("verify_checksum('%s')", '/desi/root/spectro/data/20190703/00001235/checksum-00001235.sha256sum')])
+                                         call("verify_checksum('%s')", '/desi/root/spectro/data/20190703/00001235/checksum-00001235.sha256sum')],
+                                         any_order=True)
 
     @patch('desitransfer.daemon.rsync_night')
     @patch('os.chdir')
