@@ -503,9 +503,10 @@ desi_spectro_data_20190702.tar.idx
         mock_mv.assert_called_once_with('/desi/root/spectro/staging/raw/20190703/00000127', '/desi/root/spectro/data/20190703')
 
     @patch('os.path.isdir')
+    @patch('desitransfer.daemon.TransferStatus')
     @patch('desitransfer.daemon.log')
     @patch.object(TransferDaemon, '_configure_log')
-    def test_TransferDaemon_catchup_no_data(self, mock_cl, mock_log, mock_isdir):
+    def test_TransferDaemon_catchup_no_data(self, mock_cl, mock_log, mock_status, mock_isdir):
         """Test morning catch-up pass with no data for the night.
         """
         with patch.dict('os.environ',
@@ -517,15 +518,18 @@ desi_spectro_data_20190702.tar.idx
             transfer = TransferDaemon(options)
         c = transfer.directories
         mock_isdir.return_value = False
-        transfer.catchup(c[0], '20190703')
+        transfer.catchup(c[0], '20190703', mock_status)
         mock_isdir.assert_called_once_with('/desi/root/spectro/data/20190703')
         mock_log.warning.assert_called_once_with("No data from %s detected, skipping catch-up transfer.", '20190703')
+        mock_status.assert_not_called()
+        mock_status.update.assert_not_called()
 
     @patch('os.path.exists')
     @patch('os.path.isdir')
+    @patch('desitransfer.daemon.TransferStatus')
     @patch('desitransfer.daemon.log')
     @patch.object(TransferDaemon, '_configure_log')
-    def test_TransferDaemon_catchup_complete(self, mock_cl, mock_log, mock_isdir, mock_exists):
+    def test_TransferDaemon_catchup_complete(self, mock_cl, mock_log, mock_status, mock_isdir, mock_exists):
         """Test morning catch-up pass after catch-up completion.
         """
         with patch.dict('os.environ',
@@ -538,17 +542,20 @@ desi_spectro_data_20190702.tar.idx
         c = transfer.directories
         mock_isdir.return_value = True
         mock_exists.return_value = True
-        transfer.catchup(c[0], '20190703')
+        transfer.catchup(c[0], '20190703', mock_status)
         sync_file = os.path.join(self.tmp.name, 'ketchup__desi_root_spectro_data_20190703.test.txt')
         mock_exists.assert_called_with(sync_file)
         mock_log.debug.assert_called_once_with("%s detected, catch-up transfer is done.", sync_file)
+        mock_status.assert_not_called()
+        mock_status.update.assert_not_called()
 
     @patch('desitransfer.daemon._popen')
     @patch('os.path.exists')
     @patch('os.path.isdir')
+    @patch('desitransfer.daemon.TransferStatus')
     @patch('desitransfer.daemon.log')
     @patch.object(TransferDaemon, '_configure_log')
-    def test_TransferDaemon_catchup_no_changes(self, mock_cl, mock_log, mock_isdir, mock_exists, mock_popen):
+    def test_TransferDaemon_catchup_no_changes(self, mock_cl, mock_log, mock_status, mock_isdir, mock_exists, mock_popen):
         """Test morning catch-up pass with no new data detected.
         """
         r0 = """receiving incremental file list
@@ -567,16 +574,19 @@ total size is 118,417,836,324  speedup is 494,367.55
         mock_isdir.return_value = True
         mock_exists.return_value = False
         mock_popen.return_value = ('0', r0, '')
-        transfer.catchup(c[0], '20190703')
+        transfer.catchup(c[0], '20190703', mock_status)
         self.assertTrue(os.path.isfile(os.path.join(self.tmp.name, 'ketchup__desi_root_spectro_data_20190703.txt')))
         mock_log.info.assert_called_once_with('No files appear to have changed in %s.', '20190703')
+        mock_status.assert_not_called()
+        mock_status.update.assert_not_called()
 
     @patch('desitransfer.daemon._popen')
     @patch('os.path.exists')
     @patch('os.path.isdir')
+    @patch('desitransfer.daemon.TransferStatus')
     @patch('desitransfer.daemon.log')
     @patch.object(TransferDaemon, '_configure_log')
-    def test_TransferDaemon_catchup_no_changes_in_backup(self, mock_cl, mock_log, mock_isdir, mock_exists, mock_popen):
+    def test_TransferDaemon_catchup_no_changes_in_backup(self, mock_cl, mock_log, mock_status, mock_isdir, mock_exists, mock_popen):
         """Test morning catch-up pass with no new data detected at backup time.
         """
         r0 = """receiving incremental file list
@@ -595,17 +605,20 @@ total size is 118,417,836,324  speedup is 494,367.55
         mock_isdir.return_value = True
         mock_exists.return_value = False
         mock_popen.return_value = ('0', r0, '')
-        transfer.catchup(c[0], '20190703', backup=True)
+        transfer.catchup(c[0], '20190703', mock_status, backup=True)
         self.assertTrue(os.path.isfile(os.path.join(self.tmp.name, 'backup__desi_root_spectro_data_20190703.txt')))
         mock_log.info.assert_called_once_with('No files appear to have changed in %s.', '20190703')
+        mock_status.assert_not_called()
+        mock_status.update.assert_not_called()
 
     @patch('desitransfer.daemon.rsync_night')
     @patch('desitransfer.daemon._popen')
     @patch('os.path.exists')
     @patch('os.path.isdir')
+    @patch('desitransfer.daemon.TransferStatus')
     @patch('desitransfer.daemon.log')
     @patch.object(TransferDaemon, '_configure_log')
-    def test_TransferDaemon_catchup_no_exposures(self, mock_cl, mock_log, mock_isdir, mock_exists, mock_popen, mock_rsync):
+    def test_TransferDaemon_catchup_no_exposures(self, mock_cl, mock_log, mock_status, mock_isdir, mock_exists, mock_popen, mock_rsync):
         """Test morning catch-up pass with no new exposures detected.
         """
         r0 = """receiving incremental file list
@@ -625,18 +638,22 @@ total size is 118,417,836,324  speedup is 494,367.55
         mock_isdir.return_value = True
         mock_exists.return_value = False
         mock_popen.return_value = ('0', r0, '')
-        transfer.catchup(c[0], '20190703')
+        transfer.catchup(c[0], '20190703', mock_status)
         mock_rsync.assert_called_once_with('/data/dts/exposures/raw', '/desi/root/spectro/data', '20190703', False)
         mock_log.warning.assert_has_calls([call('New files detected in %s!', '20190703'),
                                            call('No updated exposures in night %s detected.', '20190703')])
+        mock_status.assert_not_called()
+        mock_status.update.assert_not_called()
+
 
     @patch('desitransfer.daemon.rsync_night')
     @patch('desitransfer.daemon._popen')
     @patch('os.path.exists')
     @patch('os.path.isdir')
+    @patch('desitransfer.daemon.TransferStatus')
     @patch('desitransfer.daemon.log')
     @patch.object(TransferDaemon, '_configure_log')
-    def test_TransferDaemon_catchup(self, mock_cl, mock_log, mock_isdir, mock_exists, mock_popen, mock_rsync):
+    def test_TransferDaemon_catchup(self, mock_cl, mock_log, mock_status, mock_isdir, mock_exists, mock_popen, mock_rsync):
         """Test morning catch-up pass.
         """
         r1 = """receiving incremental file list
@@ -657,12 +674,20 @@ total size is 118,417,836,324  speedup is 494,367.55
         mock_isdir.return_value = True
         mock_exists.return_value = False
         mock_popen.return_value = ('0', r1, '')
-        transfer.catchup(c[0], '20190703')
+        transfer.catchup(c[0], '20190703', mock_status)
         mock_rsync.assert_called_once_with('/data/dts/exposures/raw', '/desi/root/spectro/data', '20190703', False)
-        mock_log.warning.assert_has_calls([call('New files detected in %s!', '20190703')])
+        mock_log.warning.assert_has_calls([call('New files detected in %s!', '20190703'),
+                                           call("No checksum file for %s/%s!", '20190703', '00001234'),
+                                           call("No checksum file for %s/%s!", '20190703', '00001235')],
+                                           any_order=True)
         mock_log.debug.assert_has_calls([call("verify_checksum('%s')", '/desi/root/spectro/data/20190703/00001234/checksum-00001234.sha256sum'),
-                                         call("verify_checksum('%s')", '/desi/root/spectro/data/20190703/00001235/checksum-00001235.sha256sum')],
+                                         call("status.update('%s', '%s', 'checksum', failure=True)", '20190703', '00001234'),
+                                         call("verify_checksum('%s')", '/desi/root/spectro/data/20190703/00001235/checksum-00001235.sha256sum'),
+                                         call("status.update('%s', '%s', 'checksum', failure=True)", '20190703', '00001235')],
                                          any_order=True)
+        mock_status.update.assert_has_calls([call('20190703', '00001234', 'checksum', failure=True),
+                                             call('20190703', '00001235', 'checksum', failure=True)],
+                                             any_order=True)
 
     @patch('desitransfer.daemon.rsync_night')
     @patch('os.chdir')
@@ -671,9 +696,10 @@ total size is 118,417,836,324  speedup is 494,367.55
     @patch('desitransfer.daemon._popen')
     @patch('os.remove')
     @patch('os.path.isdir')
+    @patch('desitransfer.daemon.TransferStatus')
     @patch('desitransfer.daemon.log')
     @patch.object(TransferDaemon, '_configure_log')
-    def test_TransferDaemon_backup_no_data(self, mock_cl, mock_log, mock_isdir, mock_rm, mock_popen, mock_empty, mock_getcwd, mock_chdir, mock_rsync):
+    def test_TransferDaemon_backup_no_data(self, mock_cl, mock_log, mock_status, mock_isdir, mock_rm, mock_popen, mock_empty, mock_getcwd, mock_chdir, mock_rsync):
         """Test HPSS backup with no data for the night.
         """
         with patch.dict('os.environ',
@@ -685,10 +711,12 @@ total size is 118,417,836,324  speedup is 494,367.55
             transfer = TransferDaemon(options)
         c = transfer.directories
         mock_isdir.return_value = False
-        s = transfer.backup(c[0], '20190703')
+        s = transfer.backup(c[0], '20190703', mock_status)
         self.assertFalse(s)
         mock_isdir.assert_called_once_with('/desi/root/spectro/data/20190703')
         mock_log.warning.assert_has_calls([call("No data from %s detected, skipping HPSS backup.", '20190703')])
+        mock_status.assert_not_called()
+        mock_status.update.assert_not_called()
 
     @patch('desitransfer.daemon.rsync_night')
     @patch('os.chdir')
@@ -697,9 +725,10 @@ total size is 118,417,836,324  speedup is 494,367.55
     @patch('desitransfer.daemon._popen')
     @patch('os.remove')
     @patch('os.path.isdir')
+    @patch('desitransfer.daemon.TransferStatus')
     @patch('desitransfer.daemon.log')
     @patch.object(TransferDaemon, '_configure_log')
-    def test_TransferDaemon_backup_already_done(self, mock_cl, mock_log, mock_isdir, mock_rm, mock_popen, mock_empty, mock_getcwd, mock_chdir, mock_rsync):
+    def test_TransferDaemon_backup_already_done(self, mock_cl, mock_log, mock_status, mock_isdir, mock_rm, mock_popen, mock_empty, mock_getcwd, mock_chdir, mock_rsync):
         """Test HPSS backup with night already done.
         """
         with patch.dict('os.environ',
@@ -715,11 +744,13 @@ total size is 118,417,836,324  speedup is 494,367.55
         ls_file = os.path.join(self.tmp.name, 'desi_spectro_data.test.txt')
         with open(ls_file, 'w') as f:
             f.write(self.fake_hsi1)
-        s = transfer.backup(c[0], '20190703')
+        s = transfer.backup(c[0], '20190703', mock_status)
         self.assertFalse(s)
         mock_log.debug.assert_has_calls([call("os.remove('%s')", ls_file),
                                          call("Backup of %s already complete.", '20190703')])
         mock_rm.assert_called_once_with(ls_file)
+        mock_status.assert_not_called()
+        mock_status.update.assert_not_called()
 
     @patch('desitransfer.daemon.rsync_night')
     @patch('os.chdir')
@@ -728,9 +759,10 @@ total size is 118,417,836,324  speedup is 494,367.55
     @patch('desitransfer.daemon._popen')
     @patch('os.remove')
     @patch('os.path.isdir')
+    @patch('desitransfer.daemon.TransferStatus')
     @patch('desitransfer.daemon.log')
     @patch.object(TransferDaemon, '_configure_log')
-    def test_TransferDaemon_backup_test(self, mock_cl, mock_log, mock_isdir, mock_rm, mock_popen, mock_empty, mock_getcwd, mock_chdir, mock_rsync):
+    def test_TransferDaemon_backup_test(self, mock_cl, mock_log, mock_status, mock_isdir, mock_rm, mock_popen, mock_empty, mock_getcwd, mock_chdir, mock_rsync):
         """Test HPSS backup of night in 'test' mode.
         """
         with patch.dict('os.environ',
@@ -752,7 +784,7 @@ total size is 118,417,836,324  speedup is 494,367.55
         mock_empty.return_value = True
         mock_getcwd.return_value = self.tmp.name
         mock_rm.side_effect = FileNotFoundError
-        s = transfer.backup(c[0], '20190703')
+        s = transfer.backup(c[0], '20190703', mock_status)
         self.assertTrue(s)
         mock_chdir.assert_has_calls([call('/desi/root/spectro/data'),
                                      call(self.tmp.name)])
@@ -762,6 +794,8 @@ total size is 118,417,836,324  speedup is 494,367.55
                                          call("os.chdir('%s')", '/desi/root/spectro/data'),
                                          call('/usr/common/mss/bin/htar -cvhf desi/spectro/data/desi_spectro_data_20190703.tar -H crc:verify=all 20190703'),
                                          call("os.chdir('%s')", self.tmp.name)])
+        mock_status.assert_not_called()
+        mock_status.update.assert_not_called()
 
     @patch('desitransfer.daemon.rsync_night')
     @patch('os.chdir')
@@ -770,9 +804,10 @@ total size is 118,417,836,324  speedup is 494,367.55
     @patch('desitransfer.daemon._popen')
     @patch('os.remove')
     @patch('os.path.isdir')
+    @patch('desitransfer.daemon.TransferStatus')
     @patch('desitransfer.daemon.log')
     @patch.object(TransferDaemon, '_configure_log')
-    def test_TransferDaemon_backup_no_test(self, mock_cl, mock_log, mock_isdir, mock_rm, mock_popen, mock_empty, mock_getcwd, mock_chdir, mock_rsync):
+    def test_TransferDaemon_backup_no_test(self, mock_cl, mock_log, mock_status, mock_isdir, mock_rm, mock_popen, mock_empty, mock_getcwd, mock_chdir, mock_rsync):
         """Test HPSS backup of night in 'real' mode.
         """
         with patch.dict('os.environ',
@@ -788,9 +823,11 @@ total size is 118,417,836,324  speedup is 494,367.55
         ls_file = os.path.join(self.tmp.name, 'desi_spectro_data.txt')
         with open(ls_file, 'w') as f:
             f.write(self.fake_hsi2)
-        s = transfer.backup(c[0], '20190703')
+        s = transfer.backup(c[0], '20190703', mock_status)
         self.assertTrue(s)
         mock_popen.assert_has_calls([call(['/usr/common/mss/bin/htar', '-cvhf', 'desi/spectro/data/desi_spectro_data_20190703.tar', '-H', 'crc:verify=all', '20190703'])])
+        mock_status.assert_not_called()
+        mock_status.update.assert_not_called()
 
     @patch('desitransfer.daemon.rsync_night')
     @patch('os.chdir')
@@ -799,9 +836,10 @@ total size is 118,417,836,324  speedup is 494,367.55
     @patch('desitransfer.daemon._popen')
     @patch('os.remove')
     @patch('os.path.isdir')
+    @patch('desitransfer.daemon.TransferStatus')
     @patch('desitransfer.daemon.log')
     @patch.object(TransferDaemon, '_configure_log')
-    def test_TransferDaemon_backup_delayed_data(self, mock_cl, mock_log, mock_isdir, mock_rm, mock_popen, mock_empty, mock_getcwd, mock_chdir, mock_rsync):
+    def test_TransferDaemon_backup_delayed_data(self, mock_cl, mock_log, mock_status, mock_isdir, mock_rm, mock_popen, mock_empty, mock_getcwd, mock_chdir, mock_rsync):
         """Test HPSS backup of night with delayed data.
         """
         with patch.dict('os.environ',
@@ -818,22 +856,26 @@ total size is 118,417,836,324  speedup is 494,367.55
         mock_empty.return_value = False
         mock_popen.return_value = ('0', '', '')
         mock_getcwd.return_value = 'HOME'
-        s = transfer.backup(c[0], '20190703')
+        s = transfer.backup(c[0], '20190703', mock_status)
         self.assertTrue(s)
         mock_log.debug.assert_has_calls([call("os.remove('%s')", os.path.join(self.tmp.name, 'desi_spectro_data.txt')),
                                          call("os.chdir('%s')", '/desi/root/spectro/data'),
                                          call("os.chdir('%s')", 'HOME')])
-        mock_log.warning.assert_has_calls([call('New files detected in %s!', '20190703')])
+        mock_log.warning.assert_has_calls([call('New files detected in %s!', '20190703'),
+                                           call('No updated exposures in night %s detected.', '20190703')])
         mock_rsync.assert_called_once_with('/data/dts/exposures/raw', '/desi/root/spectro/data', '20190703', False)
+        mock_status.assert_not_called()
+        mock_status.update.assert_not_called()
 
     @patch('desitransfer.daemon.rsync_night')
     @patch('desitransfer.daemon.empty_rsync')
     @patch('desitransfer.daemon._popen')
     @patch('os.remove')
     @patch('os.path.isdir')
+    @patch('desitransfer.daemon.TransferStatus')
     @patch('desitransfer.daemon.log')
     @patch.object(TransferDaemon, '_configure_log')
-    def test_TransferDaemon_no_backup(self, mock_cl, mock_log, mock_isdir, mock_rm, mock_popen, mock_empty, mock_rsync):
+    def test_TransferDaemon_no_backup(self, mock_cl, mock_log, mock_status, mock_isdir, mock_rm, mock_popen, mock_empty, mock_rsync):
         """Test disabling HPSS backups.
         """
         with patch.dict('os.environ',
@@ -846,11 +888,13 @@ total size is 118,417,836,324  speedup is 494,367.55
         c = transfer.directories
         mock_isdir.return_value = True
         mock_popen.return_value = ('0', '', '')
-        s = transfer.backup(c[0], '20190703')
+        s = transfer.backup(c[0], '20190703', mock_status)
         self.assertTrue(s)
         mock_isdir.assert_has_calls([call('/desi/root/spectro/data/20190703'),
                                      call('/desi/root/spectro/data/20190703')])
         mock_log.info.assert_has_calls([call('Tape backup disabled by user request.')])
+        mock_status.assert_not_called()
+        mock_status.update.assert_not_called()
 
     @patch('desitransfer.daemon.TemporaryFile')
     @patch('subprocess.Popen')

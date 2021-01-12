@@ -277,6 +277,27 @@ The DESI Collaboration Account
         #
         checksum_file = os.path.join(staging_exposure,
                                      d.checksum.format(night=night, exposure=exposure))
+        self.checksum(checksum_file, status)
+        #
+        # Move data into DESI_SPECTRO_DATA.
+        #
+        if not os.path.isdir(destination_exposure):
+            log.debug("shutil.move('%s', '%s')", staging_exposure, destination_night)
+            if not self.test:
+                shutil.move(staging_exposure, destination_night)
+
+    def checksum(self, checksum_file, status):
+        """Verify checksum associated with `exposure` and report status.
+
+        Parameters
+        ----------
+        checksum_file : :class:`str`
+            The checksum file.
+        status : :class:`desitransfer.status.TransferStatus`
+            The associated status object.
+        """
+        exposure = os.path.basename(os.path.dirname(checksum_file))
+        night = os.path.basename(os.path.dirname(os.path.dirname(checksum_file)))
         log.debug("verify_checksum('%s')", checksum_file)
         if not self.test:
             if os.path.exists(checksum_file):
@@ -295,15 +316,8 @@ The DESI Collaboration Account
                 log.warning("No checksum file for %s/%s!", night, exposure)
                 log.debug("status.update('%s', '%s', 'checksum', failure=True)", night, exposure)
                 status.update(night, exposure, 'checksum', failure=True)
-        #
-        # Move data into DESI_SPECTRO_DATA.
-        #
-        if not os.path.isdir(destination_exposure):
-            log.debug("shutil.move('%s', '%s')", staging_exposure, destination_night)
-            if not self.test:
-                shutil.move(staging_exposure, destination_night)
 
-    def catchup(self, d, night, backup=False):
+    def catchup(self, d, night, status, backup=False):
         """Do a "catch-up" transfer to catch delayed files in the morning, rather than at noon.
 
         Parameters
@@ -312,6 +326,8 @@ The DESI Collaboration Account
             Configuration for the destination directory.
         night : :class:`str`
             Night to check.
+        status : :class:`desitransfer.status.TransferStatus`
+            The status object associated with `d`.
         backup : :class:`bool`
             If ``True``, this catch-up is happening immediately prior to tape backup.
 
@@ -352,28 +368,11 @@ The DESI Collaboration Account
                         for exposure in e:
                             checksum_file = os.path.join(os.path.join(d.destination, night, exposure),
                                                          d.checksum.format(night=night, exposure=exposure))
-                            log.debug("verify_checksum('%s')", checksum_file)
-                    #         if not self.test:
-                    #             if os.path.exists(checksum_file):
-                    #                 checksum_status = verify_checksum(checksum_file)
-                    #                 #
-                    #                 # Did we pass checksums?
-                    #                 #
-                    #                 if checksum_status == 0:
-                    #                     log.debug("status.update('%s', '%s', 'checksum')", night, exposure)
-                    #                     status.update(night, exposure, 'checksum')
-                    #                 else:
-                    #                     log.critical("Checksum problem detected for %s/%s, check logs!", night, exposure)
-                    #                     log.debug("status.update('%s', '%s', 'checksum', failure=True)", night, exposure)
-                    #                     status.update(night, exposure, 'checksum', failure=True)
-                    #             else:
-                    #                 log.warning("No checksum file for %s/%s!", night, exposure)
-                    #                 log.debug("status.update('%s', '%s', 'checksum', failure=True)", night, exposure)
-                    #                 status.update(night, exposure, 'checksum', failure=True)
+                            self.checksum(checksum_file, status)
         else:
             log.warning("No data from %s detected, skipping catch-up transfer.", night)
 
-    def backup(self, d, night):
+    def backup(self, d, night, status):
         """Final sync and backup for a specific night.
 
         Parameters
@@ -382,6 +381,8 @@ The DESI Collaboration Account
             Configuration for the destination directory.
         night : :class:`str`
             Night to check.
+        status : :class:`desitransfer.status.TransferStatus`
+            The status object associated with `d`.
 
         Returns
         -------
@@ -420,7 +421,7 @@ The DESI Collaboration Account
                 log.debug("Backup of %s already complete.", night)
                 return False
             else:
-                self.catchup(d, night, backup=True)
+                self.catchup(d, night, status, backup=True)
                 #
                 # Issue HTAR command.
                 #
