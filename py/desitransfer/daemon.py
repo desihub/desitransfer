@@ -211,7 +211,7 @@ The DESI Collaboration Account
 
         Parameters
         ----------
-        d : :class:`desitransfer.common.DTSDir`
+        d : :func:`collections.namedtuple`
             Configuration for the destination directory.
         link : :class:`str`
             The exposure path.
@@ -345,14 +345,14 @@ The DESI Collaboration Account
                     #
                     # Re-check the checksums for exposures that changed.
                     #
-                    # e = new_exposures(out)
-                    # if len(e) == 0:
-                    #     log.warning('No updated exposures in night %s detected.', night)
-                    # else:
-                    #     for exposure in e:
-                    #         checksum_file = os.path.join(os.path.join(d.destination, night, exposure),
-                    #                                      d.checksum.format(night=night, exposure=exposure))
-                    #         log.debug("verify_checksum('%s')", checksum_file)
+                    e = new_exposures(out)
+                    if len(e) == 0:
+                        log.warning('No updated exposures in night %s detected.', night)
+                    else:
+                        for exposure in e:
+                            checksum_file = os.path.join(os.path.join(d.destination, night, exposure),
+                                                         d.checksum.format(night=night, exposure=exposure))
+                            log.debug("verify_checksum('%s')", checksum_file)
                     #         if not self.test:
                     #             if os.path.exists(checksum_file):
                     #                 checksum_status = verify_checksum(checksum_file)
