@@ -36,6 +36,28 @@ def empty_rsync(out):
     return all([rr.match(l) is not None for l in out.split('\n') if l])
 
 
+def new_exposures(out):
+    """Scan rsync output for exposures to be transferred.
+
+    Parameters
+    ----------
+    out : :class:`str`
+        Output from :command:`rsync`.
+
+    Returns
+    -------
+    :class:`set`
+        The unique exposure numbers detected in `out`.
+    """
+    e = set()
+    e_re = re.compile(r'([0-9]{8})/?')
+    for l in out.split('\n'):
+        m = e_re.match(l)
+        if m is not None:
+            e.add(m.groups()[0])
+    return e
+
+
 def rsync(s, d, test=False, config='dts'):
     """Set up rsync command.
 
@@ -92,7 +114,8 @@ def ensure_scratch(directories):
 
     Returns
     -------
-    The first available temporary directory found.
+    :class:`str`
+        The first available temporary directory found.
     """
     for d in directories:
         try:

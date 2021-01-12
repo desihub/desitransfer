@@ -22,7 +22,12 @@ class TestDaemon(unittest.TestCase):
 
     @classmethod
     def setUpClass(cls):
-        pass
+        cls.fake_hsi1 = """desi_spectro_data_20190703.tar
+desi_spectro_data_20190703.tar.idx
+"""
+        cls.fake_hsi2 = """desi_spectro_data_20190702.tar
+desi_spectro_data_20190702.tar.idx
+"""
 
     @classmethod
     def tearDownClass(cls):
@@ -541,6 +546,9 @@ total size is 118,417,836,324  speedup is 494,367.55
         transfer.catchup(c[0], '20190703')
         self.assertTrue(os.path.isfile(os.path.join(self.tmp.name, 'ketchup__desi_root_spectro_data_20190703.txt')))
         mock_log.info.assert_has_calls([call('No files appear to have changed in %s.', '20190703')])
+        transfer.catchup(c[0], '20190703', backup=True)
+        self.assertTrue(os.path.isfile(os.path.join(self.tmp.name, 'backup__desi_root_spectro_data_20190703.txt')))
+        mock_log.info.assert_has_calls([call('No files appear to have changed in %s.', '20190703')])
         mock_popen.return_value = ('0', r1, '')
         transfer.catchup(c[0], '20190703')
         mock_rsync.assert_called_once_with('/data/dts/exposures/raw', '/desi/root/spectro/data', '20190703', False)
@@ -555,15 +563,9 @@ total size is 118,417,836,324  speedup is 494,367.55
     @patch('os.path.isdir')
     @patch('desitransfer.daemon.log')
     @patch.object(TransferDaemon, '_configure_log')
-    def test_TransferDaemon_backup(self, mock_cl, mock_log, mock_isdir, mock_rm, mock_popen, mock_empty, mock_getcwd, mock_chdir, mock_rsync):
-        """Test HPSS backup of nights.
+    def test_TransferDaemon_backup_no_data(self, mock_cl, mock_log, mock_isdir, mock_rm, mock_popen, mock_empty, mock_getcwd, mock_chdir, mock_rsync):
+        """Test HPSS backup with no data for the night.
         """
-        fake_hsi1 = """desi_spectro_data_20190703.tar
-desi_spectro_data_20190703.tar.idx
-"""
-        fake_hsi2 = """desi_spectro_data_20190702.tar
-desi_spectro_data_20190702.tar.idx
-"""
         with patch.dict('os.environ',
                         {'CSCRATCH': self.tmp.name,
                          'DESI_ROOT': '/desi/root',
@@ -572,32 +574,71 @@ desi_spectro_data_20190702.tar.idx
                 options = _options()
             transfer = TransferDaemon(options)
         c = transfer.directories
-        #
-        # No data
-        #
         mock_isdir.return_value = False
         s = transfer.backup(c[0], '20190703')
         self.assertFalse(s)
         mock_isdir.assert_called_once_with('/desi/root/spectro/data/20190703')
         mock_log.warning.assert_has_calls([call("No data from %s detected, skipping HPSS backup.", '20190703')])
+
+    @patch('desitransfer.daemon.rsync_night')
+    @patch('os.chdir')
+    @patch('os.getcwd')
+    @patch('desitransfer.daemon.empty_rsync')
+    @patch('desitransfer.daemon._popen')
+    @patch('os.remove')
+    @patch('os.path.isdir')
+    @patch('desitransfer.daemon.log')
+    @patch.object(TransferDaemon, '_configure_log')
+    def test_TransferDaemon_backup_already_done(self, mock_cl, mock_log, mock_isdir, mock_rm, mock_popen, mock_empty, mock_getcwd, mock_chdir, mock_rsync):
+        """Test HPSS backup with night already done.
+        """
+        with patch.dict('os.environ',
+                        {'CSCRATCH': self.tmp.name,
+                         'DESI_ROOT': '/desi/root',
+                         'DESI_SPECTRO_DATA': '/desi/root/spectro/data'}):
+            with patch.object(sys, 'argv', ['desi_transfer_daemon', '--debug', '--test']):
+                options = _options()
+            transfer = TransferDaemon(options)
+        c = transfer.directories
         mock_isdir.return_value = True
-        #
-        # Already backed up
-        #
-        ls_file = os.path.join(self.tmp.name, 'desi_spectro_data.test.txt')
         mock_popen.return_value = ('0', '', '')
+        ls_file = os.path.join(self.tmp.name, 'desi_spectro_data.test.txt')
         with open(ls_file, 'w') as f:
-            f.write(fake_hsi1)
+            f.write(self.fake_hsi1)
         s = transfer.backup(c[0], '20190703')
         self.assertFalse(s)
         mock_log.debug.assert_has_calls([call("os.remove('%s')", ls_file),
                                          call("Backup of %s already complete.", '20190703')])
         mock_rm.assert_called_once_with(ls_file)
+
+    @patch('desitransfer.daemon.rsync_night')
+    @patch('os.chdir')
+    @patch('os.getcwd')
+    @patch('desitransfer.daemon.empty_rsync')
+    @patch('desitransfer.daemon._popen')
+    @patch('os.remove')
+    @patch('os.path.isdir')
+    @patch('desitransfer.daemon.log')
+    @patch.object(TransferDaemon, '_configure_log')
+    def test_TransferDaemon_backup_test(self, mock_cl, mock_log, mock_isdir, mock_rm, mock_popen, mock_empty, mock_getcwd, mock_chdir, mock_rsync):
+        """Test HPSS backup of night in 'test' mode.
+        """
+        with patch.dict('os.environ',
+                        {'CSCRATCH': self.tmp.name,
+                         'DESI_ROOT': '/desi/root',
+                         'DESI_SPECTRO_DATA': '/desi/root/spectro/data'}):
+            with patch.object(sys, 'argv', ['desi_transfer_daemon', '--debug', '--test']):
+                options = _options()
+            transfer = TransferDaemon(options)
+        c = transfer.directories
+        mock_isdir.return_value = True
+        mock_popen.return_value = ('0', '', '')
+        ls_file = os.path.join(self.tmp.name, 'desi_spectro_data.test.txt')
         #
         # Not yet backed up
         #
         with open(ls_file, 'w') as f:
-            f.write(fake_hsi2)
+            f.write(self.fake_hsi2)
         mock_empty.return_value = True
         mock_getcwd.return_value = self.tmp.name
         mock_rm.side_effect = FileNotFoundError
@@ -611,27 +652,69 @@ desi_spectro_data_20190702.tar.idx
                                          call("os.chdir('%s')", '/desi/root/spectro/data'),
                                          call('/usr/common/mss/bin/htar -cvhf desi/spectro/data/desi_spectro_data_20190703.tar -H crc:verify=all 20190703'),
                                          call("os.chdir('%s')", self.tmp.name)])
-        #
-        # Not yet backed up and not test
-        #
-        ls_file = ls_file.replace('.test.txt', '.txt')
+
+    @patch('desitransfer.daemon.rsync_night')
+    @patch('os.chdir')
+    @patch('os.getcwd')
+    @patch('desitransfer.daemon.empty_rsync')
+    @patch('desitransfer.daemon._popen')
+    @patch('os.remove')
+    @patch('os.path.isdir')
+    @patch('desitransfer.daemon.log')
+    @patch.object(TransferDaemon, '_configure_log')
+    def test_TransferDaemon_backup_no_test(self, mock_cl, mock_log, mock_isdir, mock_rm, mock_popen, mock_empty, mock_getcwd, mock_chdir, mock_rsync):
+        """Test HPSS backup of night in 'real' mode.
+        """
+        with patch.dict('os.environ',
+                        {'CSCRATCH': self.tmp.name,
+                         'DESI_ROOT': '/desi/root',
+                         'DESI_SPECTRO_DATA': '/desi/root/spectro/data'}):
+            with patch.object(sys, 'argv', ['desi_transfer_daemon', '--debug']):
+                options = _options()
+            transfer = TransferDaemon(options)
+        c = transfer.directories
+        mock_isdir.return_value = True
+        mock_popen.return_value = ('0', '', '')
+        ls_file = os.path.join(self.tmp.name, 'desi_spectro_data.txt')
         with open(ls_file, 'w') as f:
-            f.write(fake_hsi2)
-        transfer.test = False
+            f.write(self.fake_hsi2)
         s = transfer.backup(c[0], '20190703')
         self.assertTrue(s)
         mock_popen.assert_has_calls([call(['/usr/common/mss/bin/htar', '-cvhf', 'desi/spectro/data/desi_spectro_data_20190703.tar', '-H', 'crc:verify=all', '20190703'])])
-        #
-        # Not yet backed up and delayed data
-        #
-        ls_file = ls_file.replace('.test.txt', '.txt')
+
+    @patch('desitransfer.daemon.rsync_night')
+    @patch('os.chdir')
+    @patch('os.getcwd')
+    @patch('desitransfer.daemon.empty_rsync')
+    @patch('desitransfer.daemon._popen')
+    @patch('os.remove')
+    @patch('os.path.isdir')
+    @patch('desitransfer.daemon.log')
+    @patch.object(TransferDaemon, '_configure_log')
+    def test_TransferDaemon_backup_delayed_data(self, mock_cl, mock_log, mock_isdir, mock_rm, mock_popen, mock_empty, mock_getcwd, mock_chdir, mock_rsync):
+        """Test HPSS backup of night with delayed data.
+        """
+        with patch.dict('os.environ',
+                        {'CSCRATCH': self.tmp.name,
+                         'DESI_ROOT': '/desi/root',
+                         'DESI_SPECTRO_DATA': '/desi/root/spectro/data'}):
+            with patch.object(sys, 'argv', ['desi_transfer_daemon', '--debug']):
+                options = _options()
+            transfer = TransferDaemon(options)
+        c = transfer.directories
+        ls_file = os.path.join(self.tmp.name, 'desi_spectro_data.txt')
         with open(ls_file, 'w') as f:
-            f.write(fake_hsi2)
+            f.write(self.fake_hsi2)
         mock_empty.return_value = False
+        mock_popen.return_value = ('0', '', '')
+        mock_getcwd.return_value = 'HOME'
         s = transfer.backup(c[0], '20190703')
         self.assertTrue(s)
+        mock_log.debug.assert_has_calls([call("os.remove('%s')", os.path.join(self.tmp.name, 'desi_spectro_data.txt')),
+                                         call("os.chdir('%s')", '/desi/root/spectro/data'),
+                                         call("os.chdir('%s')", 'HOME')])
         mock_log.warning.assert_has_calls([call('New files detected in %s!', '20190703')])
-        mock_rsync.assert_called_with('/data/dts/exposures/raw', '/desi/root/spectro/data', '20190703', False)
+        mock_rsync.assert_called_once_with('/data/dts/exposures/raw', '/desi/root/spectro/data', '20190703', False)
 
     @patch('desitransfer.daemon.rsync_night')
     @patch('desitransfer.daemon.empty_rsync')
@@ -643,12 +726,6 @@ desi_spectro_data_20190702.tar.idx
     def test_TransferDaemon_no_backup(self, mock_cl, mock_log, mock_isdir, mock_rm, mock_popen, mock_empty, mock_rsync):
         """Test disabling HPSS backups.
         """
-        fake_hsi1 = """desi_spectro_data_20190703.tar
-desi_spectro_data_20190703.tar.idx
-"""
-        fake_hsi2 = """desi_spectro_data_20190702.tar
-desi_spectro_data_20190702.tar.idx
-"""
         with patch.dict('os.environ',
                         {'CSCRATCH': self.tmp.name,
                          'DESI_ROOT': '/desi/root',
@@ -661,7 +738,8 @@ desi_spectro_data_20190702.tar.idx
         mock_popen.return_value = ('0', '', '')
         s = transfer.backup(c[0], '20190703')
         self.assertTrue(s)
-        mock_isdir.assert_called_once_with('/desi/root/spectro/data/20190703')
+        mock_isdir.assert_has_calls([call('/desi/root/spectro/data/20190703'),
+                                     call('/desi/root/spectro/data/20190703')])
         mock_log.info.assert_has_calls([call('Tape backup disabled by user request.')])
 
     @patch('desitransfer.daemon.TemporaryFile')
@@ -799,8 +877,8 @@ desi_spectro_data_20190702.tar.idx
         rsync_night('/source', '/destination', '20190703')
         mock_log.critical.assert_called_once_with('rsync problem (status = %s) detected on catch-up for %s, check logs!',
                                                   '1', '20190703')
-        mock_log.error.assert_has_calls([call('rsync STDOUT = %s', 'stdout'),
-                                         call('rsync STDERR = %s', 'stderr')])
+        mock_log.error.assert_has_calls([call('rsync STDOUT = \n%s', 'stdout'),
+                                         call('rsync STDERR = \n%s', 'stderr')])
 
 
 def test_suite():

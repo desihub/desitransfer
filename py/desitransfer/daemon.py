@@ -25,7 +25,7 @@ from socket import getfqdn
 from tempfile import TemporaryFile
 from pkg_resources import resource_filename
 from desiutil.log import get_logger
-from .common import dir_perm, file_perm, rsync, yesterday, empty_rsync, ensure_scratch
+from .common import dir_perm, file_perm, rsync, yesterday, empty_rsync, new_exposures, ensure_scratch
 from .status import TransferStatus
 from . import __version__ as dtVersion
 
@@ -303,7 +303,7 @@ The DESI Collaboration Account
             if not self.test:
                 shutil.move(staging_exposure, destination_night)
 
-    def catchup(self, d, night):
+    def catchup(self, d, night, backup=False):
         """Do a "catch-up" transfer to catch delayed files in the morning, rather than at noon.
 
         Parameters
@@ -312,6 +312,8 @@ The DESI Collaboration Account
             Configuration for the destination directory.
         night : :class:`str`
             Night to check.
+        backup : :class:`bool`
+            If ``True``, this catch-up is happening immediately prior to tape backup.
 
         Notes
         -----
@@ -325,6 +327,8 @@ The DESI Collaboration Account
                                      'ketchup_{0}_{1}.txt'.format(ketchup_file, night))
             if self.test:
                 sync_file = sync_file.replace('.txt', '.test.txt')
+            if backup:
+                sync_file = sync_file.replace('ketchup', 'backup')
             if os.path.exists(sync_file):
                 log.debug("%s detected, catch-up transfer is done.", sync_file)
             else:
@@ -338,6 +342,34 @@ The DESI Collaboration Account
                 else:
                     log.warning('New files detected in %s!', night)
                     rsync_night(d.source, d.destination, night, self.test)
+                    #
+                    # Re-check the checksums for exposures that changed.
+                    #
+                    # e = new_exposures(out)
+                    # if len(e) == 0:
+                    #     log.warning('No updated exposures in night %s detected.', night)
+                    # else:
+                    #     for exposure in e:
+                    #         checksum_file = os.path.join(os.path.join(d.destination, night, exposure),
+                    #                                      d.checksum.format(night=night, exposure=exposure))
+                    #         log.debug("verify_checksum('%s')", checksum_file)
+                    #         if not self.test:
+                    #             if os.path.exists(checksum_file):
+                    #                 checksum_status = verify_checksum(checksum_file)
+                    #                 #
+                    #                 # Did we pass checksums?
+                    #                 #
+                    #                 if checksum_status == 0:
+                    #                     log.debug("status.update('%s', '%s', 'checksum')", night, exposure)
+                    #                     status.update(night, exposure, 'checksum')
+                    #                 else:
+                    #                     log.critical("Checksum problem detected for %s/%s, check logs!", night, exposure)
+                    #                     log.debug("status.update('%s', '%s', 'checksum', failure=True)", night, exposure)
+                    #                     status.update(night, exposure, 'checksum', failure=True)
+                    #             else:
+                    #                 log.warning("No checksum file for %s/%s!", night, exposure)
+                    #                 log.debug("status.update('%s', '%s', 'checksum', failure=True)", night, exposure)
+                    #                 status.update(night, exposure, 'checksum', failure=True)
         else:
             log.warning("No data from %s detected, skipping catch-up transfer.", night)
 
@@ -388,20 +420,7 @@ The DESI Collaboration Account
                 log.debug("Backup of %s already complete.", night)
                 return False
             else:
-                #
-                # Run a final sync of the night and see if anything changed.
-                # This isn't supposed to be necessary, but during
-                # commissioning, all kinds of crazy stuff might happen.
-                #
-                # sync_file = sync_file.replace('ketchup', 'final_sync')
-                cmd = rsync(os.path.join(d.source, night),
-                            os.path.join(d.destination, night), test=True)
-                rsync_status, out, err = _popen(cmd)
-                if empty_rsync(out):
-                    log.info('No files appear to have changed in %s.', night)
-                else:
-                    log.warning('New files detected in %s!', night)
-                    rsync_night(d.source, d.destination, night, self.test)
+                self.catchup(d, night, backup=True)
                 #
                 # Issue HTAR command.
                 #
@@ -579,8 +598,8 @@ def rsync_night(source, destination, night, test=False):
     if rsync_status != '0':
         log.critical('rsync problem (status = %s) detected on catch-up for %s, check logs!',
                      rsync_status, night)
-        log.error('rsync STDOUT = %s', out)
-        log.error('rsync STDERR = %s', err)
+        log.error('rsync STDOUT = \n%s', out)
+        log.error('rsync STDERR = \n%s', err)
     #
     # Lock files.
     #

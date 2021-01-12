@@ -10,13 +10,13 @@ for c in $(/usr/bin/find ${data} -name \*.sha256sum); do
     echo "DEBUG: cd ${d}"
     cd ${d}
     n=$(/usr/bin/wc -l ${b} | /usr/bin/cut -d' ' -f1)
-    l=$(/usr/bin/find . -type f | /usr/bin/wc -l)
-    if ((n == l - 1)); then
+    l=$(/usr/bin/find . -type f -not -name \*.sha256sum | /usr/bin/wc -l)
+    if (( n == l )); then
         echo "DEBUG: correct number of files listed in ${c}."
-    elif ((n > l - 1)); then
-        echo "ERROR: missing files listed in ${c}!"
+    elif (( n > l )); then
+        echo "ERROR: missing files listed in ${c} (${n} listed, ${l} exist)!"
     else
-        echo "ERROR: extra files listed in ${c}!"
+        echo "ERROR: extra files not listed in ${c} (${n} listed, ${l} exist)!"
     fi
     echo "DEBUG: /usr/bin/sha256sum --check --status ${b}"
     /usr/bin/sha256sum --check --status ${b}
