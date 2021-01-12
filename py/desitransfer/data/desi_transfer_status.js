@@ -111,7 +111,7 @@ $(function() {
                 this.stage[r[2]] = {"success": r[3], "stamp": r[5]};
             }
             // this.c = this.status ? "bg-success" : "bg-danger";
-            this.l = r[4].length > 0 ? " Last " + r[4] + " exposure." : "";
+            // this.l = r[4].length > 0 ? " Last " + r[4] + " exposure." : "";
         }
         var E = Exposure, Ep = Exposure.prototype;
         E.padding = 8;
@@ -132,7 +132,8 @@ $(function() {
             for (var k = 0; k < Exposure.stages.length; k++) {
                 h += "<th class=\"text-uppercase\">" + Exposure.stages[k] + "</th>";
             }
-            h += "<th class=\"text-uppercase\">comment</th></tr></thead>";
+            // h += "<th class=\"text-uppercase\">comment</th></tr></thead>";
+            h += "</tr></thead>";
             return h;
         };
         //
@@ -151,7 +152,8 @@ $(function() {
                 }
                 r +=  "<td class=\"" + c + "\">" + stamp + "</td>";
             }
-            r += "<td>" + this.l + "</td></tr>";
+            // r += "<td>" + this.l + "</td></tr>";
+            r += "</tr>";
             return r;
         };
         //
