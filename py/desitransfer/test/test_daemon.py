@@ -201,8 +201,8 @@ desi_spectro_data_20190702.tar.idx
         transfer.directory(c[0])
         mock_status.assert_called_once_with(os.path.join(os.path.dirname(c[0].staging), 'status'))
         mock_popen.assert_called_once_with(['/bin/ssh', '-q', 'dts', '/bin/find', c[0].source, '-type', 'l'])
-        mock_catchup.assert_called_once_with(c[0], '20190703')
-        mock_backup.assert_called_once_with(c[0], '20190703')
+        mock_catchup.assert_called_once_with(c[0], '20190703', mock_status())
+        mock_backup.assert_called_once_with(c[0], '20190703', mock_status())
         mock_status().update.assert_called_once_with('20190703', 'all', 'backup')
         #
         # No links.

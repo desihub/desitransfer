@@ -193,12 +193,12 @@ The DESI Collaboration Account
         yst = yesterday()
         now = int(dt.datetime.utcnow().strftime('%H'))
         if now >= self.conf['common'].getint('catchup'):
-            self.catchup(d, yst)
+            self.catchup(d, yst, status)
         #
         # Are any nights eligible for backup?
         #
         if now >= self.conf['common'].getint('backup'):
-            s = self.backup(d, yst)
+            s = self.backup(d, yst, status)
             if s and self.tape:
                 log.debug("status.update('%s', 'all', 'backup')", yst)
                 status.update(yst, 'all', 'backup')
