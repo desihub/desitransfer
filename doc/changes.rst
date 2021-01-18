@@ -2,7 +2,7 @@
 Change Log
 ==========
 
-0.5.0 (unreleased)
+0.5.0 (2021-01-18)
 ------------------
 
 * Moderate refactor of :command:`desi_transfer_daemon` (PR `#27`_):
