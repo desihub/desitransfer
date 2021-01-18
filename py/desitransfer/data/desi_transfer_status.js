@@ -39,15 +39,13 @@ $(function() {
             var r = "btn-success";
             for (var k = 0; k < this.exposures.length; k++) {
                 for (var l = 0; l < s.length; l++) {
-                    if (Exposure.display[l]) {
-                        if (!this.exposures[k].stage[s[l]].success) {
-                            //
-                            // It's not successful, but is it complete?
-                            //
-                            if (this.exposures[k].stage[s[l]].stamp > 0)
-                                return "btn-danger";
-                            r = "btn-warning";
-                        }
+                    if (!this.exposures[k].stage[s[l]].success) {
+                        //
+                        // It's not successful, but is it complete?
+                        //
+                        if (this.exposures[k].stage[s[l]].stamp > 0)
+                            return "btn-danger";
+                        r = "btn-warning";
                     }
                 }
             }
@@ -113,12 +111,11 @@ $(function() {
                 this.stage[r[2]] = {"success": r[3], "stamp": r[5]};
             }
             // this.c = this.status ? "bg-success" : "bg-danger";
-            this.l = r[4].length > 0 ? " Last " + r[4] + " exposure." : "";
+            // this.l = r[4].length > 0 ? " Last " + r[4] + " exposure." : "";
         }
         var E = Exposure, Ep = Exposure.prototype;
         E.padding = 8;
-        E.stages = ["rsync", "checksum", "pipeline", "backup"];
-        E.display = [true, true, false, true];
+        E.stages = ["rsync", "checksum", "backup"];
         //
         // Pad integers out to 8 characters.
         //
@@ -133,10 +130,10 @@ $(function() {
         Ep.header = function() {
             var h = "<thead><tr><th class=\"text-uppercase\">exposure</th>";
             for (var k = 0; k < Exposure.stages.length; k++) {
-                if (Exposure.display[k])
-                    h += "<th class=\"text-uppercase\">" + Exposure.stages[k] + "</th>";
+                h += "<th class=\"text-uppercase\">" + Exposure.stages[k] + "</th>";
             }
-            h += "<th class=\"text-uppercase\">comment</th></tr></thead>";
+            // h += "<th class=\"text-uppercase\">comment</th></tr></thead>";
+            h += "</tr></thead>";
             return h;
         };
         //
@@ -146,18 +143,17 @@ $(function() {
             var r = "<tr id=\"e" + this.toString() +"\">" +
                     "<td>" + this.pad() + "</td>";
             for (var k = 0; k < Exposure.stages.length; k++) {
-                if (Exposure.display[k]) {
-                    var c = "table-warning";
-                    var stamp = "INCOMPLETE";
-                    if (this.stage[Exposure.stages[k]].stamp != 0) {
-                        c = this.stage[Exposure.stages[k]].success ? "table-success" : "table-danger";
-                        var d = new Date(this.stage[Exposure.stages[k]].stamp);
-                        stamp = d.toISOString();
-                    }
-                    r +=  "<td class=\"" + c + "\">" + stamp + "</td>";
+                var c = "table-warning";
+                var stamp = "INCOMPLETE";
+                if (this.stage[Exposure.stages[k]].stamp != 0) {
+                    c = this.stage[Exposure.stages[k]].success ? "table-success" : "table-danger";
+                    var d = new Date(this.stage[Exposure.stages[k]].stamp);
+                    stamp = d.toISOString();
                 }
+                r +=  "<td class=\"" + c + "\">" + stamp + "</td>";
             }
-            r += "<td>" + this.l + "</td></tr>";
+            // r += "<td>" + this.l + "</td></tr>";
+            r += "</tr>";
             return r;
         };
         //

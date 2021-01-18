@@ -2,10 +2,17 @@
 Change Log
 ==========
 
-0.4.1 (unreleased)
+0.5.0 (unreleased)
 ------------------
 
-* No changes yet.
+* Moderate refactor of :command:`desi_transfer_daemon` (PR `#27`_):
+
+  - Remove vestigial pipeline activation code.
+  - More visible warnings of rsync and checksum errors in raw data transfers.
+  - Move all raw data to :envvar:`DESI_SPECTRO_DATA`, even if errors detected.
+  - Redo checksum on "catch-up" data.
+
+.. _`#27`: https://github.com/desihub/desitransfer/pull/27
 
 0.4.0 (2020-12-23)
 ------------------

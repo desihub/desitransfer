@@ -7,7 +7,7 @@ import os
 import unittest
 from unittest.mock import patch
 from tempfile import TemporaryDirectory
-from ..common import dir_perm, file_perm, empty_rsync, rsync, stamp, ensure_scratch, yesterday, today
+from ..common import dir_perm, file_perm, empty_rsync, new_exposures, rsync, stamp, ensure_scratch, yesterday, today
 
 
 class TestCommon(unittest.TestCase):
@@ -55,6 +55,24 @@ total size is 118,417,836,324  speedup is 494,367.55
 """
         self.assertFalse(empty_rsync(r))
 
+    def test_new_exposures(self):
+        """Test parsing of rsync output for new exposures.
+        """
+        r = """receiving incremental file list
+
+sent 765 bytes  received 238,769 bytes  159,689.33 bytes/sec
+total size is 118,417,836,324  speedup is 494,367.55
+"""
+        self.assertEqual(len(new_exposures(r)), 0)
+        r = """receiving incremental file list
+12345678/foo.txt
+12345679/foo.txt
+
+sent 765 bytes  received 238,769 bytes  159,689.33 bytes/sec
+total size is 118,417,836,324  speedup is 494,367.55
+"""
+        self.assertEqual(len(new_exposures(r)), 2)
+
     def test_rsync(self):
         """Test construction of rsync command.
         """
@@ -81,13 +99,13 @@ total size is 118,417,836,324  speedup is 494,367.55
         """Test ensure_scratch.
         """
         tmp = self.tmp.name
-        t = ensure_scratch(tmp, ['/foo', '/bar'])
+        t = ensure_scratch([tmp, '/foo', '/bar'])
         self.assertEqual(t, tmp)
-        t = ensure_scratch('/foo', tmp)
+        t = ensure_scratch(['/foo', tmp])
         self.assertEqual(t, tmp)
-        t = ensure_scratch('/foo', ['/bar', tmp])
+        t = ensure_scratch(['/foo', '/bar', tmp])
         self.assertEqual(t, tmp)
-        t = ensure_scratch('/foo', ['/bar', '/abcdefg', tmp])
+        t = ensure_scratch(['/foo', '/bar', '/abcdefg', tmp])
         self.assertEqual(t, tmp)
 
     @patch('desitransfer.common.dt')

@@ -36,6 +36,28 @@ def empty_rsync(out):
     return all([rr.match(l) is not None for l in out.split('\n') if l])
 
 
+def new_exposures(out):
+    """Scan rsync output for exposures to be transferred.
+
+    Parameters
+    ----------
+    out : :class:`str`
+        Output from :command:`rsync`.
+
+    Returns
+    -------
+    :class:`set`
+        The unique exposure numbers detected in `out`.
+    """
+    e = set()
+    e_re = re.compile(r'([0-9]{8})/?')
+    for l in out.split('\n'):
+        m = e_re.match(l)
+        if m is not None:
+            e.add(m.groups()[0])
+    return e
+
+
 def rsync(s, d, test=False, config='dts'):
     """Set up rsync command.
 
@@ -81,33 +103,26 @@ def stamp(zone='US/Pacific'):
     return n.astimezone(tz).strftime('%Y-%m-%d %H:%M:%S %Z')
 
 
-def ensure_scratch(primary, alternate):
+def ensure_scratch(directories):
     """Try an alternate temporary directory if the primary temporary directory
     is unavilable.
 
     Parameters
     ----------
-    primary : :class:`str`
-        Primary temporary directory.
-    alternate : :class:`list`
-        A list of alternate directories.
+    directories : :class:`list`
+        A list of candidate directories.
 
     Returns
     -------
-    The first available temporary directory found.
+    :class:`str`
+        The first available temporary directory found.
     """
-    if not isinstance(alternate, list):
-        alternate = [alternate]
-    try:
-        l = os.listdir(primary)
-    except FileNotFoundError:
-        for a in alternate:
-            try:
-                l = os.listdir(a)
-            except FileNotFoundError:
-                continue
-            return a
-    return primary
+    for d in directories:
+        try:
+            l = os.listdir(d)
+        except FileNotFoundError:
+            continue
+        return d
 
 
 def yesterday():
