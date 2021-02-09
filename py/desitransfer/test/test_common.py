@@ -121,7 +121,7 @@ total size is 118,417,836,324  speedup is 494,367.55
     def test_today(self, mock_dt):
         """Test today's date.
         """
-        mock_dt.datetime.now.return_value = datetime.datetime(2019, 7, 3, 5, 0, 0)
+        mock_dt.datetime.utcnow.return_value = datetime.datetime(2019, 7, 3, 5, 0, 0)
         mock_dt.timedelta.return_value = datetime.timedelta(7/24+0.5)
         y = today()
         self.assertEqual(y, '20190702')

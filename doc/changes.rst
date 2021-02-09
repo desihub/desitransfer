@@ -5,7 +5,10 @@ Change Log
 0.5.1 (unreleased)
 ------------------
 
-* No changes yet.
+* Fix nightwatch transfer night offset (PR `#31`_).
+
+.. _`#31`: https://github.com/desihub/desitransfer/pull/31
+
 
 0.5.0 (2021-01-18)
 ------------------
