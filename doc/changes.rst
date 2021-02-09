@@ -2,7 +2,7 @@
 Change Log
 ==========
 
-0.5.1 (unreleased)
+0.5.1 (2021-02-09)
 ------------------
 
 * Fix nightwatch transfer night offset (PR `#31`_).
