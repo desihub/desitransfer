@@ -6,6 +6,7 @@ __pycache__
 htmlcov
 .coverage
 py/desitransfer/.cache
+.pytest_cache
 
 # Sphinx
 doc/api
@@ -20,6 +21,7 @@ doc/nb/.ipynb_checkpoints
 dist
 build
 eggs
+.eggs
 parts
 var
 sdist
