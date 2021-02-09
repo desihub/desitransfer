@@ -133,5 +133,8 @@ def yesterday():
 
 def today():
     """Today's date in DESI "NIGHT" format, YYYYMMDD.
+
+    This formulation, with the offset ``7/24+0.5``, is inherited from previous
+    nightwatch transfer scripts.
     """
-    return (dt.datetime.now() - dt.timedelta(7/24+0.5)).strftime('%Y%m%d')
+    return (dt.datetime.utcnow() - dt.timedelta(7/24+0.5)).strftime('%Y%m%d')
