@@ -5,10 +5,11 @@
 function usage() {
     local execName=$(basename $0)
     (
-    echo "${execName} [-d DIR] [-e DIR] [-h] [-l DIR] [-s] [-S TIME] [-t] [-v]"
+    echo "${execName} [-c] [-d DIR] [-e DIR] [-h] [-l DIR] [-s] [-S TIME] [-t] [-v]"
     echo ""
     echo "Sync DESI data to Tucson mirror site."
     echo ""
+    echo "     -c = Pass -c, --checksum to rsync command."
     echo " -d DIR = Use DIR as destination directory."
     echo " -e DIR = Exclude DIR from sync."
     echo "     -h = Print this message and exit."
@@ -39,6 +40,7 @@ dynamic='cmx datachallenge engineering spectro/data spectro/nightwatch/kpno spec
 #
 # Get options.
 #
+checksum=''
 dst=''
 exclude=NONE
 log=${HOME}/Documents/Logfiles
@@ -46,8 +48,9 @@ sleepTime=15m
 stampFormat='+%Y-%m-%dT%H:%M:%S%z'
 test=/bin/false
 verbose=/bin/false
-while getopts d:e:hsS:tv argname; do
+while getopts cd:e:hsS:tv argname; do
     case ${argname} in
+        c) checksum='--checksum' ;;
         d) dst=${OPTARG} ;;
         e) exclude=${OPTARG} ;;
         h) usage; exit 0 ;;
@@ -115,7 +118,7 @@ done
 #
 # Run rsync.
 #
-rsync="/usr/bin/rsync --archive --verbose --delete --delete-after --no-motd --password-file ${HOME}/.desi"
+rsync="/usr/bin/rsync --archive ${checksum} --verbose --delete --delete-after --no-motd --password-file ${HOME}/.desi"
 for d in ${dynamic}; do
     #
     # Check for subdirectories to include.
