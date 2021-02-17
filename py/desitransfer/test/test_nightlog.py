@@ -55,12 +55,11 @@ class TestNightlog(unittest.TestCase):
         """
         with patch.dict('os.environ',
                         {'CSCRATCH': self.tmp.name,
-                         'DESI_ROOT': '/desi/root',
-                         'DESI_SPECTRO_DATA': '/desi/root/spectro/data'}):
+                         'DESI_ROOT': '/desi/root',}):
             with patch.object(sys, 'argv', ['desi_nightlog_transfer', '--debug']):
                 options = _options()
             _configure_log(options)
-        rfh.assert_called_once_with('/desi/root/spectro/nightlog/desi_nightlog_transfer.log',
+        rfh.assert_called_once_with('/desi/root/survey/ops/nightlog/desi_nightlog_transfer.log',
                                     backupCount=100, maxBytes=100000000)
         gl.assert_called_once_with(timestamp=True)
         gl().setLevel.assert_called_once_with(logging.DEBUG)

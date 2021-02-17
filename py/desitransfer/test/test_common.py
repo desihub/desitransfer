@@ -86,6 +86,11 @@ total size is 118,417,836,324  speedup is 494,367.55
                                  '--recursive', '--copy-dirlinks', '--times',
                                  '--omit-dir-times', 'dts:/source/',
                                  '/destination/'])
+        r = rsync('/source', '/destination', reverse=True)
+        self.assertListEqual(r, ['/bin/rsync', '--verbose',
+                                 '--recursive', '--copy-dirlinks', '--times',
+                                 '--omit-dir-times', '/source/',
+                                 'dts:/destination/'])
 
     @patch('desitransfer.common.dt')
     def test_stamp(self, mock_dt):

@@ -2,10 +2,12 @@
 Change Log
 ==========
 
-0.5.2 (unreleased)
+0.6.0 (unreleased)
 ------------------
 
-* No changes yet.
+* Add nightlog transfers (PR `#33`_).
+
+.. _`#33`: https://github.com/desihub/desitransfer/pull/33
 
 0.5.1 (2021-02-09)
 ------------------
