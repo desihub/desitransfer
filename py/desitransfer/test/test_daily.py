@@ -37,7 +37,7 @@ class TestDaily(unittest.TestCase):
             self.assertEqual(c[0].source, '/exposures/desi/sps')
             self.assertEqual(c[0].destination, os.path.join(os.environ['DESI_ROOT'],
                                                             'engineering', 'spectrograph', 'sps'))
-            self.assertEqual(c[1].extra[0], '--exclude-from')
+            # self.assertEqual(c[1].extra[0], '--exclude-from')
             self.assertTrue(c[2].dirlinks)
 
     def test_options(self):
