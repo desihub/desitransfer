@@ -156,6 +156,7 @@ The DESI Collaboration Account
         """
         cmd = [self.conf['common']['ssh'], '-q', 'dts',
                '/bin/ls', self.conf['common']['checksum_lock']]
+        log.debug(' '.join(cmd))
         _, out, err = _popen(cmd)
         if out:
             log.info('Checksums are being computed at KPNO.')
@@ -177,6 +178,7 @@ The DESI Collaboration Account
         #
         cmd = [self.conf['common']['ssh'], '-q', 'dts',
                '/bin/find', d.source, '-type', 'l']
+        log.debug(' '.join(cmd))
         _, out, err = _popen(cmd)
         links = sorted([x for x in out.split('\n') if x])
         if links:
@@ -353,6 +355,7 @@ The DESI Collaboration Account
             else:
                 cmd = rsync(os.path.join(d.source, night),
                             os.path.join(d.destination, night), test=True)
+                log.debug(' '.join(cmd))
                 rsync_status, out, err = _popen(cmd)
                 with open(sync_file, 'w') as sf:
                     sf.write(out)
@@ -410,6 +413,7 @@ The DESI Collaboration Account
             cmd = ['/usr/common/mss/bin/hsi', '-O', ls_file,
                    'ls', '-l', d.hpss]
             if self.tape:
+                log.debug(' '.join(cmd))
                 _, out, err = _popen(cmd)
                 with open(ls_file) as l:
                     data = l.read()
@@ -436,9 +440,8 @@ The DESI Collaboration Account
                            '-cvhf', os.path.join(d.hpss, backup_file),
                            '-H', 'crc:verify=all',
                            night]
-                    if self.test:
-                        log.debug(' '.join(cmd))
-                    else:
+                    log.debug(' '.join(cmd))
+                    if not self.test:
                         _, out, err = _popen(cmd)
                     log.debug("os.chdir('%s')", start_dir)
                     os.chdir(start_dir)
@@ -463,8 +466,6 @@ def _popen(command):
     :func:`tuple`
         The returncode, standard output and standard error.
     """
-    global log
-    log.debug(' '.join(command))
     with TemporaryFile() as tout, TemporaryFile() as terr:
         p = sub.Popen(command, stdout=tout, stderr=terr)
         p.wait()
@@ -595,8 +596,8 @@ def rsync_night(source, destination, night, test=False):
     #
     cmd = rsync(os.path.join(source, night),
                 os.path.join(destination, night))
+    log.debug(' '.join(cmd))
     if test:
-        log.debug(' '.join(cmd))
         rsync_status, out, err = '0', '', ''
     else:
         rsync_status, out, err = _popen(cmd)

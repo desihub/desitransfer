@@ -125,6 +125,7 @@ def main():
         #
         log.info('Checking for nightlog data from %s.', night)
         cmd = ['/bin/rsync', 'dts:{0}/'.format(kpno_source)]
+        log.debug(' '.join(cmd))
         status, out, err = _popen(cmd)
         kpno_found = False
         if status != '0':
@@ -148,6 +149,7 @@ def main():
             cmd = rsync(os.path.join(kpno_source, night),
                         os.path.join(nersc_source, night), test=options.test)
             log.info('Syncing %s KPNO -> NERSC.', night)
+            log.debug(' '.join(cmd))
             status, out, err = _popen(cmd)
             if status != '0':
                 errcount += 1
@@ -157,6 +159,7 @@ def main():
                         os.path.join(kpno_source, night), test=options.test,
                         reverse=True)
             log.info('Syncing %s NERSC -> KPNO.', night)
+            log.debug(' '.join(cmd))
             status, out, err = _popen(cmd)
             if status != '0':
                 errcount += 1
@@ -168,8 +171,8 @@ def main():
             if os.path.exists(nightdir):
                 log.info('Fixing permissions for DESI.')
                 cmd = ['fix_permissions.sh', nightdir]
+                log.debug(' '.join(cmd))
                 if options.test:
-                    log.debug(' '.join(cmd))
                     status = '0'
                 else:
                     status, out, err = _popen(cmd)

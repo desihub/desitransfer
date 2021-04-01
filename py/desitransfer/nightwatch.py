@@ -147,6 +147,7 @@ def main():
         #
         log.info('Checking for nightwatch data from %s.', night)
         cmd = ['/bin/rsync', 'dts:{0}/'.format(source)]
+        log.debug(' '.join(cmd))
         status, out, err = _popen(cmd)
         found = False
         if status != '0':
@@ -170,6 +171,7 @@ def main():
         cmd.insert(cmd.index('--omit-dir-times') + 1, '--exclude-from')
         cmd.insert(cmd.index('--exclude-from') + 1, exclude)
         log.info('Syncing %s.', night)
+        log.debug(' '.join(cmd))
         status, out, err = _popen(cmd)
         if status != '0':
             errcount += 1
@@ -181,6 +183,7 @@ def main():
             if os.path.exists(nightdir):
                 log.info('Fixing permissions for DESI.')
                 cmd = ['fix_permissions.sh', nightdir]
+                log.debug(' '.join(cmd))
                 status, out, err = _popen(cmd)
                 if status != '0':
                     errcount += 1
@@ -197,6 +200,7 @@ def main():
                include,
                'dts:{0}/'.format(source),
                '{0}/'.format(kpnodir)]
+        log.debug(' '.join(cmd))
         status, out, err = _popen(cmd)
         if status != '0':
             errcount += 1

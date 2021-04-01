@@ -747,6 +747,7 @@ total size is 118,417,836,324  speedup is 494,367.55
         s = transfer.backup(c[0], '20190703', mock_status)
         self.assertFalse(s)
         mock_log.debug.assert_has_calls([call("os.remove('%s')", ls_file),
+                                         call("/usr/common/mss/bin/hsi -O %s ls -l desi/spectro/data" % ls_file),
                                          call("Backup of %s already complete.", '20190703')])
         mock_rm.assert_called_once_with(ls_file)
         mock_status.assert_not_called()
@@ -791,6 +792,8 @@ total size is 118,417,836,324  speedup is 494,367.55
         mock_log.info.assert_has_calls([call('No files appear to have changed in %s.', '20190703')])
         mock_log.debug.assert_has_calls([call("os.remove('%s')", ls_file),
                                          call("Failed to remove %s because it didn't exist. That's OK.", ls_file),
+                                         call("/usr/common/mss/bin/hsi -O %s ls -l desi/spectro/data" % ls_file),
+                                         call('/bin/rsync --dry-run --verbose --recursive --copy-dirlinks --times --omit-dir-times dts:/data/dts/exposures/raw/20190703/ /desi/root/spectro/data/20190703/'),
                                          call("os.chdir('%s')", '/desi/root/spectro/data'),
                                          call('/usr/common/mss/bin/htar -cvhf desi/spectro/data/desi_spectro_data_20190703.tar -H crc:verify=all 20190703'),
                                          call("os.chdir('%s')", self.tmp.name)])
@@ -859,7 +862,10 @@ total size is 118,417,836,324  speedup is 494,367.55
         s = transfer.backup(c[0], '20190703', mock_status)
         self.assertTrue(s)
         mock_log.debug.assert_has_calls([call("os.remove('%s')", os.path.join(self.tmp.name, 'desi_spectro_data.txt')),
+                                         call("/usr/common/mss/bin/hsi -O %s ls -l desi/spectro/data" % ls_file),
+                                         call('/bin/rsync --dry-run --verbose --recursive --copy-dirlinks --times --omit-dir-times dts:/data/dts/exposures/raw/20190703/ /desi/root/spectro/data/20190703/'),
                                          call("os.chdir('%s')", '/desi/root/spectro/data'),
+                                         call('/usr/common/mss/bin/htar -cvhf desi/spectro/data/desi_spectro_data_20190703.tar -H crc:verify=all 20190703'),
                                          call("os.chdir('%s')", 'HOME')])
         mock_log.warning.assert_has_calls([call('New files detected in %s!', '20190703'),
                                            call('No updated exposures in night %s detected.', '20190703')])
@@ -898,8 +904,7 @@ total size is 118,417,836,324  speedup is 494,367.55
 
     @patch('desitransfer.daemon.TemporaryFile')
     @patch('subprocess.Popen')
-    @patch('desitransfer.daemon.log')
-    def test_popen(self, mock_log, mock_popen, mock_temp):
+    def test_popen(self, mock_popen, mock_temp):
         """Test Popen wrapper.
         """
         mock_file = mock_temp().__enter__.return_value = MagicMock()
@@ -908,7 +913,6 @@ total size is 118,417,836,324  speedup is 494,367.55
         proc.returncode = 0
         pp = _popen(['foo', 'bar'])
         self.assertEqual(pp, ('0', 'MOCK', 'MOCK'))
-        mock_log.debug.assert_called_once_with('foo bar')
         mock_popen.assert_called_once_with(['foo', 'bar'], stdout=mock_file, stderr=mock_file)
 
     def test_verify_checksum(self):
