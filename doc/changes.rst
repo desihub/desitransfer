@@ -5,9 +5,9 @@ Change Log
 0.6.0 (unreleased)
 ------------------
 
-* Add nightlog transfers (PR `#33`_).
+* Add nightlog transfers (PR `#32`_).
 
-.. _`#33`: https://github.com/desihub/desitransfer/pull/33
+.. _`#32`: https://github.com/desihub/desitransfer/pull/32
 
 0.5.1 (2021-02-09)
 ------------------

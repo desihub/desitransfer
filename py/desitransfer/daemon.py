@@ -463,6 +463,7 @@ def _popen(command):
     :func:`tuple`
         The returncode, standard output and standard error.
     """
+    global log
     log.debug(' '.join(command))
     with TemporaryFile() as tout, TemporaryFile() as terr:
         p = sub.Popen(command, stdout=tout, stderr=terr)

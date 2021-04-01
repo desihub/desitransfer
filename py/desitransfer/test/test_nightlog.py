@@ -11,7 +11,7 @@ import unittest
 from tempfile import TemporaryDirectory
 from unittest.mock import call, patch, MagicMock
 from pkg_resources import resource_filename
-from ..nightlog import (_options, _popen, _configure_log)
+from ..nightlog import (_options, _configure_log)
 
 
 class TestNightlog(unittest.TestCase):
@@ -63,21 +63,6 @@ class TestNightlog(unittest.TestCase):
                                     backupCount=100, maxBytes=100000000)
         gl.assert_called_once_with(timestamp=True)
         gl().setLevel.assert_called_once_with(logging.DEBUG)
-
-    @patch('desitransfer.nightlog.TemporaryFile')
-    @patch('subprocess.Popen')
-    @patch('desitransfer.nightlog.log')
-    def test_popen(self, mock_log, mock_popen, mock_temp):
-        """Test Popen wrapper.
-        """
-        mock_file = mock_temp().__enter__.return_value = MagicMock()
-        mock_file.read.return_value = b'MOCK'
-        proc = mock_popen.return_value = MagicMock()
-        proc.returncode = 0
-        pp = _popen(['foo', 'bar'])
-        self.assertEqual(pp, ('0', 'MOCK', 'MOCK'))
-        mock_log.debug.assert_called_once_with('foo bar')
-        mock_popen.assert_called_once_with(['foo', 'bar'], stdout=mock_file, stderr=mock_file)
 
 
 def test_suite():

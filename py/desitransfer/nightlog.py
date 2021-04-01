@@ -19,6 +19,7 @@ from pkg_resources import resource_filename
 from socket import getfqdn
 from tempfile import TemporaryFile
 from desiutil.log import get_logger
+from .daemon import _popen
 from .common import rsync, today
 from . import __version__ as dtVersion
 
@@ -51,6 +52,8 @@ def _options():
     #                   help='Observe the actions of another data transfer script but do not make any changes.')
     prsr.add_argument('-s', '--sleep', metavar='M', type=int, default=5,
                       help='Sleep M minutes before checking for new data (default %(default)s minutes).')
+    prsr.add_argument('-t', '--test', action='store_true', dest='test',
+                      help='Test mode. Do not transfer any files.')
     prsr.add_argument('-V', '--version', action='version',
                       version='%(prog)s {0}'.format(dtVersion))
     return prsr.parse_args()
@@ -92,30 +95,6 @@ The DESI Collaboration Account
     handler2.setFormatter(formatter2)
     handler2.setLevel(logging.CRITICAL)
     log.parent.addHandler(handler2)
-
-
-def _popen(command):
-    """Simple wrapper for :class:`subprocess.Popen` to avoid repeated code.
-
-    Parameters
-    ----------
-    command : :class:`list`
-        Command to pass to :class:`subprocess.Popen`.
-
-    Returns
-    -------
-    :func:`tuple`
-        The returncode, standard output and standard error.
-    """
-    log.debug(' '.join(command))
-    with TemporaryFile() as tout, TemporaryFile() as terr:
-        p = sub.Popen(command, stdout=tout, stderr=terr)
-        p.wait()
-        tout.seek(0)
-        out = tout.read()
-        terr.seek(0)
-        err = terr.read()
-    return (str(p.returncode), out.decode('utf-8'), err.decode('utf-8'))
 
 
 def main():
@@ -167,7 +146,7 @@ def main():
         #
         if kpno_found:
             cmd = rsync(os.path.join(kpno_source, night),
-                        os.path.join(nersc_source, night))
+                        os.path.join(nersc_source, night), test=options.test)
             log.info('Syncing %s KPNO -> NERSC.', night)
             status, out, err = _popen(cmd)
             if status != '0':
@@ -175,7 +154,7 @@ def main():
                 log.error('Syncing %s KPNO -> NERSC.', night)
         if nersc_found:
             cmd = rsync(os.path.join(nersc_source, night),
-                        os.path.join(kpno_source, night),
+                        os.path.join(kpno_source, night), test=options.test,
                         reverse=True)
             log.info('Syncing %s NERSC -> KPNO.', night)
             status, out, err = _popen(cmd)
@@ -189,7 +168,11 @@ def main():
             if os.path.exists(nightdir):
                 log.info('Fixing permissions for DESI.')
                 cmd = ['fix_permissions.sh', nightdir]
-                status, out, err = _popen(cmd)
+                if options.test:
+                    log.debug(' '.join(cmd))
+                    status = '0'
+                else:
+                    status, out, err = _popen(cmd)
                 if status != '0':
                     errcount += 1
                     log.error('Fixing permissions for %s.', nightdir)

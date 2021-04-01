@@ -11,7 +11,7 @@ PRGDIR=$(dirname ${PROGRAM})
 if [[ -z "${NERSC_HOST}" ]]; then
     PRGOPTS='--debug --no-permission'
 else
-    PRGOPTS='--debug'
+    PRGOPTS='--debug --test'
 fi
 #
 # Common initialization code.

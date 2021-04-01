@@ -36,7 +36,7 @@ from socket import getfqdn
 from tempfile import TemporaryFile
 from desiutil.log import get_logger
 from .common import rsync, today
-# from .daemon import _popen
+from .daemon import _popen
 from . import __version__ as dtVersion
 
 
@@ -109,30 +109,6 @@ The DESI Collaboration Account
     handler2.setFormatter(formatter2)
     handler2.setLevel(logging.CRITICAL)
     log.parent.addHandler(handler2)
-
-
-def _popen(command):
-    """Simple wrapper for :class:`subprocess.Popen` to avoid repeated code.
-
-    Parameters
-    ----------
-    command : :class:`list`
-        Command to pass to :class:`subprocess.Popen`.
-
-    Returns
-    -------
-    :func:`tuple`
-        The returncode, standard output and standard error.
-    """
-    log.debug(' '.join(command))
-    with TemporaryFile() as tout, TemporaryFile() as terr:
-        p = sub.Popen(command, stdout=tout, stderr=terr)
-        p.wait()
-        tout.seek(0)
-        out = tout.read()
-        terr.seek(0)
-        err = terr.read()
-    return (str(p.returncode), out.decode('utf-8'), err.decode('utf-8'))
 
 
 def main():
