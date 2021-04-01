@@ -168,6 +168,7 @@ def main():
         # Correct the permissions.
         #
         if options.permission:
+            nightdir = os.path.join(nersc_source, night)
             if os.path.exists(nightdir):
                 log.info('Fixing permissions for DESI.')
                 cmd = ['fix_permissions.sh', nightdir]
