@@ -71,7 +71,7 @@ def _configure_log(debug):
     # conf = self.conf['logging']
     log = get_logger(timestamp=True)
     h = log.parent.handlers[0]
-    handler = RotatingFileHandler(os.path.join(os.environ['DESI_ROOT'], 'survey', 'ops', 'nightlog', 'desi_nightlog_transfer.log'),
+    handler = RotatingFileHandler(os.path.join(os.environ['DESI_ROOT'], 'survey', 'ops', 'nightlogs', 'desi_nightlog_transfer.log'),
                                   maxBytes=100000000,
                                   backupCount=100)
     handler.setFormatter(h.formatter)
@@ -110,7 +110,7 @@ def main():
     errcount = 0
     wait = options.sleep*60
     kpno_source = '/software/www2/html/nightlogs'
-    nersc_source = os.path.join(os.environ['DESI_ROOT'], 'survey', 'ops', 'nightlog')
+    nersc_source = os.path.join(os.environ['DESI_ROOT'], 'survey', 'ops', 'nightlogs')
     while True:
         log.info('Starting nightlog transfer loop; desitransfer version = %s.',
                  dtVersion)
