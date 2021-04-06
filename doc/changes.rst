@@ -2,9 +2,10 @@
 Change Log
 ==========
 
-0.6.0 (unreleased)
+0.6.0 (2021-04-06)
 ------------------
 
+* Renamed ``master`` branch to ``main``.
 * Add nightlog transfers (PR `#32`_).
 
 .. _`#32`: https://github.com/desihub/desitransfer/pull/32
