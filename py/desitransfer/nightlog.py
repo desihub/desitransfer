@@ -111,6 +111,8 @@ def main():
     wait = options.sleep*60
     kpno_source = '/software/www2/html/nightlogs'
     nersc_source = os.path.join(os.environ['DESI_ROOT'], 'survey', 'ops', 'nightlogs')
+    kpno_include = resource_filename('desitransfer', 'data/desi_nightlog_transfer_kpno.txt')
+    nersc_include = resource_filename('desitransfer', 'data/desi_nightlog_transfer_nersc.txt')
     while True:
         log.info('Starting nightlog transfer loop; desitransfer version = %s.',
                  dtVersion)
@@ -148,6 +150,10 @@ def main():
         if kpno_found:
             cmd = rsync(os.path.join(kpno_source, night),
                         os.path.join(nersc_source, night), test=options.test)
+            cmd.insert(cmd.index('--omit-dir-times') + 1, '--include-from')
+            cmd.insert(cmd.index('--include-from') + 1, kpno_include)
+            cmd.insert(cmd.index(kpno_include) + 1, '--exclude')
+            cmd.insert(cmd.index('--exclude') + 1, '*')
             log.info('Syncing %s KPNO -> NERSC.', night)
             log.debug(' '.join(cmd))
             status, out, err = _popen(cmd)
@@ -158,6 +164,10 @@ def main():
             cmd = rsync(os.path.join(nersc_source, night),
                         os.path.join(kpno_source, night), test=options.test,
                         reverse=True)
+            cmd.insert(cmd.index('--omit-dir-times') + 1, '--include-from')
+            cmd.insert(cmd.index('--include-from') + 1, nersc_include)
+            cmd.insert(cmd.index(nersc_include) + 1, '--exclude')
+            cmd.insert(cmd.index('--exclude') + 1, '*')
             log.info('Syncing %s NERSC -> KPNO.', night)
             log.debug(' '.join(cmd))
             status, out, err = _popen(cmd)
