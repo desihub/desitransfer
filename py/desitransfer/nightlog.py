@@ -1,28 +1,12 @@
 # Licensed under a 3-clause BSD style license - see LICENSE.rst
 # -*- coding: utf-8 -*-
 """
-desitransfer.nightwatch
-=======================
+desitransfer.nightlog
+=====================
 
-Sync KPNO nightwatch.  This module will hopefully be integrated into
-the standard transfer daemon.
+Bi-directional sync of KPNO and NERSC nightlog data.
 
-Run as desi@dtn01.nersc.gov.
-
-Catchup on a specific night::
-
-    NIGHT=20200124 && rsync -rlvt --exclude-from ${DESITRANSFER}/py/desitransfer/data/desi_nightwatch_transfer_exclude.txt dts:/exposures/nightwatch/${NIGHT}/ /global/cfs/cdirs/desi/spectro/nightwatch/kpno/${NIGHT}/
-
-
-Typical startup sequence (bash shell)::
-
-    source /global/common/software/desi/desi_environment.sh datatran
-    module load desitransfer
-    nohup nice -19 ${DESITRANSFER}/bin/desi_nightwatch_transfer &> /dev/null &
-    tail -f ${DESI_ROOT}/spectro/nightwatch/desi_nightwatch_transfer.log
-
-The above sequence is for starting by hand.  A cronjob on dtn01 should ensure
-that the script is running.
+Run as a daemon on ``desi@dtn01.nersc.gov``.
 """
 import logging
 import os
@@ -35,8 +19,8 @@ from pkg_resources import resource_filename
 from socket import getfqdn
 from tempfile import TemporaryFile
 from desiutil.log import get_logger
-from .common import rsync, today
 from .daemon import _popen
+from .common import rsync, today
 from . import __version__ as dtVersion
 
 
@@ -44,14 +28,14 @@ log = None
 
 
 def _options():
-    """Parse command-line options for :command:`desi_nightwatch_transfer`.
+    """Parse command-line options for :command:`desi_nightlog_transfer`.
 
     Returns
     -------
     :class:`argparse.Namespace`
         The parsed command-line options.
     """
-    desc = "Transfer DESI nightwatch data files."
+    desc = "Transfer DESI nightlog data files."
     prsr = ArgumentParser(description=desc)
     # prsr.add_argument('-B', '--no-backup', action='store_false', dest='backup',
     #                   help="Skip NERSC HPSS backups.")
@@ -66,8 +50,10 @@ def _options():
                       help='Do not set permissions for DESI collaboration access.')
     # prsr.add_argument('-S', '--shadow', action='store_true',
     #                   help='Observe the actions of another data transfer script but do not make any changes.')
-    prsr.add_argument('-s', '--sleep', metavar='M', type=int, default=1,
+    prsr.add_argument('-s', '--sleep', metavar='M', type=int, default=5,
                       help='Sleep M minutes before checking for new data (default %(default)s minutes).')
+    prsr.add_argument('-t', '--test', action='store_true', dest='test',
+                      help='Test mode. Do not transfer any files.')
     prsr.add_argument('-V', '--version', action='version',
                       version='%(prog)s {0}'.format(dtVersion))
     return prsr.parse_args()
@@ -85,7 +71,7 @@ def _configure_log(debug):
     # conf = self.conf['logging']
     log = get_logger(timestamp=True)
     h = log.parent.handlers[0]
-    handler = RotatingFileHandler(os.path.join(os.environ['DESI_ROOT'], 'spectro', 'nightwatch', 'desi_nightwatch_transfer.log'),
+    handler = RotatingFileHandler(os.path.join(os.environ['DESI_ROOT'], 'survey', 'ops', 'nightlogs', 'desi_nightlog_transfer.log'),
                                   maxBytes=100000000,
                                   backupCount=100)
     handler.setFormatter(h.formatter)
@@ -95,10 +81,10 @@ def _configure_log(debug):
         log.setLevel(logging.DEBUG)
     email_from = os.environ['USER'] + '@' + getfqdn()
     handler2 = SMTPHandler('localhost', email_from, ['desi-alarms-transfer@desi.lbl.gov', ],
-                           'Critical error reported by desi_nightwatch_transfer!')
+                           'Critical error reported by desi_nightlog_transfer!')
     fmt = """Greetings,
 
-At %(asctime)s, desi_nightwatch_transfer failed with this message:
+At %(asctime)s, desi_nightlog_transfer failed with this message:
 
 %(message)s
 
@@ -112,7 +98,7 @@ The DESI Collaboration Account
 
 
 def main():
-    """Entry point for :command:`desi_nightwatch_transfer`.
+    """Entry point for :command:`desi_nightlog_transfer`.
 
     Returns
     -------
@@ -123,21 +109,15 @@ def main():
     _configure_log(options.debug)
     errcount = 0
     wait = options.sleep*60
-    source = '/exposures/nightwatch'
-    basedir = os.path.join(os.environ['DESI_ROOT'], 'spectro', 'nightwatch')
-    kpnodir = os.path.join(basedir, 'kpno')
-    # syncdir = os.path.join(basedir, 'sync')
-    exclude = resource_filename('desitransfer', 'data/desi_nightwatch_transfer_exclude.txt')
-    include = resource_filename('desitransfer', 'data/desi_nightwatch_transfer_include.txt')
-    with open(include) as i:
-        top_level_files = i.read().strip().split('\n')
-    log.debug(', '.join(top_level_files))
-    top_level_files_mode = stat.S_IRUSR | stat.S_IWUSR | stat.S_IRGRP | stat.S_IROTH
+    kpno_source = '/software/www2/html/nightlogs'
+    nersc_source = os.path.join(os.environ['DESI_ROOT'], 'survey', 'ops', 'nightlogs')
+    kpno_include = resource_filename('desitransfer', 'data/desi_nightlog_transfer_kpno.txt')
+    nersc_include = resource_filename('desitransfer', 'data/desi_nightlog_transfer_nersc.txt')
     while True:
-        log.info('Starting nightwatch transfer loop; desitransfer version = %s.',
+        log.info('Starting nightlog transfer loop; desitransfer version = %s.',
                  dtVersion)
         if os.path.exists(options.kill):
-            log.info("%s detected, shutting down nightwatch daemon.",
+            log.info("%s detected, shutting down nightlog daemon.",
                      options.kill)
             return 0
         night = today()
@@ -145,46 +125,68 @@ def main():
         #
         # First check if there is any data for tonight yet.
         #
-        log.info('Checking for nightwatch data from %s.', night)
-        cmd = ['/bin/rsync', 'dts:{0}/'.format(source)]
+        log.info('Checking for nightlog data from %s.', night)
+        cmd = ['/bin/rsync', 'dts:{0}/'.format(kpno_source)]
         log.debug(' '.join(cmd))
         status, out, err = _popen(cmd)
-        found = False
+        kpno_found = False
         if status != '0':
             errcount += 1
-            log.error('Getting file list for %s; trying again in %d minutes.', night, options.sleep)
+            log.error('Getting KPNO file list for %s; trying again in %d minutes.', night, options.sleep)
             time.sleep(wait)
             continue
         for line in out.split('\n'):
             if line.endswith(night):
                 log.info(line)
-                found = True
-        if not found:
-            log.info('No nightwatch data found for %s; trying again in %d minutes.', night, options.sleep)
+                kpno_found = True
+        nersc_found = os.path.exists(os.path.join(nersc_source, night))
+        if not (kpno_found or nersc_found):
+            log.info('No KPNO or NERSC nightlog data found for %s; trying again in %d minutes.', night, options.sleep)
             time.sleep(wait)
             continue
         #
         # Sync per-night directory.
         #
-        nightdir = os.path.join(kpnodir, night)
-        cmd = rsync(os.path.join(source, night), nightdir)
-        cmd.insert(cmd.index('--omit-dir-times') + 1, '--exclude-from')
-        cmd.insert(cmd.index('--exclude-from') + 1, exclude)
-        log.info('Syncing %s.', night)
-        log.debug(' '.join(cmd))
-        status, out, err = _popen(cmd)
-        if status != '0':
-            errcount += 1
-            log.error('Syncing %s.', night)
+        if kpno_found:
+            cmd = rsync(os.path.join(kpno_source, night),
+                        os.path.join(nersc_source, night), test=options.test)
+            cmd.insert(cmd.index('--omit-dir-times') + 1, '--include-from')
+            cmd.insert(cmd.index('--include-from') + 1, kpno_include)
+            cmd.insert(cmd.index(kpno_include) + 1, '--exclude')
+            cmd.insert(cmd.index('--exclude') + 1, '*')
+            log.info('Syncing %s KPNO -> NERSC.', night)
+            log.debug(' '.join(cmd))
+            status, out, err = _popen(cmd)
+            if status != '0':
+                errcount += 1
+                log.error('Syncing %s KPNO -> NERSC.', night)
+        if nersc_found:
+            cmd = rsync(os.path.join(nersc_source, night),
+                        os.path.join(kpno_source, night), test=options.test,
+                        reverse=True)
+            cmd.insert(cmd.index('--omit-dir-times') + 1, '--include-from')
+            cmd.insert(cmd.index('--include-from') + 1, nersc_include)
+            cmd.insert(cmd.index(nersc_include) + 1, '--exclude')
+            cmd.insert(cmd.index('--exclude') + 1, '*')
+            log.info('Syncing %s NERSC -> KPNO.', night)
+            log.debug(' '.join(cmd))
+            status, out, err = _popen(cmd)
+            if status != '0':
+                errcount += 1
+                log.error('Syncing %s NERSC -> KPNO.', night)
         #
         # Correct the permissions.
         #
         if options.permission:
+            nightdir = os.path.join(nersc_source, night)
             if os.path.exists(nightdir):
                 log.info('Fixing permissions for DESI.')
                 cmd = ['fix_permissions.sh', nightdir]
                 log.debug(' '.join(cmd))
-                status, out, err = _popen(cmd)
+                if options.test:
+                    status = '0'
+                else:
+                    status, out, err = _popen(cmd)
                 if status != '0':
                     errcount += 1
                     log.error('Fixing permissions for %s.', nightdir)
@@ -193,35 +195,13 @@ def main():
         else:
             log.info("Skipping permission changes at user request.")
         #
-        # Sync the top level files; skip the logs.
-        #
-        log.info('Syncing top level html/js files.')
-        cmd = ['/bin/rsync', '--verbose', '--links', '--times', '--files-from',
-               include,
-               'dts:{0}/'.format(source),
-               '{0}/'.format(kpnodir)]
-        log.debug(' '.join(cmd))
-        status, out, err = _popen(cmd)
-        if status != '0':
-            errcount += 1
-            log.error('Syncing top level html files.')
-        #
-        # Hack: just add world read to those top level files since fix_permissions.sh
-        # is recursive and we don't want to redo all nights.
-        #
-        for filename in top_level_files:
-            log.debug("os.chmod('%s', 0o%o)",
-                      os.path.join(kpnodir, filename),
-                      top_level_files_mode)
-            os.chmod(os.path.join(kpnodir, filename), top_level_files_mode)
-        #
         # Check for accumulated errors.
         #
         if errcount > 10:
-            log.critical('Transfer error count exceeded, shutting down.')
+            log.critical('Transfer error count exceeded, check logs!')
             return 1
         #
-        # If all that took less than 10 minutes, sleep a bit.
+        # If all that took less than sleep.wait minutes, sleep a bit.
         #
         dt = time.time() - t0
         if dt < wait:

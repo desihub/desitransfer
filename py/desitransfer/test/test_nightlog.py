@@ -1,6 +1,6 @@
 # Licensed under a 3-clause BSD style license - see LICENSE.rst
 # -*- coding: utf-8 -*-
-"""Test desitransfer.nightwatch.
+"""Test desitransfer.nightlog.
 """
 # import datetime
 import logging
@@ -11,11 +11,11 @@ import unittest
 from tempfile import TemporaryDirectory
 from unittest.mock import call, patch, MagicMock
 from pkg_resources import resource_filename
-from ..nightwatch import (_options, _configure_log)
+from ..nightlog import (_options, _configure_log)
 
 
-class TestNightwatch(unittest.TestCase):
-    """Test desitransfer.nightwatch.
+class TestNightlog(unittest.TestCase):
+    """Test desitransfer.nightlog.
     """
 
     @classmethod
@@ -39,28 +39,27 @@ class TestNightwatch(unittest.TestCase):
     def test_options(self):
         """Test command-line arguments.
         """
-        with patch.object(sys, 'argv', ['desi_nightwatch_transfer', '--debug']):
+        with patch.object(sys, 'argv', ['desi_nightlog_transfer', '--debug']):
             options = _options()
             self.assertTrue(options.debug)
             self.assertEqual(options.kill,
                              os.path.join(os.environ['HOME'],
                                           'stop_desi_transfer'))
 
-    @patch('desitransfer.nightwatch.SMTPHandler')
-    @patch('desitransfer.nightwatch.RotatingFileHandler')
-    @patch('desitransfer.nightwatch.get_logger')
-    @patch('desitransfer.nightwatch.log')  # Needed to restore the module-level log object after test.
+    @patch('desitransfer.nightlog.SMTPHandler')
+    @patch('desitransfer.nightlog.RotatingFileHandler')
+    @patch('desitransfer.nightlog.get_logger')
+    @patch('desitransfer.nightlog.log')  # Needed to restore the module-level log object after test.
     def test_configure_log(self, mock_log, gl, rfh, smtp):
         """Test logging configuration.
         """
         with patch.dict('os.environ',
                         {'CSCRATCH': self.tmp.name,
-                         'DESI_ROOT': '/desi/root',
-                         'DESI_SPECTRO_DATA': '/desi/root/spectro/data'}):
-            with patch.object(sys, 'argv', ['desi_nightwatch_transfer', '--debug']):
+                         'DESI_ROOT': '/desi/root',}):
+            with patch.object(sys, 'argv', ['desi_nightlog_transfer', '--debug']):
                 options = _options()
             _configure_log(options)
-        rfh.assert_called_once_with('/desi/root/spectro/nightwatch/desi_nightwatch_transfer.log',
+        rfh.assert_called_once_with('/desi/root/survey/ops/nightlogs/desi_nightlog_transfer.log',
                                     backupCount=100, maxBytes=100000000)
         gl.assert_called_once_with(timestamp=True)
         gl().setLevel.assert_called_once_with(logging.DEBUG)

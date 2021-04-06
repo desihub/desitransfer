@@ -14,6 +14,9 @@ desitransfer API
 .. automodule:: desitransfer.daily
     :members:
 
+.. automodule:: desitransfer.nightlog
+    :members:
+
 .. automodule:: desitransfer.nightwatch
     :members:
 

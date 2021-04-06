@@ -58,7 +58,7 @@ def new_exposures(out):
     return e
 
 
-def rsync(s, d, test=False, config='dts'):
+def rsync(s, d, test=False, config='dts', reverse=False):
     """Set up rsync command.
 
     Parameters
@@ -67,10 +67,12 @@ def rsync(s, d, test=False, config='dts'):
         Source directory.
     d : :class:`str`
         Destination directory.
-    test : :class:`str`, optional
+    test : :class:`bool`, optional
         If ``True``, add ``--dry-run`` to the command.
     config : :class:`str`, optional
         Pass this configuration to the ssh command.
+    reverse : :class:`bool`
+        If ``True``, attach `config` to `d` instead of `s`.
 
     Returns
     -------
@@ -78,8 +80,11 @@ def rsync(s, d, test=False, config='dts'):
         A list suitable for passing to :class:`subprocess.Popen`.
     """
     c = ['/bin/rsync', '--verbose', '--recursive',
-         '--copy-dirlinks', '--times', '--omit-dir-times',
-         config + ':' + s + '/', d + '/']
+         '--copy-dirlinks', '--times', '--omit-dir-times']
+    if reverse:
+        c += [s + '/', config + ':' + d + '/']
+    else:
+        c += [config + ':' + s + '/', d + '/']
     if test:
         c.insert(1, '--dry-run')
     return c
