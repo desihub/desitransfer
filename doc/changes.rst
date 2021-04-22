@@ -5,7 +5,9 @@ Change Log
 0.6.1 (unreleased)
 ------------------
 
-* No changes yet.
+* Sync ``NightSummaryYYYYMMDD`` files; adjust HPSS utility path (PR `#35`_).
+
+.. _`#35`: https://github.com/desihub/desitransfer/pull/35
 
 0.6.0 (2021-04-06)
 ------------------
