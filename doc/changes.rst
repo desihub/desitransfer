@@ -2,7 +2,7 @@
 Change Log
 ==========
 
-0.6.1 (unreleased)
+0.6.1 (2021-04-27)
 ------------------
 
 * Sync ``NightSummaryYYYYMMDD`` files; adjust HPSS utility path (PR `#35`_).
