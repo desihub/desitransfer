@@ -410,8 +410,8 @@ The DESI Collaboration Account
                 os.remove(ls_file)
             except FileNotFoundError:
                 log.debug("Failed to remove %s because it didn't exist. That's OK.", ls_file)
-            cmd = ['/usr/common/mss/bin/hsi', '-O', ls_file,
-                   'ls', '-l', d.hpss]
+            cmd = [os.path.join(self.conf['common']['hpss'], 'hsi'),
+                   '-O', ls_file, 'ls', '-l', d.hpss]
             if self.tape:
                 log.debug(' '.join(cmd))
                 _, out, err = _popen(cmd)
@@ -436,7 +436,7 @@ The DESI Collaboration Account
                     start_dir = os.getcwd()
                     log.debug("os.chdir('%s')", d.destination)
                     os.chdir(d.destination)
-                    cmd = ['/usr/common/mss/bin/htar',
+                    cmd = [os.path.join(self.conf['common']['hpss'], 'htar'),
                            '-cvhf', os.path.join(d.hpss, backup_file),
                            '-H', 'crc:verify=all',
                            night]

@@ -746,8 +746,9 @@ total size is 118,417,836,324  speedup is 494,367.55
             f.write(self.fake_hsi1)
         s = transfer.backup(c[0], '20190703', mock_status)
         self.assertFalse(s)
+        hsi = os.path.join(transfer.conf['common']['hpss'], 'hsi')
         mock_log.debug.assert_has_calls([call("os.remove('%s')", ls_file),
-                                         call("/usr/common/mss/bin/hsi -O %s ls -l desi/spectro/data" % ls_file),
+                                         call("%s -O %s ls -l desi/spectro/data" % (hsi, ls_file)),
                                          call("Backup of %s already complete.", '20190703')])
         mock_rm.assert_called_once_with(ls_file)
         mock_status.assert_not_called()
@@ -787,15 +788,17 @@ total size is 118,417,836,324  speedup is 494,367.55
         mock_rm.side_effect = FileNotFoundError
         s = transfer.backup(c[0], '20190703', mock_status)
         self.assertTrue(s)
+        hsi = os.path.join(transfer.conf['common']['hpss'], 'hsi')
+        htar = os.path.join(transfer.conf['common']['hpss'], 'htar')
         mock_chdir.assert_has_calls([call('/desi/root/spectro/data'),
                                      call(self.tmp.name)])
         mock_log.info.assert_has_calls([call('No files appear to have changed in %s.', '20190703')])
         mock_log.debug.assert_has_calls([call("os.remove('%s')", ls_file),
                                          call("Failed to remove %s because it didn't exist. That's OK.", ls_file),
-                                         call("/usr/common/mss/bin/hsi -O %s ls -l desi/spectro/data" % ls_file),
+                                         call("%s -O %s ls -l desi/spectro/data" % (hsi, ls_file)),
                                          call('/bin/rsync --dry-run --verbose --recursive --copy-dirlinks --times --omit-dir-times dts:/data/dts/exposures/raw/20190703/ /desi/root/spectro/data/20190703/'),
                                          call("os.chdir('%s')", '/desi/root/spectro/data'),
-                                         call('/usr/common/mss/bin/htar -cvhf desi/spectro/data/desi_spectro_data_20190703.tar -H crc:verify=all 20190703'),
+                                         call('%s -cvhf desi/spectro/data/desi_spectro_data_20190703.tar -H crc:verify=all 20190703' % htar),
                                          call("os.chdir('%s')", self.tmp.name)])
         mock_status.assert_not_called()
         mock_status.update.assert_not_called()
@@ -828,7 +831,8 @@ total size is 118,417,836,324  speedup is 494,367.55
             f.write(self.fake_hsi2)
         s = transfer.backup(c[0], '20190703', mock_status)
         self.assertTrue(s)
-        mock_popen.assert_has_calls([call(['/usr/common/mss/bin/htar', '-cvhf', 'desi/spectro/data/desi_spectro_data_20190703.tar', '-H', 'crc:verify=all', '20190703'])])
+        htar = os.path.join(transfer.conf['common']['hpss'], 'htar')
+        mock_popen.assert_has_calls([call([htar, '-cvhf', 'desi/spectro/data/desi_spectro_data_20190703.tar', '-H', 'crc:verify=all', '20190703'])])
         mock_status.assert_not_called()
         mock_status.update.assert_not_called()
 
@@ -861,11 +865,13 @@ total size is 118,417,836,324  speedup is 494,367.55
         mock_getcwd.return_value = 'HOME'
         s = transfer.backup(c[0], '20190703', mock_status)
         self.assertTrue(s)
+        hsi = os.path.join(transfer.conf['common']['hpss'], 'hsi')
+        htar = os.path.join(transfer.conf['common']['hpss'], 'htar')
         mock_log.debug.assert_has_calls([call("os.remove('%s')", os.path.join(self.tmp.name, 'desi_spectro_data.txt')),
-                                         call("/usr/common/mss/bin/hsi -O %s ls -l desi/spectro/data" % ls_file),
+                                         call("%s -O %s ls -l desi/spectro/data" % (hsi, ls_file)),
                                          call('/bin/rsync --dry-run --verbose --recursive --copy-dirlinks --times --omit-dir-times dts:/data/dts/exposures/raw/20190703/ /desi/root/spectro/data/20190703/'),
                                          call("os.chdir('%s')", '/desi/root/spectro/data'),
-                                         call('/usr/common/mss/bin/htar -cvhf desi/spectro/data/desi_spectro_data_20190703.tar -H crc:verify=all 20190703'),
+                                         call('%s -cvhf desi/spectro/data/desi_spectro_data_20190703.tar -H crc:verify=all 20190703' % htar),
                                          call("os.chdir('%s')", 'HOME')])
         mock_log.warning.assert_has_calls([call('New files detected in %s!', '20190703'),
                                            call('No updated exposures in night %s detected.', '20190703')])
