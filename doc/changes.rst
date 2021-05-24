@@ -2,10 +2,13 @@
 Change Log
 ==========
 
-0.6.2 (unreleased)
+0.6.2 (2021-05-24)
 ------------------
 
-* No changes yet.
+* Exclude ``preproc`` files from daily reductions when transferring to Tucson;
+  update name of ``NightSummaryYYYYMMDD.html`` files (PR `#37`_).
+
+.. _`#37`: https://github.com/desihub/desitransfer/pull/37
 
 0.6.1 (2021-04-27)
 ------------------
