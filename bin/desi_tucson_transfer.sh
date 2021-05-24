@@ -124,7 +124,7 @@ for d in ${dynamic}; do
     #
     case ${d} in
         # spectro/nightwatch) inc="--include kpno/*** --exclude *" ;;
-        spectro/redux/daily) inc="--exclude *.tmp" ;;
+        spectro/redux/daily) inc="--exclude *.tmp --exclude preproc-*.fits" ;;
         *) inc='' ;;
     esac
     #
