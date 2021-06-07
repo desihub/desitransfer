@@ -35,7 +35,7 @@ static='protodesi public/epo spectro/redux/andes spectro/redux/blanc spectro/red
 #
 # Dynamic data sets may change daily.
 #
-dynamic='cmx datachallenge engineering spectro/data spectro/nightwatch/kpno spectro/redux/daily spectro/staging/lost+found sv target/catalogs target/cmx_files target/secondary'
+dynamic='cmx datachallenge engineering software/AnyConnect spectro/data spectro/nightwatch/kpno spectro/redux/daily spectro/staging/lost+found sv target/catalogs target/cmx_files target/secondary'
 #
 # Get options.
 #
