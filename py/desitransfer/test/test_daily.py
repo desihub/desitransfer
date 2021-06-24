@@ -78,9 +78,10 @@ class TestDaily(unittest.TestCase):
         mo.assert_has_calls([call('/dst/d0.log', 'ab'),
                              call().__enter__(),
                              call().write(('DEBUG: desi_daily_transfer {}\n'.format(dtVersion)).encode('utf-8')),
-                             call().write(b'DEBUG: 2019-07-03\n'),
                              call().write(b'DEBUG: /bin/rsync --verbose --recursive --links --times --omit-dir-times dts:/src/d0/ /dst/d0/\n'),
+                             call().write(b'DEBUG: Transfer start: 2019-07-03\n'),
                              call().flush(),
+                             call().write(b'DEBUG: Transfer complete: 2019-07-03\n'),
                              call().__exit__(None, None, None)])
         mock_walk.assert_called_once_with('/dst/d0')
         mock_chmod.assert_has_calls([call('/dst/d0', 1512),
@@ -107,9 +108,10 @@ class TestDaily(unittest.TestCase):
         mo.assert_has_calls([call('/dst/d0.log', 'ab'),
                              call().__enter__(),
                              call().write(('DEBUG: desi_daily_transfer {}\n'.format(dtVersion)).encode('utf-8')),
-                             call().write(b'DEBUG: 2019-07-03\n'),
                              call().write(b'DEBUG: /bin/rsync --verbose --recursive --links --times --omit-dir-times --exclude-from foo dts:/src/d0/ /dst/d0/\n'),
+                             call().write(b'DEBUG: Transfer start: 2019-07-03\n'),
                              call().flush(),
+                             call().write(b'DEBUG: Transfer complete: 2019-07-03\n'),
                              call().__exit__(None, None, None)])
         mock_walk.assert_called_once_with('/dst/d0')
         mock_chmod.assert_has_calls([call('/dst/d0', 1512),
@@ -119,7 +121,9 @@ class TestDaily(unittest.TestCase):
     @patch('os.walk')
     @patch('os.stat')
     @patch('os.chmod')
-    def test_lock(self, mock_chmod, mock_stat, mock_walk):
+    @patch('desitransfer.daily.stamp')
+    @patch('builtins.open', new_callable=mock_open)
+    def test_lock(self, mo, mock_stamp, mock_chmod, mock_stat, mock_walk):
         """Test the lock functions in DailyDirectory.lock().
         """
         mock_walk.return_value = [('/dst/d0', ['d1', 'd2'], ['f1', 'f2']),
@@ -128,8 +132,13 @@ class TestDaily(unittest.TestCase):
         mode = Mock()
         mode.st_mode = 137
         mock_stat.return_value = mode
+        mock_stamp.return_value = '2019-07-03'
         d = DailyDirectory('/src/d0', '/dst/d0')
         d.lock()
+        mo.assert_has_calls([call('/dst/d0.log', 'ab'),
+                             call().__enter__(),
+                             call().write(b'DEBUG: Lock complete: 2019-07-03\n'),
+                             call().__exit__(None, None, None)])
         mock_walk.assert_called_once_with('/dst/d0')
         mock_chmod.assert_has_calls([call('/dst/d0', 0o2750),
                                      call('/dst/d0/f1', 0o0440),
@@ -140,17 +149,20 @@ class TestDaily(unittest.TestCase):
                                      call('/dst/d0/d2/f4', 0o0440)])
 
     @patch('subprocess.Popen')
+    @patch('desitransfer.daily.stamp')
     @patch('builtins.open', new_callable=mock_open)
-    def test_permission(self, mo, mock_popen):
+    def test_permission(self, mo, mock_stamp, mock_popen):
         """Test granting permissions.
         """
         mock_popen().wait.return_value = 0
+        mock_stamp.return_value = '2019-07-03'
         d = DailyDirectory('/src/d0', '/dst/d0')
         d.permission()
         mo.assert_has_calls([call('/dst/d0.log', 'ab'),
                              call().__enter__(),
                              call().write(b'DEBUG: fix_permissions.sh /dst/d0\n'),
                              call().flush(),
+                             call().write(b'DEBUG: Permission reset complete: 2019-07-03\n'),
                              call().__exit__(None, None, None)])
         mock_popen.assert_has_calls([call(),
                                      call(['fix_permissions.sh', '/dst/d0'],

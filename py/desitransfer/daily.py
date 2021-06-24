@@ -60,11 +60,12 @@ class DailyDirectory(object):
                 cmd.insert(cmd.index('--omit-dir-times') + 1 + i, e)
         with open(self.log, 'ab') as l:
             l.write(("DEBUG: desi_daily_transfer %s\n" % dtVersion).encode('utf-8'))
-            l.write(("DEBUG: %s\n" % stamp()).encode('utf-8'))
             l.write(("DEBUG: %s\n" % ' '.join(cmd)).encode('utf-8'))
+            l.write(("DEBUG: Transfer start: %s\n" % stamp()).encode('utf-8'))
             l.flush()
             p = sub.Popen(cmd, stdout=l, stderr=sub.STDOUT)
             status = p.wait()
+            l.write(("DEBUG: Transfer complete: %s\n" % stamp()).encode('utf-8'))
         if status == 0:
             self.lock()
             if permission:
@@ -81,6 +82,8 @@ class DailyDirectory(object):
                 fpath = os.path.join(dirpath, f)
                 if stat.S_IMODE(os.stat(fpath).st_mode) != file_perm:
                     os.chmod(fpath, file_perm)
+        with open(self.log, 'ab') as l:
+            l.write(("DEBUG: Lock complete: %s\n" % stamp()).encode('utf-8'))
 
     def permission(self):
         """Set permissions for DESI collaboration access.
@@ -99,6 +102,7 @@ class DailyDirectory(object):
             l.flush()
             p = sub.Popen(cmd, stdout=l, stderr=sub.STDOUT)
             status = p.wait()
+            l.write(("DEBUG: Permission reset complete: %s\n" % stamp()).encode('utf-8'))
         return status
 
 
