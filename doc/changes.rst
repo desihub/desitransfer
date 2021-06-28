@@ -2,10 +2,13 @@
 Change Log
 ==========
 
-0.6.3 (unreleased)
+0.6.3 (2021-06-28)
 ------------------
 
-* No changes yet.
+* Add more information about the types of checksum failures; also more detailed
+  timing of daily transfers, mirror certain software to Tucson (PR `#39`_).
+
+.. _`#39`: https://github.com/desihub/desitransfer/pull/39
 
 0.6.2 (2021-05-24)
 ------------------
