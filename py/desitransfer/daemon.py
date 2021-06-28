@@ -310,11 +310,12 @@ The DESI Collaboration Account
                 #
                 # Did we pass checksums?
                 #
-                if checksum_status == 0:
+                if checksum_status == "":
                     log.debug("status.update('%s', '%s', 'checksum')", night, exposure)
                     status.update(night, exposure, 'checksum')
                 else:
-                    log.critical("Checksum problem detected for %s/%s, check logs!", night, exposure)
+                    msg = "The following checksum error(s) detected for %s/%s:\n\n" + checksum_status
+                    log.critical(msg, night, exposure)
                     log.debug("status.update('%s', '%s', 'checksum', failure=True)", night, exposure)
                     status.update(night, exposure, 'checksum', failure=True)
             else:
@@ -486,11 +487,10 @@ def verify_checksum(checksum_file):
 
     Returns
     -------
-    :class:`int`
-        An integer that indicates the number of checksum mismatches.  A
-        negative integer indicates that the checksum file lists files
-        that are not present.  This is considered more serious than the
-        case where files are present but not listed in the checksum file.
+    :class:`str`
+        An string that describes the errors encountered while verifying
+        the checksum. In addition to mismatches, there can be missing files,
+        extraneous files, etc.  An empty string indicates no errors.
     """
     with open(checksum_file) as c:
         data = c.read()
@@ -501,14 +501,15 @@ def verify_checksum(checksum_file):
     lines = data.split('\n')
     d = os.path.dirname(checksum_file)
     files = os.listdir(d)
-    errors = 0
+    errors = ""
     n_lines = len(lines) - len(files)
     if n_lines > 0:
         log.error("%s lists %d file(s) that are not present!",
                   checksum_file, n_lines)
-        return -1*n_lines
+        errors += "{0:d} file(s) listed but not downloaded.\n".format(n_lines)
     if n_lines < 0:
         log.error("%d files are not listed in %s!", -1*n_lines, checksum_file)
+        errors += "{0:d} file(s) downloaded but not listed.\n".format(-1*n_lines)
     digest = dict([(l.split()[1], l.split()[0]) for l in lines if l])
     for f in files:
         ff = os.path.join(d, f)
@@ -520,14 +521,14 @@ def verify_checksum(checksum_file):
             except KeyError:
                 hh = ''
                 log.error("%s does not appear in %s!", ff, checksum_file)
-                errors += 1
+                errors += "{0} not listed in checksum file.\n".format(f)
             if hh == h:
                 log.debug("%s is valid.", ff)
             elif hh == '':
                 pass
             else:
                 log.error("Checksum mismatch for %s in %s!", ff, checksum_file)
-                errors += 1
+                errors += "{0} had a checksum mismatch.\n".format(f)
     return errors
 
 

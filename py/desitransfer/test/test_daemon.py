@@ -273,7 +273,7 @@ desi_spectro_data_20190702.tar.idx
         mock_isdir.return_value = False
         mock_popen.return_value = ('0', '', '')
         mock_exists.return_value = True
-        mock_cksum.return_value = 0
+        mock_cksum.return_value = ""
         transfer.exposure(c[0], '20190703/00000127', mock_status)
         mock_log.debug.assert_has_calls([call("os.makedirs('%s', exist_ok=True)", '/desi/root/spectro/staging/raw/20190703'),
                                          call("os.makedirs('%s', exist_ok=True)", '/desi/root/spectro/data/20190703'),
@@ -373,7 +373,7 @@ desi_spectro_data_20190702.tar.idx
         mock_isdir.return_value = False
         mock_popen.return_value = ('1', 'stdout', 'stderr')
         mock_exists.return_value = True
-        mock_cksum.return_value = 0
+        mock_cksum.return_value = ""
         transfer.exposure(c[0], '20190703/00000127', mock_status)
         mock_log.debug.assert_has_calls([call("os.makedirs('%s', exist_ok=True)", '/desi/root/spectro/staging/raw/20190703'),
                                          call("os.makedirs('%s', exist_ok=True)", '/desi/root/spectro/data/20190703'),
@@ -422,7 +422,7 @@ desi_spectro_data_20190702.tar.idx
         mock_isdir.return_value = False
         mock_popen.return_value = ('0', '', '')
         mock_exists.return_value = False
-        mock_cksum.return_value = 0
+        mock_cksum.return_value = "There was an error.\n"
         transfer.exposure(c[0], '20190703/00000127', mock_status)
         mock_log.debug.assert_has_calls([call("os.makedirs('%s', exist_ok=True)", '/desi/root/spectro/staging/raw/20190703'),
                                          call("os.makedirs('%s', exist_ok=True)", '/desi/root/spectro/data/20190703'),
@@ -476,7 +476,7 @@ desi_spectro_data_20190702.tar.idx
         mock_isdir.return_value = False
         mock_popen.return_value = ('0', '', '')
         mock_exists.return_value = True
-        mock_cksum.return_value = 1
+        mock_cksum.return_value = "There was an error.\n"
         transfer.exposure(c[0], '20190703/00000127', mock_status)
         mock_log.debug.assert_has_calls([call("os.makedirs('%s', exist_ok=True)", '/desi/root/spectro/staging/raw/20190703'),
                                          call("os.makedirs('%s', exist_ok=True)", '/desi/root/spectro/data/20190703'),
@@ -497,7 +497,7 @@ desi_spectro_data_20190702.tar.idx
         mock_lock.assert_called_once_with('/desi/root/spectro/staging/raw/20190703/00000127', False)
         mock_exists.assert_has_calls([call('/desi/root/spectro/staging/raw/20190703/00000127/checksum-00000127.sha256sum'),])
         # mock_cksum.assert_called_once_with('/desi/root/spectro/staging/raw/20190703/00000127/checksum-00000127.sha256sum')
-        mock_log.critical.assert_called_once_with("Checksum problem detected for %s/%s, check logs!", '20190703', '00000127')
+        mock_log.critical.assert_called_once_with("The following checksum error(s) detected for %s/%s:\n\nThere was an error.\n", '20190703', '00000127')
         mock_status.update.assert_has_calls([call('20190703', '00000127', 'rsync'),
                                              call('20190703', '00000127', 'checksum', failure=True)])
         mock_mv.assert_called_once_with('/desi/root/spectro/staging/raw/20190703/00000127', '/desi/root/spectro/data/20190703')
@@ -930,7 +930,7 @@ total size is 118,417,836,324  speedup is 494,367.55
             mock_listdir.return_value = ['t.sha256sum', 'test_file_1.txt', 'test_file_2.txt']
             with patch('desitransfer.daemon.log') as l:
                 o = verify_checksum(c)
-        self.assertEqual(o, 0)
+        self.assertEqual(o, "")
         l.debug.assert_has_calls([call("%s is valid.", os.path.join(d, 'test_file_1.txt')),
                                   call("%s is valid.", os.path.join(d, 'test_file_2.txt'))])
         #
@@ -940,13 +940,13 @@ total size is 118,417,836,324  speedup is 494,367.55
             mock_listdir.return_value = ['t.sha256sum', 'test_file_1.txt']
             with patch('desitransfer.daemon.log') as l:
                 o = verify_checksum(c)
-        self.assertEqual(o, -1)
+        self.assertEqual(o, "1 file(s) listed but not downloaded.\n")
         l.error.assert_has_calls([call("%s lists %d file(s) that are not present!", c, 1)])
         with patch('os.listdir') as mock_listdir:
             mock_listdir.return_value = ['t.sha256sum', 'test_file_1.txt', 'test_file_2.txt', 'test_file_3.txt']
             with patch('desitransfer.daemon.log') as l:
                 o = verify_checksum(c)
-        self.assertEqual(o, 1)
+        self.assertEqual(o, "1 file(s) downloaded but not listed.\ntest_file_3.txt not listed in checksum file.\n")
         l.error.assert_has_calls([call("%d files are not listed in %s!", 1, c)])
         #
         # Bad list of files.
@@ -955,7 +955,7 @@ total size is 118,417,836,324  speedup is 494,367.55
             mock_listdir.return_value = ['t.sha256sum', 'test_file_1.txt', 'test_file_3.txt']
             with patch('desitransfer.daemon.log') as l:
                 o = verify_checksum(c)
-        self.assertEqual(o, 1)
+        self.assertEqual(o, "test_file_3.txt not listed in checksum file.\n")
         l.debug.assert_has_calls([call("%s is valid.", os.path.join(d, 'test_file_1.txt'))])
         l.error.assert_has_calls([call("%s does not appear in %s!", os.path.join(d, 'test_file_3.txt'), c)])
         #
@@ -968,7 +968,7 @@ total size is 118,417,836,324  speedup is 494,367.55
                     # h.sha256 = MagicMock()
                     h.hexdigest.return_value = 'abcdef'
                     o = verify_checksum(c)
-        self.assertEqual(o, 2)
+        self.assertEqual(o, "test_file_1.txt had a checksum mismatch.\ntest_file_2.txt had a checksum mismatch.\n")
         l.error.assert_has_calls([call("Checksum mismatch for %s in %s!", os.path.join(d, 'test_file_1.txt'), c),
                                   call("Checksum mismatch for %s in %s!", os.path.join(d, 'test_file_2.txt'), c)])
 
