@@ -228,7 +228,7 @@ The DESI Collaboration Account
                 log.critical("Error while decoding HPSS status!")
                 return False
             else:
-                return status['status'] == 'up'
+                return status['status'] == 'active'
 
     def exposure(self, d, link, status):
         """Data transfer operations for a single exposure.

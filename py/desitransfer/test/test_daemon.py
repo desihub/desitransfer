@@ -182,14 +182,17 @@ desi_spectro_data_20190702.tar.idx
                 options = _options()
             d = TransferDaemon(options)
         mock_json = MagicMock()
-        mock_json.json.return_value = {'status': 'up', 'machine': 'archive'}
+        mock_json.json.return_value = {'status': 'active', 'name': 'archive'}
         mock_req.get.return_value = mock_json
         self.assertTrue(d.hpss_status())
         # mock_popen.return_value = ('0', '/tmp/checksum-running', '')
         # self.assertTrue(d.checksum_lock())
+        # mock_log.debug.assert_called_once_with("requests.get('%s')",
+        #                                        'https://newt.nersc.gov/newt/status/archive')
+        # mock_req.get.assert_called_once_with('https://newt.nersc.gov/newt/status/archive')
         mock_log.debug.assert_called_once_with("requests.get('%s')",
-                                               'https://newt.nersc.gov/newt/status/archive')
-        mock_req.get.assert_called_once_with('https://newt.nersc.gov/newt/status/archive')
+                                               'https://api.nersc.gov/api/v1.2/status/archive')
+        mock_req.get.assert_called_once_with('https://api.nersc.gov/api/v1.2/status/archive')
         mock_json.json.return_value = {'status': 'down', 'machine': 'archive'}
         self.assertFalse(d.hpss_status())
         mock_json.json.side_effect = json.decoder.JSONDecodeError('foo', 'Expecting value: line 1 column 1 (char 0)', 0)
