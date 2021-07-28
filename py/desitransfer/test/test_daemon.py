@@ -3,11 +3,13 @@
 """Test desitransfer.daemon.
 """
 import datetime
+import json
 import logging
 import os
 import shutil
 import sys
 import unittest
+import requests
 from tempfile import TemporaryDirectory
 from unittest.mock import call, patch, MagicMock
 from pkg_resources import resource_filename
@@ -165,6 +167,39 @@ desi_spectro_data_20190702.tar.idx
         mock_log.info.assert_called_once_with('Checksums are being computed at KPNO.')
         mock_popen.return_value = ('2', '', 'No such file.')
         self.assertFalse(d.checksum_lock())
+
+    @patch('desitransfer.daemon.requests')
+    @patch('desitransfer.daemon.log')
+    @patch.object(TransferDaemon, '_configure_log')
+    def test_TransferDaemon_hpss_status(self, mock_cl, mock_log, mock_req):
+        """Test HPSS status mechanism.
+        """
+        with patch.dict('os.environ',
+                        {'CSCRATCH': self.tmp.name,
+                         'DESI_ROOT': '/desi/root',
+                         'DESI_SPECTRO_DATA': '/desi/root/spectro/data'}):
+            with patch.object(sys, 'argv', ['desi_transfer_daemon', '--debug']):
+                options = _options()
+            d = TransferDaemon(options)
+        mock_json = MagicMock()
+        mock_json.json.return_value = {'status': 'up', 'machine': 'archive'}
+        mock_req.get.return_value = mock_json
+        self.assertTrue(d.hpss_status())
+        # mock_popen.return_value = ('0', '/tmp/checksum-running', '')
+        # self.assertTrue(d.checksum_lock())
+        mock_log.debug.assert_called_once_with("requests.get('%s')",
+                                               'https://newt.nersc.gov/newt/status/archive')
+        mock_req.get.assert_called_once_with('https://newt.nersc.gov/newt/status/archive')
+        mock_json.json.return_value = {'status': 'down', 'machine': 'archive'}
+        self.assertFalse(d.hpss_status())
+        mock_json.json.side_effect = json.decoder.JSONDecodeError('foo', 'Expecting value: line 1 column 1 (char 0)', 0)
+        self.assertFalse(d.hpss_status())
+        mock_log.critical.assert_called_once_with("Error while decoding HPSS status!")
+        mock_req.exceptions.ConnectionError = requests.exceptions.ConnectionError
+        mock_req.get.side_effect = requests.exceptions.ConnectionError('foo')
+        self.assertFalse(d.hpss_status())
+        mock_log.critical.assert_has_calls([call("Error while decoding HPSS status!"),
+                                            call("Error while determining HPSS availability!"),])
 
     @patch.object(TransferDaemon, 'backup')
     @patch.object(TransferDaemon, 'catchup')

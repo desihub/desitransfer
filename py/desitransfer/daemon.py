@@ -8,6 +8,7 @@ Entry point for :command:`desi_transfer_daemon`.
 """
 import datetime as dt
 import hashlib
+import json
 import logging
 import os
 import re
@@ -17,6 +18,7 @@ import subprocess as sub
 import sys
 import time
 import traceback
+import requests
 from argparse import ArgumentParser
 from collections import namedtuple
 from configparser import ConfigParser, ExtendedInterpolation
@@ -204,6 +206,29 @@ The DESI Collaboration Account
             if s and self.tape:
                 log.debug("status.update('%s', 'all', 'backup')", yst)
                 status.update(yst, 'all', 'backup')
+
+    def hpss_status(self):
+        """Check HPSS availability.
+
+        Returns
+        -------
+        :class:`bool`
+            ``True`` if HPSS is available.
+        """
+        try:
+            log.debug("requests.get('%s')", self.conf['common']['hpss_status'])
+            r = requests.get(self.conf['common']['hpss_status'])
+        except requests.exceptions.ConnectionError:
+            log.critical("Error while determining HPSS availability!")
+            return False
+        else:
+            try:
+                status = r.json()
+            except json.decoder.JSONDecodeError:
+                log.critical("Error while decoding HPSS status!")
+                return False
+            else:
+                return status['status'] == 'up'
 
     def exposure(self, d, link, status):
         """Data transfer operations for a single exposure.
