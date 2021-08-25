@@ -5,7 +5,9 @@ Change Log
 0.6.4 (unreleased)
 ------------------
 
-* No changes yet.
+* Use NERSC API to check for HPSS availability; update Tucson transfers for everest (PR `#41`_).
+
+.. _`#41`: https://github.com/desihub/desitransfer/pull/41
 
 0.6.3 (2021-06-28)
 ------------------
