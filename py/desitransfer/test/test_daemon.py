@@ -315,7 +315,7 @@ desi_spectro_data_20190702.tar.idx
         transfer.exposure(c[0], '20190703/00000127', mock_status)
         mock_log.debug.assert_has_calls([call("os.makedirs('%s', exist_ok=True)", '/desi/root/spectro/staging/raw/20190703'),
                                          call("os.makedirs('%s', exist_ok=True)", '/desi/root/spectro/data/20190703'),
-                                         call("os.chmod('%s', 0o%o)", '/desi/root/spectro/data/20190703', 1512),
+                                         call("os.chmod('%s', 0o%o)", '/desi/root/spectro/data/20190703', 0o2550),
                                          call('/bin/rsync --verbose --recursive --copy-dirlinks --times --omit-dir-times dts:/data/dts/exposures/raw/20190703/00000127/ /desi/root/spectro/staging/raw/20190703/00000127/'),
                                          call("status.update('%s', '%s', 'rsync')", '20190703', '00000127'),
                                          call("lock_directory('%s', %s)", '/desi/root/spectro/staging/raw/20190703/00000127', 'False'),
@@ -324,7 +324,7 @@ desi_spectro_data_20190702.tar.idx
                                          call("shutil.move('%s', '%s')", '/desi/root/spectro/staging/raw/20190703/00000127', '/desi/root/spectro/data/20190703')])
         mock_mkdir.assert_has_calls([call('/desi/root/spectro/staging/raw/20190703', exist_ok=True),
                                      call('/desi/root/spectro/data/20190703', exist_ok=True)])
-        mock_chmod.assert_has_calls([call('/desi/root/spectro/data/20190703', 1512)])
+        mock_chmod.assert_has_calls([call('/desi/root/spectro/data/20190703', 0o2550)])
         mock_popen.assert_called_once_with(['/bin/rsync', '--verbose', '--recursive',
                                             '--copy-dirlinks', '--times', '--omit-dir-times',
                                             'dts:/data/dts/exposures/raw/20190703/00000127/',
@@ -368,7 +368,7 @@ desi_spectro_data_20190702.tar.idx
         transfer.exposure(c[0], '20190703/00000127', mock_status)
         mock_log.debug.assert_has_calls([call("os.makedirs('%s', exist_ok=True)", '/desi/root/spectro/staging/raw/20190703'),
                                          call("os.makedirs('%s', exist_ok=True)", '/desi/root/spectro/data/20190703'),
-                                         call("os.chmod('%s', 0o%o)", '/desi/root/spectro/data/20190703', 1512),
+                                         call("os.chmod('%s', 0o%o)", '/desi/root/spectro/data/20190703', 0o2550),
                                          call('/bin/rsync --verbose --recursive --copy-dirlinks --times --omit-dir-times dts:/data/dts/exposures/raw/20190703/00000127/ /desi/root/spectro/staging/raw/20190703/00000127/'),
                                          call("status.update('%s', '%s', 'rsync')", '20190703', '00000127'),
                                          call("lock_directory('%s', %s)", '/desi/root/spectro/staging/raw/20190703/00000127', 'True'),
@@ -415,7 +415,7 @@ desi_spectro_data_20190702.tar.idx
         transfer.exposure(c[0], '20190703/00000127', mock_status)
         mock_log.debug.assert_has_calls([call("os.makedirs('%s', exist_ok=True)", '/desi/root/spectro/staging/raw/20190703'),
                                          call("os.makedirs('%s', exist_ok=True)", '/desi/root/spectro/data/20190703'),
-                                         call("os.chmod('%s', 0o%o)", '/desi/root/spectro/data/20190703', 1512),
+                                         call("os.chmod('%s', 0o%o)", '/desi/root/spectro/data/20190703', 0o2550),
                                          call('/bin/rsync --verbose --recursive --copy-dirlinks --times --omit-dir-times dts:/data/dts/exposures/raw/20190703/00000127/ /desi/root/spectro/staging/raw/20190703/00000127/'),
                                          call("status.update('%s', '%s', 'rsync', failure=True)", '20190703', '00000127'),
                                          call("lock_directory('%s', %s)", '/desi/root/spectro/staging/raw/20190703/00000127', 'False'),
@@ -424,7 +424,7 @@ desi_spectro_data_20190702.tar.idx
                                          call("shutil.move('%s', '%s')", '/desi/root/spectro/staging/raw/20190703/00000127', '/desi/root/spectro/data/20190703')])
         mock_mkdir.assert_has_calls([call('/desi/root/spectro/staging/raw/20190703', exist_ok=True),
                                      call('/desi/root/spectro/data/20190703', exist_ok=True)])
-        mock_chmod.assert_has_calls([call('/desi/root/spectro/data/20190703', 1512)])
+        mock_chmod.assert_has_calls([call('/desi/root/spectro/data/20190703', 0o2550)])
         mock_lock.assert_called_once_with('/desi/root/spectro/staging/raw/20190703/00000127', False)
         mock_exists.assert_has_calls([call('/desi/root/spectro/staging/raw/20190703/00000127/checksum-00000127.sha256sum'),])
         mock_cksum.assert_called_once_with('/desi/root/spectro/staging/raw/20190703/00000127/checksum-00000127.sha256sum')
@@ -464,7 +464,7 @@ desi_spectro_data_20190702.tar.idx
         transfer.exposure(c[0], '20190703/00000127', mock_status)
         mock_log.debug.assert_has_calls([call("os.makedirs('%s', exist_ok=True)", '/desi/root/spectro/staging/raw/20190703'),
                                          call("os.makedirs('%s', exist_ok=True)", '/desi/root/spectro/data/20190703'),
-                                         call("os.chmod('%s', 0o%o)", '/desi/root/spectro/data/20190703', 1512),
+                                         call("os.chmod('%s', 0o%o)", '/desi/root/spectro/data/20190703', 0o2550),
                                          call('/bin/rsync --verbose --recursive --copy-dirlinks --times --omit-dir-times dts:/data/dts/exposures/raw/20190703/00000127/ /desi/root/spectro/staging/raw/20190703/00000127/'),
                                          call("status.update('%s', '%s', 'rsync')", '20190703', '00000127'),
                                          call("lock_directory('%s', %s)", '/desi/root/spectro/staging/raw/20190703/00000127', 'False'),
@@ -473,7 +473,7 @@ desi_spectro_data_20190702.tar.idx
                                          call("shutil.move('%s', '%s')", '/desi/root/spectro/staging/raw/20190703/00000127', '/desi/root/spectro/data/20190703')])
         mock_mkdir.assert_has_calls([call('/desi/root/spectro/staging/raw/20190703', exist_ok=True),
                                      call('/desi/root/spectro/data/20190703', exist_ok=True)])
-        mock_chmod.assert_has_calls([call('/desi/root/spectro/data/20190703', 1512)])
+        mock_chmod.assert_has_calls([call('/desi/root/spectro/data/20190703', 0o2550)])
         mock_popen.assert_called_once_with(['/bin/rsync', '--verbose', '--recursive',
                                             '--copy-dirlinks', '--times', '--omit-dir-times',
                                             'dts:/data/dts/exposures/raw/20190703/00000127/',
@@ -518,7 +518,7 @@ desi_spectro_data_20190702.tar.idx
         transfer.exposure(c[0], '20190703/00000127', mock_status)
         mock_log.debug.assert_has_calls([call("os.makedirs('%s', exist_ok=True)", '/desi/root/spectro/staging/raw/20190703'),
                                          call("os.makedirs('%s', exist_ok=True)", '/desi/root/spectro/data/20190703'),
-                                         call("os.chmod('%s', 0o%o)", '/desi/root/spectro/data/20190703', 1512),
+                                         call("os.chmod('%s', 0o%o)", '/desi/root/spectro/data/20190703', 0o2550),
                                          call('/bin/rsync --verbose --recursive --copy-dirlinks --times --omit-dir-times dts:/data/dts/exposures/raw/20190703/00000127/ /desi/root/spectro/staging/raw/20190703/00000127/'),
                                          call("status.update('%s', '%s', 'rsync')", '20190703', '00000127'),
                                          call("lock_directory('%s', %s)", '/desi/root/spectro/staging/raw/20190703/00000127', 'False'),
@@ -527,7 +527,7 @@ desi_spectro_data_20190702.tar.idx
                                          call("shutil.move('%s', '%s')", '/desi/root/spectro/staging/raw/20190703/00000127', '/desi/root/spectro/data/20190703')])
         mock_mkdir.assert_has_calls([call('/desi/root/spectro/staging/raw/20190703', exist_ok=True),
                                      call('/desi/root/spectro/data/20190703', exist_ok=True)])
-        mock_chmod.assert_has_calls([call('/desi/root/spectro/data/20190703', 1512)])
+        mock_chmod.assert_has_calls([call('/desi/root/spectro/data/20190703', 0o2550)])
         mock_popen.assert_called_once_with(['/bin/rsync', '--verbose', '--recursive',
                                             '--copy-dirlinks', '--times', '--omit-dir-times',
                                             'dts:/data/dts/exposures/raw/20190703/00000127/',
@@ -1020,19 +1020,19 @@ total size is 118,417,836,324  speedup is 494,367.55
                                   ('/d0/d1', [], ['f3']),
                                   ('/d0/d2', [], ['f4'])]
         lock_directory('/d0')
-        mock_log.debug.assert_has_calls([call("os.chmod('%s', 0o%o)", '/d0', 0o2750),
+        mock_log.debug.assert_has_calls([call("os.chmod('%s', 0o%o)", '/d0', 0o2550),
                                          call("os.chmod('%s', 0o%o)", '/d0/f1', 0o0440),
                                          call("os.chmod('%s', 0o%o)", '/d0/f2', 0o0440),
-                                         call("os.chmod('%s', 0o%o)", '/d0/d1', 0o2750),
+                                         call("os.chmod('%s', 0o%o)", '/d0/d1', 0o2550),
                                          call("os.chmod('%s', 0o%o)", '/d0/d1/f3', 0o0440),
-                                         call("os.chmod('%s', 0o%o)", '/d0/d2', 0o2750),
+                                         call("os.chmod('%s', 0o%o)", '/d0/d2', 0o2550),
                                          call("os.chmod('%s', 0o%o)", '/d0/d2/f4', 0o0440)])
-        mock_chmod.assert_has_calls([call('/d0', 0o2750),
+        mock_chmod.assert_has_calls([call('/d0', 0o2550),
                                      call('/d0/f1', 0o0440),
                                      call('/d0/f2', 0o0440),
-                                     call('/d0/d1', 0o2750),
+                                     call('/d0/d1', 0o2550),
                                      call('/d0/d1/f3', 0o0440),
-                                     call('/d0/d2', 0o2750),
+                                     call('/d0/d2', 0o2550),
                                      call('/d0/d2/f4', 0o0440)])
 
     @patch('os.walk')

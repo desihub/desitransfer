@@ -35,7 +35,7 @@ class TestCommon(unittest.TestCase):
     def test_permissions(self):
         """Ensure that file and directory permissions do not change.
         """
-        self.assertEqual(dir_perm, 0o2750)
+        self.assertEqual(dir_perm, 0o2550)
         self.assertEqual(file_perm, 0o0440)
 
     def test_empty_rsync(self):
