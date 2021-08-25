@@ -13,12 +13,9 @@ import stat
 import pytz
 
 
-# dir_perm = (stat.S_ISGID |
-#             stat.S_IRUSR | stat.S_IWUSR | stat.S_IXUSR |
-#             stat.S_IRGRP | stat.S_IXGRP)  # 0o2750
 dir_perm = (stat.S_ISGID |
-            stat.S_IRUSR | stat.S_IXUSR |
-            stat.S_IRGRP | stat.S_IXGRP)  # 0o2550
+            stat.S_IRUSR | stat.S_IWUSR | stat.S_IXUSR |
+            stat.S_IRGRP | stat.S_IXGRP)  # 0o2750
 file_perm = stat.S_IRUSR | stat.S_IRGRP    # 0o0440
 
 

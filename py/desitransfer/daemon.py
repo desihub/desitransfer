@@ -456,6 +456,13 @@ The DESI Collaboration Account
             else:
                 self.catchup(d, night, status, backup=True)
                 #
+                # Final permission lock: remove user-write permission from directories.
+                #
+                for dirpath, dirnames, filenames in os.walk(os.path.join(d.destination, night)):
+                    log.debug("os.chmod('%s', 0o%o)", dirpath, dir_perm ^ stat.S_IWUSR)
+                    if not self.test:
+                        os.chmod(dirpath, dir_perm ^ stat.S_IWUSR)
+                #
                 # Issue HTAR command.
                 #
                 if self.tape:
