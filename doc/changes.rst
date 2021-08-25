@@ -6,8 +6,10 @@ Change Log
 ------------------
 
 * Use NERSC API to check for HPSS availability; update Tucson transfers for everest (PR `#41`_).
+* Test removing user-write permission from raw data *directories* (Issue `#28`_)
 
 .. _`#41`: https://github.com/desihub/desitransfer/pull/41
+.. _`#28`: https://github.com/desihub/desitransfer/issues/28
 
 0.6.3 (2021-06-28)
 ------------------
