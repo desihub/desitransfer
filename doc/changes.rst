@@ -2,7 +2,7 @@
 Change Log
 ==========
 
-0.6.4 (unreleased)
+0.6.4 (2021-09-10)
 ------------------
 
 * Use NERSC API to check for HPSS availability; update Tucson transfers for everest (PR `#41`_).
