@@ -84,9 +84,9 @@ class TestDaily(unittest.TestCase):
                              call().write(b'DEBUG: Transfer complete: 2019-07-03\n'),
                              call().__exit__(None, None, None)])
         mock_walk.assert_called_once_with('/dst/d0')
-        mock_chmod.assert_has_calls([call('/dst/d0', 1512),
-                                     call('/dst/d0/f1', 288),
-                                     call('/dst/d0/f2', 288)])
+        mock_chmod.assert_has_calls([call('/dst/d0', 0o2750),
+                                     call('/dst/d0/f1', 0o0440),
+                                     call('/dst/d0/f2', 0o0440)])
 
     @patch('os.walk')
     @patch('os.stat')
@@ -114,9 +114,9 @@ class TestDaily(unittest.TestCase):
                              call().write(b'DEBUG: Transfer complete: 2019-07-03\n'),
                              call().__exit__(None, None, None)])
         mock_walk.assert_called_once_with('/dst/d0')
-        mock_chmod.assert_has_calls([call('/dst/d0', 1512),
-                                     call('/dst/d0/f1', 288),
-                                     call('/dst/d0/f2', 288)])
+        mock_chmod.assert_has_calls([call('/dst/d0', 0o2750),
+                                     call('/dst/d0/f1', 0o0440),
+                                     call('/dst/d0/f2', 0o0440)])
 
     @patch('os.walk')
     @patch('os.stat')

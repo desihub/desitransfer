@@ -3,11 +3,13 @@
 """Test desitransfer.daemon.
 """
 import datetime
+import json
 import logging
 import os
 import shutil
 import sys
 import unittest
+import requests
 from tempfile import TemporaryDirectory
 from unittest.mock import call, patch, MagicMock
 from pkg_resources import resource_filename
@@ -166,6 +168,42 @@ desi_spectro_data_20190702.tar.idx
         mock_popen.return_value = ('2', '', 'No such file.')
         self.assertFalse(d.checksum_lock())
 
+    @patch('desitransfer.daemon.requests')
+    @patch('desitransfer.daemon.log')
+    @patch.object(TransferDaemon, '_configure_log')
+    def test_TransferDaemon_hpss_status(self, mock_cl, mock_log, mock_req):
+        """Test HPSS status mechanism.
+        """
+        with patch.dict('os.environ',
+                        {'CSCRATCH': self.tmp.name,
+                         'DESI_ROOT': '/desi/root',
+                         'DESI_SPECTRO_DATA': '/desi/root/spectro/data'}):
+            with patch.object(sys, 'argv', ['desi_transfer_daemon', '--debug']):
+                options = _options()
+            d = TransferDaemon(options)
+        mock_json = MagicMock()
+        mock_json.json.return_value = {'status': 'active', 'name': 'archive'}
+        mock_req.get.return_value = mock_json
+        self.assertTrue(d.hpss_status())
+        # mock_popen.return_value = ('0', '/tmp/checksum-running', '')
+        # self.assertTrue(d.checksum_lock())
+        # mock_log.debug.assert_called_once_with("requests.get('%s')",
+        #                                        'https://newt.nersc.gov/newt/status/archive')
+        # mock_req.get.assert_called_once_with('https://newt.nersc.gov/newt/status/archive')
+        mock_log.debug.assert_called_once_with("requests.get('%s')",
+                                               'https://api.nersc.gov/api/v1.2/status/archive')
+        mock_req.get.assert_called_once_with('https://api.nersc.gov/api/v1.2/status/archive')
+        mock_json.json.return_value = {'status': 'down', 'machine': 'archive'}
+        self.assertFalse(d.hpss_status())
+        mock_json.json.side_effect = json.decoder.JSONDecodeError('foo', 'Expecting value: line 1 column 1 (char 0)', 0)
+        self.assertFalse(d.hpss_status())
+        mock_log.critical.assert_called_once_with("Error while decoding HPSS status!")
+        mock_req.exceptions.ConnectionError = requests.exceptions.ConnectionError
+        mock_req.get.side_effect = requests.exceptions.ConnectionError('foo')
+        self.assertFalse(d.hpss_status())
+        mock_log.critical.assert_has_calls([call("Error while decoding HPSS status!"),
+                                            call("Error while determining HPSS availability!"),])
+
     @patch.object(TransferDaemon, 'backup')
     @patch.object(TransferDaemon, 'catchup')
     @patch.object(TransferDaemon, 'exposure')
@@ -277,7 +315,7 @@ desi_spectro_data_20190702.tar.idx
         transfer.exposure(c[0], '20190703/00000127', mock_status)
         mock_log.debug.assert_has_calls([call("os.makedirs('%s', exist_ok=True)", '/desi/root/spectro/staging/raw/20190703'),
                                          call("os.makedirs('%s', exist_ok=True)", '/desi/root/spectro/data/20190703'),
-                                         call("os.chmod('%s', 0o%o)", '/desi/root/spectro/data/20190703', 1512),
+                                         call("os.chmod('%s', 0o%o)", '/desi/root/spectro/data/20190703', 0o2750),
                                          call('/bin/rsync --verbose --recursive --copy-dirlinks --times --omit-dir-times dts:/data/dts/exposures/raw/20190703/00000127/ /desi/root/spectro/staging/raw/20190703/00000127/'),
                                          call("status.update('%s', '%s', 'rsync')", '20190703', '00000127'),
                                          call("lock_directory('%s', %s)", '/desi/root/spectro/staging/raw/20190703/00000127', 'False'),
@@ -286,7 +324,7 @@ desi_spectro_data_20190702.tar.idx
                                          call("shutil.move('%s', '%s')", '/desi/root/spectro/staging/raw/20190703/00000127', '/desi/root/spectro/data/20190703')])
         mock_mkdir.assert_has_calls([call('/desi/root/spectro/staging/raw/20190703', exist_ok=True),
                                      call('/desi/root/spectro/data/20190703', exist_ok=True)])
-        mock_chmod.assert_has_calls([call('/desi/root/spectro/data/20190703', 1512)])
+        mock_chmod.assert_has_calls([call('/desi/root/spectro/data/20190703', 0o2750)])
         mock_popen.assert_called_once_with(['/bin/rsync', '--verbose', '--recursive',
                                             '--copy-dirlinks', '--times', '--omit-dir-times',
                                             'dts:/data/dts/exposures/raw/20190703/00000127/',
@@ -330,7 +368,7 @@ desi_spectro_data_20190702.tar.idx
         transfer.exposure(c[0], '20190703/00000127', mock_status)
         mock_log.debug.assert_has_calls([call("os.makedirs('%s', exist_ok=True)", '/desi/root/spectro/staging/raw/20190703'),
                                          call("os.makedirs('%s', exist_ok=True)", '/desi/root/spectro/data/20190703'),
-                                         call("os.chmod('%s', 0o%o)", '/desi/root/spectro/data/20190703', 1512),
+                                         call("os.chmod('%s', 0o%o)", '/desi/root/spectro/data/20190703', 0o2750),
                                          call('/bin/rsync --verbose --recursive --copy-dirlinks --times --omit-dir-times dts:/data/dts/exposures/raw/20190703/00000127/ /desi/root/spectro/staging/raw/20190703/00000127/'),
                                          call("status.update('%s', '%s', 'rsync')", '20190703', '00000127'),
                                          call("lock_directory('%s', %s)", '/desi/root/spectro/staging/raw/20190703/00000127', 'True'),
@@ -377,7 +415,7 @@ desi_spectro_data_20190702.tar.idx
         transfer.exposure(c[0], '20190703/00000127', mock_status)
         mock_log.debug.assert_has_calls([call("os.makedirs('%s', exist_ok=True)", '/desi/root/spectro/staging/raw/20190703'),
                                          call("os.makedirs('%s', exist_ok=True)", '/desi/root/spectro/data/20190703'),
-                                         call("os.chmod('%s', 0o%o)", '/desi/root/spectro/data/20190703', 1512),
+                                         call("os.chmod('%s', 0o%o)", '/desi/root/spectro/data/20190703', 0o2750),
                                          call('/bin/rsync --verbose --recursive --copy-dirlinks --times --omit-dir-times dts:/data/dts/exposures/raw/20190703/00000127/ /desi/root/spectro/staging/raw/20190703/00000127/'),
                                          call("status.update('%s', '%s', 'rsync', failure=True)", '20190703', '00000127'),
                                          call("lock_directory('%s', %s)", '/desi/root/spectro/staging/raw/20190703/00000127', 'False'),
@@ -386,7 +424,7 @@ desi_spectro_data_20190702.tar.idx
                                          call("shutil.move('%s', '%s')", '/desi/root/spectro/staging/raw/20190703/00000127', '/desi/root/spectro/data/20190703')])
         mock_mkdir.assert_has_calls([call('/desi/root/spectro/staging/raw/20190703', exist_ok=True),
                                      call('/desi/root/spectro/data/20190703', exist_ok=True)])
-        mock_chmod.assert_has_calls([call('/desi/root/spectro/data/20190703', 1512)])
+        mock_chmod.assert_has_calls([call('/desi/root/spectro/data/20190703', 0o2750)])
         mock_lock.assert_called_once_with('/desi/root/spectro/staging/raw/20190703/00000127', False)
         mock_exists.assert_has_calls([call('/desi/root/spectro/staging/raw/20190703/00000127/checksum-00000127.sha256sum'),])
         mock_cksum.assert_called_once_with('/desi/root/spectro/staging/raw/20190703/00000127/checksum-00000127.sha256sum')
@@ -426,7 +464,7 @@ desi_spectro_data_20190702.tar.idx
         transfer.exposure(c[0], '20190703/00000127', mock_status)
         mock_log.debug.assert_has_calls([call("os.makedirs('%s', exist_ok=True)", '/desi/root/spectro/staging/raw/20190703'),
                                          call("os.makedirs('%s', exist_ok=True)", '/desi/root/spectro/data/20190703'),
-                                         call("os.chmod('%s', 0o%o)", '/desi/root/spectro/data/20190703', 1512),
+                                         call("os.chmod('%s', 0o%o)", '/desi/root/spectro/data/20190703', 0o2750),
                                          call('/bin/rsync --verbose --recursive --copy-dirlinks --times --omit-dir-times dts:/data/dts/exposures/raw/20190703/00000127/ /desi/root/spectro/staging/raw/20190703/00000127/'),
                                          call("status.update('%s', '%s', 'rsync')", '20190703', '00000127'),
                                          call("lock_directory('%s', %s)", '/desi/root/spectro/staging/raw/20190703/00000127', 'False'),
@@ -435,7 +473,7 @@ desi_spectro_data_20190702.tar.idx
                                          call("shutil.move('%s', '%s')", '/desi/root/spectro/staging/raw/20190703/00000127', '/desi/root/spectro/data/20190703')])
         mock_mkdir.assert_has_calls([call('/desi/root/spectro/staging/raw/20190703', exist_ok=True),
                                      call('/desi/root/spectro/data/20190703', exist_ok=True)])
-        mock_chmod.assert_has_calls([call('/desi/root/spectro/data/20190703', 1512)])
+        mock_chmod.assert_has_calls([call('/desi/root/spectro/data/20190703', 0o2750)])
         mock_popen.assert_called_once_with(['/bin/rsync', '--verbose', '--recursive',
                                             '--copy-dirlinks', '--times', '--omit-dir-times',
                                             'dts:/data/dts/exposures/raw/20190703/00000127/',
@@ -480,7 +518,7 @@ desi_spectro_data_20190702.tar.idx
         transfer.exposure(c[0], '20190703/00000127', mock_status)
         mock_log.debug.assert_has_calls([call("os.makedirs('%s', exist_ok=True)", '/desi/root/spectro/staging/raw/20190703'),
                                          call("os.makedirs('%s', exist_ok=True)", '/desi/root/spectro/data/20190703'),
-                                         call("os.chmod('%s', 0o%o)", '/desi/root/spectro/data/20190703', 1512),
+                                         call("os.chmod('%s', 0o%o)", '/desi/root/spectro/data/20190703', 0o2750),
                                          call('/bin/rsync --verbose --recursive --copy-dirlinks --times --omit-dir-times dts:/data/dts/exposures/raw/20190703/00000127/ /desi/root/spectro/staging/raw/20190703/00000127/'),
                                          call("status.update('%s', '%s', 'rsync')", '20190703', '00000127'),
                                          call("lock_directory('%s', %s)", '/desi/root/spectro/staging/raw/20190703/00000127', 'False'),
@@ -489,7 +527,7 @@ desi_spectro_data_20190702.tar.idx
                                          call("shutil.move('%s', '%s')", '/desi/root/spectro/staging/raw/20190703/00000127', '/desi/root/spectro/data/20190703')])
         mock_mkdir.assert_has_calls([call('/desi/root/spectro/staging/raw/20190703', exist_ok=True),
                                      call('/desi/root/spectro/data/20190703', exist_ok=True)])
-        mock_chmod.assert_has_calls([call('/desi/root/spectro/data/20190703', 1512)])
+        mock_chmod.assert_has_calls([call('/desi/root/spectro/data/20190703', 0o2750)])
         mock_popen.assert_called_once_with(['/bin/rsync', '--verbose', '--recursive',
                                             '--copy-dirlinks', '--times', '--omit-dir-times',
                                             'dts:/data/dts/exposures/raw/20190703/00000127/',
@@ -803,6 +841,8 @@ total size is 118,417,836,324  speedup is 494,367.55
         mock_status.assert_not_called()
         mock_status.update.assert_not_called()
 
+    @patch('os.walk')
+    @patch('os.chmod')
     @patch('desitransfer.daemon.rsync_night')
     @patch('os.chdir')
     @patch('os.getcwd')
@@ -813,7 +853,7 @@ total size is 118,417,836,324  speedup is 494,367.55
     @patch('desitransfer.daemon.TransferStatus')
     @patch('desitransfer.daemon.log')
     @patch.object(TransferDaemon, '_configure_log')
-    def test_TransferDaemon_backup_no_test(self, mock_cl, mock_log, mock_status, mock_isdir, mock_rm, mock_popen, mock_empty, mock_getcwd, mock_chdir, mock_rsync):
+    def test_TransferDaemon_backup_no_test(self, mock_cl, mock_log, mock_status, mock_isdir, mock_rm, mock_popen, mock_empty, mock_getcwd, mock_chdir, mock_rsync, mock_chmod, mock_walk):
         """Test HPSS backup of night in 'real' mode.
         """
         with patch.dict('os.environ',
@@ -825,17 +865,35 @@ total size is 118,417,836,324  speedup is 494,367.55
             transfer = TransferDaemon(options)
         c = transfer.directories
         mock_isdir.return_value = True
+        mock_walk.return_value = [('/desi/root/spectro/data/20190703', ['00001234', '00001235'], []),
+                                  ('/desi/root/spectro/data/20190703/00001234', [], ['f1']),
+                                  ('/desi/root/spectro/data/20190703/00001235', [], ['f2'])]
+        mock_empty.return_value = True
         mock_popen.return_value = ('0', '', '')
+        mock_getcwd.return_value = 'HOME'
         ls_file = os.path.join(self.tmp.name, 'desi_spectro_data.txt')
         with open(ls_file, 'w') as f:
             f.write(self.fake_hsi2)
         s = transfer.backup(c[0], '20190703', mock_status)
         self.assertTrue(s)
+        hsi = os.path.join(transfer.conf['common']['hpss'], 'hsi')
         htar = os.path.join(transfer.conf['common']['hpss'], 'htar')
+        mock_log.info.assert_has_calls([call('No files appear to have changed in %s.', '20190703')])
+        mock_log.debug.assert_has_calls([call("os.remove('%s')", os.path.join(self.tmp.name, 'desi_spectro_data.txt')),
+                                         call("%s -O %s ls -l desi/spectro/data" % (hsi, ls_file)),
+                                         call('/bin/rsync --dry-run --verbose --recursive --copy-dirlinks --times --omit-dir-times dts:/data/dts/exposures/raw/20190703/ /desi/root/spectro/data/20190703/'),
+                                         call("os.chmod('%s', 0o%o)", '/desi/root/spectro/data/20190703', 0o2550),
+                                         call("os.chmod('%s', 0o%o)", '/desi/root/spectro/data/20190703/00001234', 0o2550),
+                                         call("os.chmod('%s', 0o%o)", '/desi/root/spectro/data/20190703/00001235', 0o2550),
+                                         call("os.chdir('%s')", '/desi/root/spectro/data'),
+                                         call('%s -cvhf desi/spectro/data/desi_spectro_data_20190703.tar -H crc:verify=all 20190703' % htar),
+                                         call("os.chdir('%s')", 'HOME')])
         mock_popen.assert_has_calls([call([htar, '-cvhf', 'desi/spectro/data/desi_spectro_data_20190703.tar', '-H', 'crc:verify=all', '20190703'])])
         mock_status.assert_not_called()
         mock_status.update.assert_not_called()
 
+    @patch('os.walk')
+    @patch('os.chmod')
     @patch('desitransfer.daemon.rsync_night')
     @patch('os.chdir')
     @patch('os.getcwd')
@@ -846,7 +904,7 @@ total size is 118,417,836,324  speedup is 494,367.55
     @patch('desitransfer.daemon.TransferStatus')
     @patch('desitransfer.daemon.log')
     @patch.object(TransferDaemon, '_configure_log')
-    def test_TransferDaemon_backup_delayed_data(self, mock_cl, mock_log, mock_status, mock_isdir, mock_rm, mock_popen, mock_empty, mock_getcwd, mock_chdir, mock_rsync):
+    def test_TransferDaemon_backup_delayed_data(self, mock_cl, mock_log, mock_status, mock_isdir, mock_rm, mock_popen, mock_empty, mock_getcwd, mock_chdir, mock_rsync, mock_chmod, mock_walk):
         """Test HPSS backup of night with delayed data.
         """
         with patch.dict('os.environ',
@@ -860,6 +918,9 @@ total size is 118,417,836,324  speedup is 494,367.55
         ls_file = os.path.join(self.tmp.name, 'desi_spectro_data.txt')
         with open(ls_file, 'w') as f:
             f.write(self.fake_hsi2)
+        mock_walk.return_value = [('/desi/root/spectro/data/20190703', ['00001234', '00001235'], []),
+                                  ('/desi/root/spectro/data/20190703/00001234', [], ['f1']),
+                                  ('/desi/root/spectro/data/20190703/00001235', [], ['f2'])]
         mock_empty.return_value = False
         mock_popen.return_value = ('0', '', '')
         mock_getcwd.return_value = 'HOME'
@@ -870,12 +931,19 @@ total size is 118,417,836,324  speedup is 494,367.55
         mock_log.debug.assert_has_calls([call("os.remove('%s')", os.path.join(self.tmp.name, 'desi_spectro_data.txt')),
                                          call("%s -O %s ls -l desi/spectro/data" % (hsi, ls_file)),
                                          call('/bin/rsync --dry-run --verbose --recursive --copy-dirlinks --times --omit-dir-times dts:/data/dts/exposures/raw/20190703/ /desi/root/spectro/data/20190703/'),
+                                         call("os.chmod('%s', 0o%o)", '/desi/root/spectro/data/20190703', 0o2550),
+                                         call("os.chmod('%s', 0o%o)", '/desi/root/spectro/data/20190703/00001234', 0o2550),
+                                         call("os.chmod('%s', 0o%o)", '/desi/root/spectro/data/20190703/00001235', 0o2550),
                                          call("os.chdir('%s')", '/desi/root/spectro/data'),
                                          call('%s -cvhf desi/spectro/data/desi_spectro_data_20190703.tar -H crc:verify=all 20190703' % htar),
                                          call("os.chdir('%s')", 'HOME')])
         mock_log.warning.assert_has_calls([call('New files detected in %s!', '20190703'),
                                            call('No updated exposures in night %s detected.', '20190703')])
         mock_rsync.assert_called_once_with('/data/dts/exposures/raw', '/desi/root/spectro/data', '20190703', False)
+        mock_walk.assert_called_once_with('/desi/root/spectro/data/20190703')
+        mock_chmod.assert_has_calls([call('/desi/root/spectro/data/20190703', 0o2550),
+                                     call('/desi/root/spectro/data/20190703/00001234', 0o2550),
+                                     call('/desi/root/spectro/data/20190703/00001235', 0o2550),])
         mock_status.assert_not_called()
         mock_status.update.assert_not_called()
 

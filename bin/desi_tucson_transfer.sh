@@ -31,7 +31,7 @@ set -o noglob
 #
 # Static data sets don't need to be updated as frequently.
 #
-static='protodesi public/epo spectro/redux/andes spectro/redux/blanc spectro/redux/cascades spectro/redux/denali spectro/redux/minisv2 spectro/redux/oak1'
+static='protodesi public/epo spectro/desi_spectro_calib spectro/redux/denali spectro/redux/everest spectro/templates/basis_templates'
 #
 # Dynamic data sets may change daily.
 #
@@ -123,8 +123,10 @@ for d in ${dynamic}; do
     # Check for subdirectories to include.
     #
     case ${d} in
+        spectro/desi_spectro_calib) inc="--exclude .svn" ;;
         # spectro/nightwatch) inc="--include kpno/*** --exclude *" ;;
         spectro/redux/daily) inc="--exclude *.tmp --exclude preproc-*.fits" ;;
+        spectro/templates/basis_templates) inc="--exclude .svn --exclude basis_templates_svn-old" ;;
         *) inc='' ;;
     esac
     #
