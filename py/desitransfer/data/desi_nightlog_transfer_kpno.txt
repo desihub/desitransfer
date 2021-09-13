@@ -1,6 +1,4 @@
 *kpno*
 NightSummary????????.html
-DataQualityAssessment
-OperationsScientist
-OtherInput
 images
+Observers
