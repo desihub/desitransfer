@@ -5,7 +5,9 @@ Change Log
 0.6.5 (unreleased)
 ------------------
 
-* No changes yet.
+* Update the NightLog directory structure (PR `#43`_).
+
+.. _`#43`: https://github.com/desihub/desitransfer/pull/43
 
 0.6.4 (2021-09-10)
 ------------------
