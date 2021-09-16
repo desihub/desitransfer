@@ -2,7 +2,7 @@
 Change Log
 ==========
 
-0.6.5 (unreleased)
+0.6.5 (2021-09-16)
 ------------------
 
 * Update the NightLog directory structure (PR `#43`_).
