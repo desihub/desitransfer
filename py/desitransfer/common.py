@@ -12,6 +12,7 @@ import re
 import stat
 import pytz
 
+MST = pytz.timezone('America/Phoenix')
 
 dir_perm = (stat.S_ISGID |
             stat.S_IRUSR | stat.S_IWUSR | stat.S_IXUSR |
@@ -143,3 +144,33 @@ def today():
     nightwatch transfer scripts.
     """
     return (dt.datetime.utcnow() - dt.timedelta(7/24+0.5)).strftime('%Y%m%d')
+
+
+def idle_time(start=8, end=12, tz=None):
+    """Determine whether we are in an idle time during the day.
+
+    Parameters
+    ----------
+    start : :class:`int`, optional
+        Start time in hours.
+    end : :class:`int`, optional
+        End time in hours.
+    tz : :class:`str`, optional
+        Time zone to use.
+
+    Returns
+    -------
+    :class:`int`
+        Number of seconds to wait until the end of the idle period.
+        If outside the idle period, this number will be negative.
+    """
+    if tz is None:
+        tz = MST
+    else:
+        tz = pytz.timezone(tz)
+    i = dt.datetime.now(tz=tz)
+    s = dt.datetime(i.year, i.month, i.day, start, 0, 0, tzinfo=tz)
+    if i < s:
+        return (i - s) // dt.timedelta(seconds=1)
+    e = dt.datetime(i.year, i.month, i.day, end, 0, 0, tzinfo=tz)
+    return (e - i) // dt.timedelta(seconds=1)

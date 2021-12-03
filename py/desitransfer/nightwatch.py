@@ -26,6 +26,7 @@ that the script is running.
 """
 import logging
 import os
+import re
 import stat
 import subprocess as sub
 import time
@@ -35,11 +36,12 @@ from pkg_resources import resource_filename
 from socket import getfqdn
 from tempfile import TemporaryFile
 from desiutil.log import get_logger
-from .common import rsync, today
+from .common import rsync, today, idle_time
 from .daemon import _popen
 from . import __version__ as dtVersion
 
-
+# Identify new night directory in a directory listing.
+nightline = 'd[rwx-]{{9}} + [0-9,]+ [0-9]{{4}}/[0-9]{{2}}/[0-9]{{2}} [0-9]{{2}}:[0-9]{{2}}:[0-9]{{2}} {night}$'
 log = None
 
 
@@ -134,6 +136,13 @@ def main():
     log.debug(', '.join(top_level_files))
     top_level_files_mode = stat.S_IRUSR | stat.S_IWUSR | stat.S_IRGRP | stat.S_IROTH
     while True:
+        #
+        # See if we are in the idle period: 08:00 - 12:00 MST
+        #
+        wait = idle_time()
+        if wait > 0:
+            log.info('Idle time detected. Sleeping until approximately 12:00 MST.')
+            time.sleep(wait)
         log.info('Starting nightwatch transfer loop; desitransfer version = %s.',
                  dtVersion)
         if os.path.exists(options.kill):
@@ -156,9 +165,10 @@ def main():
             time.sleep(wait)
             continue
         for line in out.split('\n'):
-            if line.endswith(night):
+            if re.match(nightline.format(night=night), line) is not None:
                 log.info(line)
                 found = True
+                break
         if not found:
             log.info('No nightwatch data found for %s; trying again in %d minutes.', night, options.sleep)
             time.sleep(wait)
@@ -221,7 +231,7 @@ def main():
             log.critical('Transfer error count exceeded, shutting down.')
             return 1
         #
-        # If all that took less than 10 minutes, sleep a bit.
+        # If all that took less than options.sleep minutes, sleep a bit.
         #
         dt = time.time() - t0
         if dt < wait:
