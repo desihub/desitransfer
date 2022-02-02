@@ -53,9 +53,8 @@ class TestNightlog(unittest.TestCase):
     def test_configure_log(self, mock_log, gl, rfh, smtp):
         """Test logging configuration.
         """
-        with patch.dict('os.environ',
-                        {'CSCRATCH': self.tmp.name,
-                         'DESI_ROOT': '/desi/root',}):
+        with patch.dict('os.environ', {'CSCRATCH': self.tmp.name,
+                                       'DESI_ROOT': '/desi/root'}):
             with patch.object(sys, 'argv', ['desi_nightlog_transfer', '--debug']):
                 options = _options()
             _configure_log(options)

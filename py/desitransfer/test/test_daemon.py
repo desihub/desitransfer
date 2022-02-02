@@ -202,7 +202,7 @@ desi_spectro_data_20190702.tar.idx
         mock_req.get.side_effect = requests.exceptions.ConnectionError('foo')
         self.assertFalse(d.hpss_status())
         mock_log.critical.assert_has_calls([call("Error while decoding HPSS status!"),
-                                            call("Error while determining HPSS availability!"),])
+                                            call("Error while determining HPSS availability!")])
 
     @patch.object(TransferDaemon, 'backup')
     @patch.object(TransferDaemon, 'catchup')
@@ -330,7 +330,7 @@ desi_spectro_data_20190702.tar.idx
                                             'dts:/data/dts/exposures/raw/20190703/00000127/',
                                             '/desi/root/spectro/staging/raw/20190703/00000127/'])
         mock_lock.assert_called_once_with('/desi/root/spectro/staging/raw/20190703/00000127', False)
-        mock_exists.assert_has_calls([call('/desi/root/spectro/staging/raw/20190703/00000127/checksum-00000127.sha256sum'),])
+        mock_exists.assert_has_calls([call('/desi/root/spectro/staging/raw/20190703/00000127/checksum-00000127.sha256sum')])
         mock_cksum.assert_called_once_with('/desi/root/spectro/staging/raw/20190703/00000127/checksum-00000127.sha256sum')
         mock_status.update.assert_has_calls([call('20190703', '00000127', 'rsync'),
                                              call('20190703', '00000127', 'checksum')])
@@ -426,7 +426,7 @@ desi_spectro_data_20190702.tar.idx
                                      call('/desi/root/spectro/data/20190703', exist_ok=True)])
         mock_chmod.assert_has_calls([call('/desi/root/spectro/data/20190703', 0o2750)])
         mock_lock.assert_called_once_with('/desi/root/spectro/staging/raw/20190703/00000127', False)
-        mock_exists.assert_has_calls([call('/desi/root/spectro/staging/raw/20190703/00000127/checksum-00000127.sha256sum'),])
+        mock_exists.assert_has_calls([call('/desi/root/spectro/staging/raw/20190703/00000127/checksum-00000127.sha256sum')])
         mock_cksum.assert_called_once_with('/desi/root/spectro/staging/raw/20190703/00000127/checksum-00000127.sha256sum')
         mock_status.update.assert_has_calls([call('20190703', '00000127', 'rsync', failure=True),
                                              call('20190703', '00000127', 'checksum')])
@@ -479,7 +479,7 @@ desi_spectro_data_20190702.tar.idx
                                             'dts:/data/dts/exposures/raw/20190703/00000127/',
                                             '/desi/root/spectro/staging/raw/20190703/00000127/'])
         mock_lock.assert_called_once_with('/desi/root/spectro/staging/raw/20190703/00000127', False)
-        mock_exists.assert_has_calls([call('/desi/root/spectro/staging/raw/20190703/00000127/checksum-00000127.sha256sum'),])
+        mock_exists.assert_has_calls([call('/desi/root/spectro/staging/raw/20190703/00000127/checksum-00000127.sha256sum')])
         # mock_cksum.assert_called_once_with('/desi/root/spectro/staging/raw/20190703/00000127/checksum-00000127.sha256sum')
         mock_log.warning.assert_called_once_with("No checksum file for %s/%s!", '20190703', '00000127')
         mock_status.update.assert_has_calls([call('20190703', '00000127', 'rsync'),
@@ -533,7 +533,7 @@ desi_spectro_data_20190702.tar.idx
                                             'dts:/data/dts/exposures/raw/20190703/00000127/',
                                             '/desi/root/spectro/staging/raw/20190703/00000127/'])
         mock_lock.assert_called_once_with('/desi/root/spectro/staging/raw/20190703/00000127', False)
-        mock_exists.assert_has_calls([call('/desi/root/spectro/staging/raw/20190703/00000127/checksum-00000127.sha256sum'),])
+        mock_exists.assert_has_calls([call('/desi/root/spectro/staging/raw/20190703/00000127/checksum-00000127.sha256sum')])
         # mock_cksum.assert_called_once_with('/desi/root/spectro/staging/raw/20190703/00000127/checksum-00000127.sha256sum')
         mock_log.critical.assert_called_once_with("The following checksum error(s) detected for %s/%s:\n\nThere was an error.\n", '20190703', '00000127')
         mock_status.update.assert_has_calls([call('20190703', '00000127', 'rsync'),
@@ -683,7 +683,6 @@ total size is 118,417,836,324  speedup is 494,367.55
         mock_status.assert_not_called()
         mock_status.update.assert_not_called()
 
-
     @patch('desitransfer.daemon.rsync_night')
     @patch('desitransfer.daemon._popen')
     @patch('os.path.exists')
@@ -716,16 +715,13 @@ total size is 118,417,836,324  speedup is 494,367.55
         mock_rsync.assert_called_once_with('/data/dts/exposures/raw', '/desi/root/spectro/data', '20190703', False)
         mock_log.warning.assert_has_calls([call('New files detected in %s!', '20190703'),
                                            call("No checksum file for %s/%s!", '20190703', '00001234'),
-                                           call("No checksum file for %s/%s!", '20190703', '00001235')],
-                                           any_order=True)
+                                           call("No checksum file for %s/%s!", '20190703', '00001235')], any_order=True)
         mock_log.debug.assert_has_calls([call("verify_checksum('%s')", '/desi/root/spectro/data/20190703/00001234/checksum-00001234.sha256sum'),
                                          call("status.update('%s', '%s', 'checksum', failure=True)", '20190703', '00001234'),
                                          call("verify_checksum('%s')", '/desi/root/spectro/data/20190703/00001235/checksum-00001235.sha256sum'),
-                                         call("status.update('%s', '%s', 'checksum', failure=True)", '20190703', '00001235')],
-                                         any_order=True)
+                                         call("status.update('%s', '%s', 'checksum', failure=True)", '20190703', '00001235')], any_order=True)
         mock_status.update.assert_has_calls([call('20190703', '00001234', 'checksum', failure=True),
-                                             call('20190703', '00001235', 'checksum', failure=True)],
-                                             any_order=True)
+                                             call('20190703', '00001235', 'checksum', failure=True)], any_order=True)
 
     @patch('desitransfer.daemon.rsync_night')
     @patch('os.chdir')
@@ -996,7 +992,7 @@ total size is 118,417,836,324  speedup is 494,367.55
         mock_walk.assert_called_once_with('/desi/root/spectro/data/20190703')
         mock_chmod.assert_has_calls([call('/desi/root/spectro/data/20190703', 0o2550),
                                      call('/desi/root/spectro/data/20190703/00001234', 0o2550),
-                                     call('/desi/root/spectro/data/20190703/00001235', 0o2550),])
+                                     call('/desi/root/spectro/data/20190703/00001235', 0o2550)])
         mock_status.assert_not_called()
         mock_status.update.assert_not_called()
 

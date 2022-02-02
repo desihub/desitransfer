@@ -5,7 +5,9 @@ Change Log
 0.6.6 (unreleased)
 ------------------
 
-* No changes yet.
+* Variable-frequency nightwatch transfers; other bug fixes (PR `#46`_).
+
+.. _`#46`: https://github.com/desihub/desitransfer/pull/46
 
 0.6.5 (2021-09-16)
 ------------------
