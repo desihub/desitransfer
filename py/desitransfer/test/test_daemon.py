@@ -904,6 +904,59 @@ total size is 118,417,836,324  speedup is 494,367.55
     @patch('desitransfer.daemon.TransferStatus')
     @patch('desitransfer.daemon.log')
     @patch.object(TransferDaemon, '_configure_log')
+    def test_TransferDaemon_backup_htar_failure(self, mock_cl, mock_log, mock_status, mock_isdir, mock_rm, mock_popen, mock_empty, mock_getcwd, mock_chdir, mock_rsync, mock_chmod, mock_walk):
+        """Test HPSS backup of night with htar failure.
+        """
+        with patch.dict('os.environ',
+                        {'CSCRATCH': self.tmp.name,
+                         'DESI_ROOT': '/desi/root',
+                         'DESI_SPECTRO_DATA': '/desi/root/spectro/data'}):
+            with patch.object(sys, 'argv', ['desi_transfer_daemon', '--debug']):
+                options = _options()
+            transfer = TransferDaemon(options)
+        c = transfer.directories
+        mock_isdir.return_value = True
+        mock_walk.return_value = [('/desi/root/spectro/data/20190703', ['00001234', '00001235'], []),
+                                  ('/desi/root/spectro/data/20190703/00001234', [], ['f1']),
+                                  ('/desi/root/spectro/data/20190703/00001235', [], ['f2'])]
+        mock_empty.return_value = True
+        mock_popen.return_value = ('1', '', 'Generating .netrc entry...\nMust run interactively to update .netrc\nUnable to update .netrc file\nFor help, see https://docs.nersc.gov/accounts/passwords/\n')
+        mock_getcwd.return_value = 'HOME'
+        ls_file = os.path.join(self.tmp.name, 'desi_spectro_data.txt')
+        with open(ls_file, 'w') as f:
+            f.write(self.fake_hsi2)
+        s = transfer.backup(c[0], '20190703', mock_status)
+        self.assertTrue(s)
+        hsi = os.path.join(transfer.conf['common']['hpss'], 'hsi')
+        htar = os.path.join(transfer.conf['common']['hpss'], 'htar')
+        mock_log.info.assert_has_calls([call('No files appear to have changed in %s.', '20190703')])
+        mock_log.debug.assert_has_calls([call("os.remove('%s')", os.path.join(self.tmp.name, 'desi_spectro_data.txt')),
+                                         call("%s -O %s ls -l desi/spectro/data" % (hsi, ls_file)),
+                                         call('/bin/rsync --dry-run --verbose --recursive --copy-dirlinks --times --omit-dir-times dts:/data/dts/exposures/raw/20190703/ /desi/root/spectro/data/20190703/'),
+                                         call("os.chmod('%s', 0o%o)", '/desi/root/spectro/data/20190703', 0o2550),
+                                         call("os.chmod('%s', 0o%o)", '/desi/root/spectro/data/20190703/00001234', 0o2550),
+                                         call("os.chmod('%s', 0o%o)", '/desi/root/spectro/data/20190703/00001235', 0o2550),
+                                         call("os.chdir('%s')", '/desi/root/spectro/data'),
+                                         call('%s -cvhf desi/spectro/data/desi_spectro_data_20190703.tar -H crc:verify=all 20190703' % htar),
+                                         call("os.chdir('%s')", 'HOME')])
+        mock_log.error.assert_has_calls([call("HTAR Backup failed! Command was: %s.", '%s -cvhf desi/spectro/data/desi_spectro_data_20190703.tar -H crc:verify=all 20190703' % htar),
+                                         call("HTAR error message was: %s", 'Generating .netrc entry...\nMust run interactively to update .netrc\nUnable to update .netrc file\nFor help, see https://docs.nersc.gov/accounts/passwords/\n')])
+        mock_popen.assert_has_calls([call([htar, '-cvhf', 'desi/spectro/data/desi_spectro_data_20190703.tar', '-H', 'crc:verify=all', '20190703'])])
+        mock_status.assert_not_called()
+        mock_status.update.assert_not_called()
+
+    @patch('os.walk')
+    @patch('os.chmod')
+    @patch('desitransfer.daemon.rsync_night')
+    @patch('os.chdir')
+    @patch('os.getcwd')
+    @patch('desitransfer.daemon.empty_rsync')
+    @patch('desitransfer.daemon._popen')
+    @patch('os.remove')
+    @patch('os.path.isdir')
+    @patch('desitransfer.daemon.TransferStatus')
+    @patch('desitransfer.daemon.log')
+    @patch.object(TransferDaemon, '_configure_log')
     def test_TransferDaemon_backup_delayed_data(self, mock_cl, mock_log, mock_status, mock_isdir, mock_rm, mock_popen, mock_empty, mock_getcwd, mock_chdir, mock_rsync, mock_chmod, mock_walk):
         """Test HPSS backup of night with delayed data.
         """
