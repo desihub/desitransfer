@@ -477,9 +477,10 @@ The DESI Collaboration Account
                     if not self.test:
                         status, out, err = _popen(cmd)
                         if status != '0' or err:
-                            log.error("HTAR Backup failed! Command was: %s.", ' '.join(cmd))
+                            msg = "HTAR Backup failed! Command was: {0}.".format(' '.join(cmd))
                             if err:
-                                log.error("HTAR error message was: %s", err)
+                                msg += "\nHTAR error message was: " + err
+                            log.critical(msg)
                     log.debug("os.chdir('%s')", start_dir)
                     os.chdir(start_dir)
                 else:
