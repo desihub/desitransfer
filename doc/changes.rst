@@ -2,7 +2,7 @@
 Change Log
 ==========
 
-0.6.6 (unreleased)
+0.6.6 (2022-02-04)
 ------------------
 
 * Variable-frequency nightwatch transfers; other bug fixes (PR `#46`_).
