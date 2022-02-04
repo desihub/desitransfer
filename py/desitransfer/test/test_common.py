@@ -2,12 +2,21 @@
 # -*- coding: utf-8 -*-
 """Test desitransfer.common.
 """
-import datetime
+from datetime import datetime, timedelta
 import os
 import unittest
 from unittest.mock import patch
 from tempfile import TemporaryDirectory
-from ..common import dir_perm, file_perm, empty_rsync, new_exposures, rsync, stamp, ensure_scratch, yesterday, today
+from ..common import (dt, MST, dir_perm, file_perm, empty_rsync, new_exposures, rsync,
+                      stamp, ensure_scratch, yesterday, today, idle_time)
+
+
+class FakeDateTime(datetime):
+    """Enable easier mocking of certain methods of :class:`datetime.datetime`.
+    """
+
+    def __new__(cls, *args, **kwargs):
+        return datetime.__new__(datetime, *args, **kwargs)
 
 
 class TestCommon(unittest.TestCase):
@@ -96,7 +105,7 @@ total size is 118,417,836,324  speedup is 494,367.55
     def test_stamp(self, mock_dt):
         """Test timestamp.
         """
-        mock_dt.datetime.utcnow.return_value = datetime.datetime(2019, 7, 3, 12, 0, 0)
+        mock_dt.datetime.utcnow.return_value = datetime(2019, 7, 3, 12, 0, 0)
         s = stamp('US/Arizona')
         self.assertEqual(s, '2019-07-03 05:00:00 MST')
 
@@ -117,8 +126,8 @@ total size is 118,417,836,324  speedup is 494,367.55
     def test_yesterday(self, mock_dt):
         """Test yesterday's date.
         """
-        mock_dt.datetime.now.return_value = datetime.datetime(2019, 7, 3, 12, 0, 0)
-        mock_dt.timedelta.return_value = datetime.timedelta(seconds=86400)
+        mock_dt.datetime.now.return_value = datetime(2019, 7, 3, 12, 0, 0)
+        mock_dt.timedelta.return_value = timedelta(seconds=86400)
         y = yesterday()
         self.assertEqual(y, '20190702')
 
@@ -126,10 +135,46 @@ total size is 118,417,836,324  speedup is 494,367.55
     def test_today(self, mock_dt):
         """Test today's date.
         """
-        mock_dt.datetime.utcnow.return_value = datetime.datetime(2019, 7, 3, 5, 0, 0)
-        mock_dt.timedelta.return_value = datetime.timedelta(7/24+0.5)
+        mock_dt.datetime.utcnow.return_value = datetime(2019, 7, 3, 5, 0, 0)
+        mock_dt.timedelta.return_value = timedelta(7/24+0.5)
         y = today()
         self.assertEqual(y, '20190702')
+
+    @patch('desitransfer.common.dt.datetime', FakeDateTime)
+    def test_idle_time(self):
+        """Test idle_time check.
+        """
+        FakeDateTime.now = classmethod(lambda cls, tz: datetime(2021, 7, 3, 7, 0, 0, tzinfo=tz))
+        # mock_datetime.now.return_value = datetime(2021, 7, 3, 7, 0, 0, tzinfo=MST)
+        # mock_datetime.side_effect = lambda *args, **kw: datetime(*args, **kw)
+        i = idle_time()
+        self.assertEqual(i, -3600)
+        FakeDateTime.now = classmethod(lambda cls, tz: datetime(2021, 7, 3, 11, 0, 0, tzinfo=tz))
+        # mock_datetime.return_value = datetime(2021, 7, 3, 11, 0, 0, tzinfo=MST)
+        i = idle_time()
+        self.assertEqual(i, 3600)
+        FakeDateTime.now = classmethod(lambda cls, tz: datetime(2021, 7, 3, 13, 0, 0, tzinfo=tz))
+        # mock_datetime.return_value = datetime(2021, 7, 3, 13, 0, 0, tzinfo=MST)
+        i = idle_time()
+        self.assertEqual(i, -3600)
+
+    @patch('desitransfer.common.dt.datetime', FakeDateTime)
+    def test_idle_time_alt_time_zone(self):
+        """Test idle_time check with alternate time zone.
+        """
+        FakeDateTime.now = classmethod(lambda cls, tz: datetime(2021, 7, 3, 7, 0, 0, tzinfo=tz))
+        # mock_datetime.now.return_value = datetime(2021, 7, 3, 7, 0, 0, tzinfo=MST)
+        # mock_datetime.side_effect = lambda *args, **kw: datetime(*args, **kw)
+        i = idle_time(tz='US/Pacific')
+        self.assertEqual(i, -3600)
+        FakeDateTime.now = classmethod(lambda cls, tz: datetime(2021, 7, 3, 11, 0, 0, tzinfo=tz))
+        # mock_datetime.return_value = datetime(2021, 7, 3, 11, 0, 0, tzinfo=MST)
+        i = idle_time(tz='US/Pacific')
+        self.assertEqual(i, 3600)
+        FakeDateTime.now = classmethod(lambda cls, tz: datetime(2021, 7, 3, 13, 0, 0, tzinfo=tz))
+        # mock_datetime.return_value = datetime(2021, 7, 3, 13, 0, 0, tzinfo=MST)
+        i = idle_time(tz='US/Pacific')
+        self.assertEqual(i, -3600)
 
 
 def test_suite():
