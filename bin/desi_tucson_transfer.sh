@@ -31,11 +31,44 @@ set -o noglob
 #
 # Static data sets don't need to be updated as frequently.
 #
-static='protodesi public/epo spectro/desi_spectro_calib spectro/redux/denali spectro/redux/everest spectro/templates/basis_templates'
+static=$(cat <<EOT
+cmx
+datachallenge
+engineering/2021_summer_illumination_checks
+engineering/fvc
+engineering/fvc_distortion
+engineering/gfa
+engineering/pfa2positioner
+engineering/platemaker
+engineering/spectrograph
+engineering/svn_export_focalplane_12302018
+engineering/umdata
+protodesi
+public/epo
+spectro/desi_spectro_calib
+spectro/redux/denali
+spectro/redux/everest
+spectro/templates/basis_templates
+sv
+target/cmx_files
+
+EOT
+)
 #
 # Dynamic data sets may change daily.
 #
-dynamic='cmx datachallenge engineering software/AnyConnect spectro/data spectro/nightwatch/kpno spectro/redux/daily spectro/staging/lost+found sv target/catalogs target/cmx_files target/secondary'
+dynamic=$(cat <<EOT
+engineering/donut
+engineering/focalplane
+software/AnyConnect
+spectro/data
+spectro/nightwatch/kpno
+spectro/redux/daily
+spectro/staging/lost+found
+target/catalogs
+target/secondary
+EOT
+)
 #
 # Get options.
 #
