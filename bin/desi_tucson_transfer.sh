@@ -158,7 +158,7 @@ for d in ${dynamic}; do
     case ${d} in
         spectro/desi_spectro_calib) inc="--exclude .svn" ;;
         # spectro/nightwatch) inc="--include kpno/*** --exclude *" ;;
-        spectro/redux/daily) inc="--exclude *.tmp --exclude preproc-*.fits" ;;
+        spectro/redux/daily) inc="--exclude *.tmp --exclude preproc-*.fits --exclude attic --exclude exposures --exclude preproc --exclude temp --exclude tiles" ;;
         spectro/templates/basis_templates) inc="--exclude .svn --exclude basis_templates_svn-old" ;;
         *) inc='' ;;
     esac
