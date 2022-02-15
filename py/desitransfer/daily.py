@@ -116,12 +116,7 @@ def _config():
                                                 'engineering'))
     spectro = os.path.realpath(os.path.join(os.environ['DESI_ROOT'],
                                             'spectro'))
-    return [DailyDirectory('/exposures/desi/sps',
-                           os.path.join(engineering, 'spectrograph', 'sps')),
-            # DailyDirectory('/exposures/nightwatch',
-            #                os.path.join(spectro, 'nightwatch', 'kpno'),
-            #                extra=['--exclude-from', nightwatch_exclude]),
-            DailyDirectory('/data/dts/exposures/lost+found',
+    return [DailyDirectory('/data/dts/exposures/lost+found',
                            os.path.join(spectro, 'staging', 'lost+found'),
                            dirlinks=True),
             DailyDirectory('/data/donut/images',
