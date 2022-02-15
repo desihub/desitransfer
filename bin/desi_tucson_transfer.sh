@@ -182,13 +182,13 @@ for d in ${dynamic}; do
     #
     # rsync command.
     #
-    skipDir=/bin/false
+    skipDir=''
     for e in $(/usr/bin/tr ',' ' ' <<<${exclude}); do
-        [[ ${d} == ${e} ]] && skipDir=/bin/true
+        [[ ${d} == ${e} ]] && skipDir=${e}
     done
     stamp=$(/bin/date ${stampFormat})
-    if ${skipDir}; then
-        ${verbose} && echo "DEBUG:${stamp}: ${exclude} skipped at user request." >> ${l}
+    if [[ -n "${skipDir}" ]]; then
+        ${verbose} && echo "DEBUG:${stamp}: ${skipDir} skipped at user request." >> ${l}
     else
         ${verbose} && echo "DEBUG:${stamp}: ${rsync} ${inc} ${src}/${d}/ ${dst}/${d}/" >> ${l}
         ${test}    || ${rsync} ${inc} ${src}/${d}/ ${dst}/${d}/ >> ${l} 2>&1 || \
