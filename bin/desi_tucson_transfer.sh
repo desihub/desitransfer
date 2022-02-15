@@ -147,8 +147,8 @@ l=${log}/desi_tucson_transfer.log
 [[ -f ${l} ]] || /bin/touch ${l}
 stamp=$(/bin/date ${stampFormat})
 if ${test}; then
-    ${verbose} && echo "DEBUG:${stamp}: /usr/bin/wget -q -O ${CSCRATCH}/daily.txt ${DESISYNC_STATUS_URL}"
-    ${verbose} && echo "DEBUG:${stamp}: Skipping NERSC wait due to test mode."
+    ${verbose} && echo "DEBUG:${stamp}: /usr/bin/wget -q -O ${CSCRATCH}/daily.txt ${DESISYNC_STATUS_URL}" >> ${l}
+    ${verbose} && echo "DEBUG:${stamp}: Skipping NERSC wait due to test mode." >> ${l}
 else
     until /usr/bin/wget -q -O ${CSCRATCH}/daily.txt ${DESISYNC_STATUS_URL}; do
         stamp=$(/bin/date ${stampFormat})
@@ -184,7 +184,7 @@ for d in ${dynamic}; do
     #
     skipDir=/bin/false
     for e in $(/usr/bin/tr ',' ' ' <<<${exclude}); do
-        [[ ${d} == ${e} ]] && skipDir == /bin/true
+        [[ ${d} == ${e} ]] && skipDir=/bin/true
     done
     stamp=$(/bin/date ${stampFormat})
     if ${skipDir}; then
