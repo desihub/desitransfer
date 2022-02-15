@@ -5,13 +5,13 @@
 function usage() {
     local execName=$(basename $0)
     (
-    echo "${execName} [-c] [-d DIR] [-e DIR] [-h] [-l DIR] [-s] [-S TIME] [-t] [-v]"
+    echo "${execName} [-c] [-d DIR] [-e DIR[,DIR]] [-h] [-l DIR] [-s] [-S TIME] [-t] [-v]"
     echo ""
     echo "Sync DESI data to Tucson mirror site."
     echo ""
     echo "     -c = Pass -c, --checksum to rsync command."
     echo " -d DIR = Use DIR as destination directory."
-    echo " -e DIR = Exclude DIR from sync."
+    echo " -e DIR = Exclude DIR from sync (comma-separated)."
     echo "     -h = Print this message and exit."
     echo " -l DIR = Use DIR for log files."
     echo "     -s = Also sync static data sets."
@@ -64,6 +64,9 @@ software/AnyConnect
 spectro/data
 spectro/nightwatch/kpno
 spectro/redux/daily
+spectro/redux/daily/exposures
+spectro/redux/daily/preproc
+spectro/redux/daily/tiles
 spectro/staging/lost+found
 target/catalogs
 target/secondary
@@ -159,6 +162,9 @@ for d in ${dynamic}; do
         spectro/desi_spectro_calib) inc="--exclude .svn" ;;
         # spectro/nightwatch) inc="--include kpno/*** --exclude *" ;;
         spectro/redux/daily) inc="--exclude *.tmp --exclude preproc-*.fits --exclude attic --exclude exposures --exclude preproc --exclude temp --exclude tiles" ;;
+        spectro/redux/daily/exposures) inc="--exclude *.tmp --exclude preproc-*.fits" ;;
+        spectro/redux/daily/preproc) inc="--exclude *.tmp --exclude preproc-*.fits" ;;
+        spectro/redux/daily/tiles) inc="--exclude *.tmp --exclude preproc-*.fits" ;;
         spectro/templates/basis_templates) inc="--exclude .svn --exclude basis_templates_svn-old" ;;
         *) inc='' ;;
     esac
@@ -170,8 +176,12 @@ for d in ${dynamic}; do
     #
     # rsync command.
     #
+    skipDir=/bin/false
+    for e in $(/usr/bin/tr ',' ' ' <<<${exclude}); do
+        [[ ${d} == ${e} ]] && skipDir == /bin/true
+    done
     stamp=$(/bin/date ${stampFormat})
-    if [[ ${d} == ${exclude} ]]; then
+    if ${skipDir}; then
         ${verbose} && echo "DEBUG:${stamp}: ${exclude} skipped at user request." >> ${l}
     else
         ${verbose} && echo "DEBUG:${stamp}: ${rsync} ${inc} ${src}/${d}/ ${dst}/${d}/" >> ${l}
