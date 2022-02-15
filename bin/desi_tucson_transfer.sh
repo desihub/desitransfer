@@ -145,11 +145,17 @@ echo $$ > ${p}
 #
 l=${log}/desi_tucson_transfer.log
 [[ -f ${l} ]] || /bin/touch ${l}
-until /usr/bin/wget -q -O ${CSCRATCH}/daily.txt ${DESISYNC_STATUS_URL}; do
-    stamp=$(/bin/date ${stampFormat})
-    ${verbose} && echo "DEBUG:${stamp}: Daily transfer incomplete, sleeping ${sleepTime}." >> ${l}
-    /bin/sleep ${sleepTime}
-done
+stamp=$(/bin/date ${stampFormat})
+if ${test}; then
+    ${verbose} && echo "DEBUG:${stamp}: /usr/bin/wget -q -O ${CSCRATCH}/daily.txt ${DESISYNC_STATUS_URL}"
+    ${verbose} && echo "DEBUG:${stamp}: Skipping NERSC wait due to test mode."
+else
+    until /usr/bin/wget -q -O ${CSCRATCH}/daily.txt ${DESISYNC_STATUS_URL}; do
+        stamp=$(/bin/date ${stampFormat})
+        ${verbose} && echo "DEBUG:${stamp}: Daily transfer incomplete, sleeping ${sleepTime}." >> ${l}
+        /bin/sleep ${sleepTime}
+    done
+fi
 #
 # Run rsync.
 #
