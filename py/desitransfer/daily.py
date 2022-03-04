@@ -138,13 +138,8 @@ def _config():
                            extra=['--include', '*.csv', '--exclude', '*'])]
 
 
-def _options(*args):
+def _options():
     """Parse command-line options for :command:`desi_daily_transfer`.
-
-    Parameters
-    ----------
-    args : iterable
-        Arguments to the function will be parsed for testing purposes.
 
     Returns
     -------
