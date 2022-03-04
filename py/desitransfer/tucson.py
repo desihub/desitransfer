@@ -153,7 +153,7 @@ def main():
         if os.path.exists(pid_file):
             with open(pid_file) as p:
                 pid = p.read()
-            cmd = ['/bin/ps', '-q', pid, '-o', 'comm=']
+            cmd = ['/usr/bin/ps', '-q', pid, '-o', 'comm=']
             proc = sup.Popen(cmd, stdout=sub.PIPE, stderr=sub.PIPE)
             out, err = proc.communicate()
             if out:
