@@ -31,21 +31,21 @@ static = ['cmx',
           'spectro/redux/everest',
           'spectro/templates/basis_templates',
           'sv',
-          'target/cmx_files',]
+          'target/cmx_files']
 
 
 dynamic = ['engineering/donut',
-           'engineering/focalplane'
-           'software/AnyConnect'
-           'spectro/data'
-           'spectro/nightwatch/kpno'
-           'spectro/redux/daily'
-           'spectro/redux/daily/exposures'
-           'spectro/redux/daily/preproc'
-           'spectro/redux/daily/tiles'
-           'spectro/staging/lost+found'
-           'target/catalogs'
-           'target/secondary',]
+           'engineering/focalplane',
+           'software/AnyConnect',
+           'spectro/data',
+           'spectro/nightwatch/kpno',
+           'spectro/redux/daily',
+           'spectro/redux/daily/exposures',
+           'spectro/redux/daily/preproc',
+           'spectro/redux/daily/tiles',
+           'spectro/staging/lost+found',
+           'target/catalogs',
+           'target/secondary']
 
 
 includes = {'spectro/desi_spectro_calib': ["--exclude", ".svn"],
@@ -54,7 +54,7 @@ includes = {'spectro/desi_spectro_calib': ["--exclude", ".svn"],
             'spectro/redux/daily/exposures': ["--exclude", "*.tmp"],
             'spectro/redux/daily/preproc': ["--exclude", "*.tmp", "--exclude", "preproc-*.fits"],
             'spectro/redux/daily/tiles': ["--exclude", "*.tmp"],
-            'spectro/templates/basis_templates': ["--exclude", ".svn", "--exclude", "basis_templates_svn-old"],}
+            'spectro/templates/basis_templates': ["--exclude", ".svn", "--exclude", "basis_templates_svn-old"]}
 
 
 def _options():
@@ -137,31 +137,32 @@ def main():
     # Source and destination.
     #
     src = "rsync://{DESISYNC_HOSTNAME}/desi".format(**os.environ)
-    if options.dst is None:
+    if options.destination is None:
         if 'DESI_ROOT' in os.environ:
             dst = os.environ['DESI_ROOT']
         else:
             print("ERROR: DESI_ROOT must be set, or destination directory set on the command-line (-d DIR)!")
             return 1
     else:
-        dst = options.dst
+        dst = options.destination
     #
     # Pid file.
     #
-    pid_file = os.path.join(options.log, 'desi_tucson_transfer.pid')
-    if os.path.exists(pid_file):
-        with open(pid_file) as p:
-            pid = p.read()
-        cmd = ['/bin/ps', '-q', pid, '-o', 'comm=']
-        proc = sup.Popen(cmd, stdout=sub.PIPE, stderr=sub.PIPE)
-        out, err = proc.communicate()
-        if out:
-            print("WARNING: Running process detected ({pid} = {out}), exiting.")
-            return 1
-        else:
-            os.remove(pid_file)
-    with open(pid_file, 'w') as p:
-        p.write(str(os.getpid()))
+    if not options.test:
+        pid_file = os.path.join(options.log, 'desi_tucson_transfer.pid')
+        if os.path.exists(pid_file):
+            with open(pid_file) as p:
+                pid = p.read()
+            cmd = ['/bin/ps', '-q', pid, '-o', 'comm=']
+            proc = sup.Popen(cmd, stdout=sub.PIPE, stderr=sub.PIPE)
+            out, err = proc.communicate()
+            if out:
+                print("WARNING: Running process detected ({pid} = {out}), exiting.")
+                return 1
+            else:
+                os.remove(pid_file)
+        with open(pid_file, 'w') as p:
+            p.write(str(os.getpid()))
     #
     # Wait for daily KPNO -> NERSC transfer to finish.
     #
