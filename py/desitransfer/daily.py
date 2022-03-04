@@ -127,10 +127,15 @@ def _config():
                            os.path.join(engineering, 'focalplane', 'logs', 'calib_logs')),
             DailyDirectory('/data/focalplane/logs/kpno',
                            os.path.join(engineering, 'focalplane', 'logs', 'kpno')),
-            DailyDirectory('/data/focalplane/logs/xytest_data',
-                           os.path.join(engineering, 'focalplane', 'logs', 'xytest_data')),
-            DailyDirectory('/data/fvc/data',
-                           os.path.join(engineering, 'fvc', 'images'))]
+            DailyDirectory('/data/focalplane/logs/sequence_logs',
+                           os.path.join(engineering, 'focalplane', 'logs', 'sequence_logs')),
+            # DailyDirectory('/data/focalplane/logs/xytest_data',
+            #                os.path.join(engineering, 'focalplane', 'logs', 'xytest_data')),
+            # DailyDirectory('/data/fvc/data',
+            #                os.path.join(engineering, 'fvc', 'images')),
+            DailyDirectory('/data/focalplane/fp_temp_files',
+                           os.path.join(engineering, 'focalplane', 'hwtables'),
+                           extra=['--include', '*.csv', '--exclude', '*'])]
 
 
 def _options(*args):
