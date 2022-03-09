@@ -832,7 +832,7 @@ total size is 118,417,836,324  speedup is 494,367.55
                                          call("%s -O %s ls -l desi/spectro/data" % (hsi, ls_file)),
                                          call('/bin/rsync --dry-run --verbose --recursive --copy-dirlinks --times --omit-dir-times dts:/data/dts/exposures/raw/20190703/ /desi/root/spectro/data/20190703/'),
                                          call("os.chdir('%s')", '/desi/root/spectro/data'),
-                                         call('%s -cvhf desi/spectro/data/desi_spectro_data_20190703.tar -H crc:verify=all 20190703' % htar),
+                                         call('%s -cvhf desi/spectro/data/desi_spectro_data_20190703.tar -Hcrc:verify=all 20190703' % htar),
                                          call("os.chdir('%s')", self.tmp.name)])
         mock_status.assert_not_called()
         mock_status.update.assert_not_called()
@@ -882,9 +882,9 @@ total size is 118,417,836,324  speedup is 494,367.55
                                          call("os.chmod('%s', 0o%o)", '/desi/root/spectro/data/20190703/00001234', 0o2550),
                                          call("os.chmod('%s', 0o%o)", '/desi/root/spectro/data/20190703/00001235', 0o2550),
                                          call("os.chdir('%s')", '/desi/root/spectro/data'),
-                                         call('%s -cvhf desi/spectro/data/desi_spectro_data_20190703.tar -H crc:verify=all 20190703' % htar),
+                                         call('%s -cvhf desi/spectro/data/desi_spectro_data_20190703.tar -Hcrc:verify=all 20190703' % htar),
                                          call("os.chdir('%s')", 'HOME')])
-        mock_popen.assert_has_calls([call([htar, '-cvhf', 'desi/spectro/data/desi_spectro_data_20190703.tar', '-H', 'crc:verify=all', '20190703'])])
+        mock_popen.assert_has_calls([call([htar, '-cvhf', 'desi/spectro/data/desi_spectro_data_20190703.tar', '-Hcrc:verify=all', '20190703'])])
         mock_status.assert_not_called()
         mock_status.update.assert_not_called()
 
@@ -933,11 +933,11 @@ total size is 118,417,836,324  speedup is 494,367.55
                                          call("os.chmod('%s', 0o%o)", '/desi/root/spectro/data/20190703/00001234', 0o2550),
                                          call("os.chmod('%s', 0o%o)", '/desi/root/spectro/data/20190703/00001235', 0o2550),
                                          call("os.chdir('%s')", '/desi/root/spectro/data'),
-                                         call('%s -cvhf desi/spectro/data/desi_spectro_data_20190703.tar -H crc:verify=all 20190703' % htar),
+                                         call('%s -cvhf desi/spectro/data/desi_spectro_data_20190703.tar -Hcrc:verify=all 20190703' % htar),
                                          call("os.chdir('%s')", 'HOME')])
-        mock_log.critical.assert_has_calls([call(("HTAR Backup failed! Command was: {0} -cvhf desi/spectro/data/desi_spectro_data_20190703.tar -H crc:verify=all 20190703.".format(htar) +
+        mock_log.critical.assert_has_calls([call(("HTAR Backup failed! Command was: {0} -cvhf desi/spectro/data/desi_spectro_data_20190703.tar -Hcrc:verify=all 20190703.".format(htar) +
                                                   "\nHTAR error message was: Generating .netrc entry...\nMust run interactively to update .netrc\nUnable to update .netrc file\nFor help, see https://docs.nersc.gov/accounts/passwords/\n"))])
-        mock_popen.assert_has_calls([call([htar, '-cvhf', 'desi/spectro/data/desi_spectro_data_20190703.tar', '-H', 'crc:verify=all', '20190703'])])
+        mock_popen.assert_has_calls([call([htar, '-cvhf', 'desi/spectro/data/desi_spectro_data_20190703.tar', '-Hcrc:verify=all', '20190703'])])
         mock_status.assert_not_called()
         mock_status.update.assert_not_called()
 
@@ -984,7 +984,7 @@ total size is 118,417,836,324  speedup is 494,367.55
                                          call("os.chmod('%s', 0o%o)", '/desi/root/spectro/data/20190703/00001234', 0o2550),
                                          call("os.chmod('%s', 0o%o)", '/desi/root/spectro/data/20190703/00001235', 0o2550),
                                          call("os.chdir('%s')", '/desi/root/spectro/data'),
-                                         call('%s -cvhf desi/spectro/data/desi_spectro_data_20190703.tar -H crc:verify=all 20190703' % htar),
+                                         call('%s -cvhf desi/spectro/data/desi_spectro_data_20190703.tar -Hcrc:verify=all 20190703' % htar),
                                          call("os.chdir('%s')", 'HOME')])
         mock_log.warning.assert_has_calls([call('New files detected in %s!', '20190703'),
                                            call('No updated exposures in night %s detected.', '20190703')])

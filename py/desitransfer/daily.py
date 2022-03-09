@@ -119,8 +119,8 @@ def _config():
     return [DailyDirectory('/data/dts/exposures/lost+found',
                            os.path.join(spectro, 'staging', 'lost+found'),
                            dirlinks=True),
-            DailyDirectory('/data/donut/images',
-                           os.path.join(engineering, 'donut', 'images')),
+            # DailyDirectory('/data/donut/images',
+            #                os.path.join(engineering, 'donut', 'images')),
             DailyDirectory('/data/focalplane/calibration',
                            os.path.join(engineering, 'focalplane', 'calibration')),
             DailyDirectory('/data/focalplane/logs/calib_logs',
@@ -128,14 +128,14 @@ def _config():
             DailyDirectory('/data/focalplane/logs/kpno',
                            os.path.join(engineering, 'focalplane', 'logs', 'kpno')),
             DailyDirectory('/data/focalplane/logs/sequence_logs',
-                           os.path.join(engineering, 'focalplane', 'logs', 'sequence_logs')),
+                           os.path.join(engineering, 'focalplane', 'logs', 'sequence_logs'))]
             # DailyDirectory('/data/focalplane/logs/xytest_data',
             #                os.path.join(engineering, 'focalplane', 'logs', 'xytest_data')),
             # DailyDirectory('/data/fvc/data',
             #                os.path.join(engineering, 'fvc', 'images')),
-            DailyDirectory('/data/focalplane/fp_temp_files',
-                           os.path.join(engineering, 'focalplane', 'hwtables'),
-                           extra=['--include', '*.csv', '--exclude', '*'])]
+            # DailyDirectory('/data/focalplane/fp_temp_files',
+            #                os.path.join(engineering, 'focalplane', 'hwtables'),
+            #                extra=['--include', '*.csv', '--exclude', '*'])]
 
 
 def _options():
