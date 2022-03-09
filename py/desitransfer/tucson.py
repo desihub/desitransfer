@@ -15,6 +15,7 @@ from . import __version__ as dtVersion
 static = ['cmx',
           'datachallenge',
           'engineering/2021_summer_illumination_checks',
+          'engineering/donut',
           'engineering/fvc',
           'engineering/fvc_distortion',
           'engineering/gfa',
@@ -34,8 +35,7 @@ static = ['cmx',
           'target/cmx_files']
 
 
-dynamic = ['engineering/donut',
-           'engineering/focalplane',
+dynamic = ['engineering/focalplane',
            'software/AnyConnect',
            'spectro/data',
            'spectro/nightwatch/kpno',

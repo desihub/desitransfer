@@ -35,6 +35,7 @@ static=$(cat <<EOT
 cmx
 datachallenge
 engineering/2021_summer_illumination_checks
+engineering/donut
 engineering/fvc
 engineering/fvc_distortion
 engineering/gfa
@@ -58,7 +59,6 @@ EOT
 # Dynamic data sets may change daily.
 #
 dynamic=$(cat <<EOT
-engineering/donut
 engineering/focalplane
 software/AnyConnect
 spectro/data
