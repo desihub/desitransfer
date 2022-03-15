@@ -6,6 +6,7 @@ desitransfer.tucson
 
 Entry point for :command:`desi_tucson_transfer`.
 """
+import logging
 import os
 import subprocess as sub
 from argparse import ArgumentParser
@@ -169,7 +170,7 @@ def main():
         try:
             foo = os.environ[e]
         except KeyError:
-            print(f"ERROR: {e} must be set!")
+            log.error("ERROR: %s must be set!", e)
             return 1
     #
     # Source and destination.
@@ -179,7 +180,7 @@ def main():
         if 'DESI_ROOT' in os.environ:
             dst = os.environ['DESI_ROOT']
         else:
-            print("ERROR: DESI_ROOT must be set, or destination directory set on the command-line (-d DIR)!")
+            log.error("DESI_ROOT must be set, or destination directory set on the command-line (-d DIR)!")
             return 1
     else:
         dst = options.destination
@@ -195,7 +196,7 @@ def main():
             proc = sup.Popen(cmd, stdout=sub.PIPE, stderr=sub.PIPE)
             out, err = proc.communicate()
             if out:
-                print("WARNING: Running process detected ({pid} = {out}), exiting.")
+                log.critical("Running process detected (%s = %s), exiting.", pid, out)
                 return 1
             else:
                 os.remove(pid_file)
@@ -205,11 +206,11 @@ def main():
     # Wait for daily KPNO -> NERSC transfer to finish.
     #
     if options.test:
-        print("DEBUG: requests.get('{DESISYNC_STATUS_URL}')".format(**os.environ))
+        log.debug("requests.get('%s')", os.environ['DESISYNC_STATUS_URL'])
     else:
         while requests.get(os.environ['DESISYNC_STATUS_URL']).status_code != 200:
             if options.debug:
-                print("DEBUG: Daily transfer incomplete, sleeping {0}.".format(options.sleep))
+                log.debug("Daily transfer incomplete, sleeping %s.", options.sleep)
                 time.sleep()
     #
     # Main transfer
@@ -224,9 +225,9 @@ def main():
         directories = dynamic
     for d in directories:
         if d in exclude:
-            print(f"INFO: {d} skipped at user request.")
+            log.info("INFO: %d skipped at user request.", d)
         else:
             command = _rsync(src, dst, d, checksum=options.checksum)
             if options.test:
-                print("DEBUG: " + ' '.join(command))
+                log.debug(' '.join(command))
     return 0
