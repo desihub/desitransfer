@@ -5,8 +5,10 @@
 import os
 import sys
 import unittest
+import logging
+from socket import getfqdn
 from unittest.mock import patch, call, mock_open, Mock
-from ..tucson import _options, _rsync
+from ..tucson import _options, _rsync, _configure_log
 from .. import __version__ as dtVersion
 
 
@@ -52,6 +54,20 @@ class TestTucson(unittest.TestCase):
                 self.assertIsNone(options.exclude)
                 self.assertEqual(options.log,
                                  os.path.join(os.environ['HOME'], 'Documents', 'Logfiles'))
+
+    @patch('desitransfer.tucson.SMTPHandler')
+    @patch('desitransfer.tucson.get_logger')
+    @patch('desitransfer.tucson.log')  # Needed to restore the module-level log object after test.
+    def test_TransferDaemon_configure_log(self, mock_log, gl, smtp):
+        """Test logging configuration.
+        """
+        _configure_log(True)
+        gl.assert_called_once_with(timestamp=True)
+        gl().setLevel.assert_called_once_with(logging.DEBUG)
+        FROM = os.environ['USER'] + '@' + getfqdn()
+        smtp.assert_called_once_with('localhost', FROM,
+                                     ['benjamin.weaver@noirlab.edu'],
+                                     'Error reported by desi_tucson_transfer!')
 
     def test_rsync(self):
         """Test rsync command construction.
