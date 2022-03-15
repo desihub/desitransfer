@@ -14,6 +14,7 @@ from socket import getfqdn
 from logging.handlers import SMTPHandler
 import requests
 from . import __version__ as dtVersion
+from .daemon import _popen
 from desiutil.log import get_logger
 
 
@@ -230,6 +231,17 @@ def main():
             log.info("%s skipped at user request.", d)
         else:
             command = _rsync(src, dst, d, checksum=options.checksum)
-            if options.test:
-                log.debug(' '.join(command))
+            log.debug(' '.join(command))
+            if not options.test:
+                status, out, err = _popen(command)
+                if status != '0':
+                    log.critical("rsync error detected for %s/%s/!  Check logs!", dst, d)
+                log_file = os.path.join(options.log,
+                                        'desi_tucson_transfer_' + d.replace('/', '_') + '.log')
+                with open(log_file, 'a') as lf:
+                    lf.write("STDOUT\n")
+                    lf.write(out)
+                    if err:
+                        lf.write("STDERR\n")
+                        lf.write(err) 
     return 0
