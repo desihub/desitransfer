@@ -11,6 +11,11 @@ import subprocess as sub
 from argparse import ArgumentParser
 import requests
 from . import __version__ as dtVersion
+from desiutil.log import get_logger
+
+
+log = None
+
 
 static = ['cmx',
           'datachallenge',
@@ -55,6 +60,38 @@ includes = {'spectro/desi_spectro_calib': ["--exclude", ".svn"],
             'spectro/redux/daily/preproc': ["--exclude", "*.tmp", "--exclude", "preproc-*.fits"],
             'spectro/redux/daily/tiles': ["--exclude", "*.tmp"],
             'spectro/templates/basis_templates': ["--exclude", ".svn", "--exclude", "basis_templates_svn-old"]}
+
+
+def _configure_log(debug):
+    """Re-configure the default logger returned by ``desiutil.log``.
+
+    Parameters
+    ----------
+    debug : :class:`bool`
+        If ``True`` set the log level to ``DEBUG``.
+    """
+    global log
+    log = get_logger(timestamp=True)
+    if debug:
+        log.setLevel(logging.DEBUG)
+    email_from = os.environ['USER'] + '@' + getfqdn()
+    # email_to = ['desi-alarms-transfer@desi.lbl.gov']
+    email_to = ['benjamin.weaver@noirlab.edu']
+    handler2 = SMTPHandler('localhost', email_from, email_to,
+                           'Error reported by desi_tucson_transfer!')
+    fmt = """Greetings,
+
+At %(asctime)s, desi_tucson_transfer reported this serious error:
+
+%(message)s
+
+Kia ora koutou,
+The DESI NOIRLab Mirror Account
+"""
+    formatter2 = logging.Formatter(fmt, datefmt='%Y-%m-%d %H:%M:%S %Z')
+    handler2.setFormatter(formatter2)
+    handler2.setLevel(logging.CRITICAL)
+    log.parent.addHandler(handler2)
 
 
 def _options():
@@ -124,6 +161,7 @@ def main():
     """
     options = _options()
     debug = options.test or options.debug
+    _configure_log(debug)
     #
     # Check for required environment variables
     #
