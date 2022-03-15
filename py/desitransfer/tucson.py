@@ -202,18 +202,18 @@ def main():
                 log.critical("Running process detected (%s = %s), exiting.", pid, out)
                 return 1
             else:
+                log.debug("os.remove('%s')", pid_filse)
                 os.remove(pid_file)
         with open(pid_file, 'w') as p:
             p.write(str(os.getpid()))
     #
     # Wait for daily KPNO -> NERSC transfer to finish.
     #
-    if options.test:
-        log.debug("requests.get('%s')", os.environ['DESISYNC_STATUS_URL'])
-    else:
+    log.debug("requests.get('%s')", os.environ['DESISYNC_STATUS_URL'])
+    if not options.test:
         while requests.get(os.environ['DESISYNC_STATUS_URL']).status_code != 200:
             if options.debug:
-                log.debug("Daily transfer incomplete, sleeping %s.", options.sleep)
+                log.info("Daily transfer incomplete, sleeping %s.", options.sleep)
                 time.sleep()
     #
     # Main transfer
@@ -228,14 +228,14 @@ def main():
         directories = dynamic
     for d in directories:
         if d in exclude:
-            log.info("%s skipped at user request.", d)
+            log.warning("%s skipped at user request.", d)
         else:
             command = _rsync(src, dst, d, checksum=options.checksum)
-            log.debug(' '.join(command))
+            log.info(' '.join(command))
             if not options.test:
                 status, out, err = _popen(command)
                 if status != '0':
-                    log.critical("rsync error detected for %s/%s/!  Check logs!", dst, d)
+                    log.critical("rsync error detected for %s/%s/! Check logs!", dst, d)
                 log_file = os.path.join(options.log,
                                         'desi_tucson_transfer_' + d.replace('/', '_') + '.log')
                 with open(log_file, 'a') as lf:
@@ -243,5 +243,5 @@ def main():
                     lf.write(out)
                     if err:
                         lf.write("STDERR\n")
-                        lf.write(err) 
+                        lf.write(err)
     return 0
