@@ -227,7 +227,7 @@ def main():
         directories = dynamic
     for d in directories:
         if d in exclude:
-            log.info("INFO: %d skipped at user request.", d)
+            log.info("%s skipped at user request.", d)
         else:
             command = _rsync(src, dst, d, checksum=options.checksum)
             if options.test:
