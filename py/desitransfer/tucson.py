@@ -10,6 +10,7 @@ import logging
 import os
 import subprocess as sub
 from argparse import ArgumentParser
+from socket import getfqdn
 import requests
 from . import __version__ as dtVersion
 from desiutil.log import get_logger
