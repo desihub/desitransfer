@@ -2,10 +2,13 @@
 Change Log
 ==========
 
-0.6.7 (unreleased)
+0.7.0 (unreleased)
 ------------------
 
-* No changes yet.
+* Update daily transfer data sets; migrate Tucson transfer script to
+  Python (PR `#47`_).
+
+.. _`#47`: https://github.com/desihub/desitransfer/pull/47
 
 0.6.6 (2022-02-04)
 ------------------
