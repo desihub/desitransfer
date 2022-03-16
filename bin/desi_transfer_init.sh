@@ -11,7 +11,7 @@ PRGDIR=$(dirname ${PROGRAM})
 if [[ -z "${NERSC_HOST}" ]]; then
     PRGOPTS='--no-backup'
 else
-    PRGOPTS=''
+    PRGOPTS='--debug'
 fi
 #
 # Common initialization code.
