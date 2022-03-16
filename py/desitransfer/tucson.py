@@ -196,7 +196,7 @@ def main():
             with open(pid_file) as p:
                 pid = p.read()
             cmd = ['/usr/bin/ps', '-q', pid, '-o', 'comm=']
-            proc = sup.Popen(cmd, stdout=sub.PIPE, stderr=sub.PIPE)
+            proc = sub.Popen(cmd, stdout=sub.PIPE, stderr=sub.PIPE)
             out, err = proc.communicate()
             if out:
                 log.critical("Running process detected (%s = %s), exiting.", pid, out)
