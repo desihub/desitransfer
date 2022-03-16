@@ -77,7 +77,7 @@ def _configure_log(debug):
     log = get_logger(timestamp=True)
     if debug:
         log.setLevel(logging.DEBUG)
-    email_from = os.environ['USER'] + '@' + getfqdn()
+    email_from = 'NOIRLab Mirror Account <{0}@{1}>'.format(os.environ['USER'], getfqdn())
     # email_to = ['desi-alarms-transfer@desi.lbl.gov']
     email_to = ['benjamin.weaver@noirlab.edu']
     handler2 = SMTPHandler('localhost', email_from, email_to,
@@ -154,6 +154,38 @@ def _rsync(src, dst, d, checksum=False):
     return cmd
 
 
+def running(pid_file):
+    """Test for a duplicate process already running.
+
+    Parameters
+    ----------
+    pid_file : :class:`str`
+        Name of file containing a process id.
+
+    Returns
+    -------
+    :class:`bool`
+        ``True`` if a duplicate process is detected.
+    """
+    if os.path.exists(pid_file):
+        with open(pid_file) as p:
+            pid = p.read().strip()
+        cmd = ['/usr/bin/ps', '-q', pid, '-o', 'comm=']
+        log.debug(' '.join(cmd))
+        proc = sub.Popen(cmd, stdout=sub.PIPE, stderr=sub.PIPE)
+        out, err = proc.communicate()
+        if out:
+            pname = out.decode('utf-8').strip()
+            log.debug(pname)
+            log.critical("Running process detected (%s = %s), exiting.", pid, pname)
+            return True
+        else:
+            log.debug("os.remove('%s')", pid_file)
+            os.remove(pid_file)
+    with open(pid_file, 'w') as p:
+        p.write(str(os.getpid()))
+
+
 def main():
     """Entry point for :command:`desi_tucson_transfer`.
 
@@ -172,7 +204,7 @@ def main():
         try:
             foo = os.environ[e]
         except KeyError:
-            log.error("ERROR: %s must be set!", e)
+            log.error("%s must be set!", e)
             return 1
     #
     # Source and destination.
@@ -190,24 +222,8 @@ def main():
     # Pid file.
     #
     if not options.test:
-        pid_file = os.path.join(options.log, 'desi_tucson_transfer.pid')
-        if os.path.exists(pid_file):
-            with open(pid_file) as p:
-                pid = p.read().strip()
-            cmd = ['/usr/bin/ps', '-q', pid, '-o', 'comm=']
-            log.debug(' '.join(cmd))
-            proc = sub.Popen(cmd, stdout=sub.PIPE, stderr=sub.PIPE)
-            out, err = proc.communicate()
-            if out:
-                pname = out.decode('utf-8').strip()
-                log.debug(pname)
-                log.critical("Running process detected (%s = %s), exiting.", pid, pname)
-                return 1
-            else:
-                log.debug("os.remove('%s')", pid_file)
-                os.remove(pid_file)
-        with open(pid_file, 'w') as p:
-            p.write(str(os.getpid()))
+        if running(os.path.join(options.log, 'desi_tucson_transfer.pid')):
+            return 1
     #
     # Wait for daily KPNO -> NERSC transfer to finish.
     #
