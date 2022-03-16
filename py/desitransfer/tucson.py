@@ -194,7 +194,7 @@ def main():
         pid_file = os.path.join(options.log, 'desi_tucson_transfer.pid')
         if os.path.exists(pid_file):
             with open(pid_file) as p:
-                pid = p.read()
+                pid = p.read().strip()
             cmd = ['/usr/bin/ps', '-q', pid, '-o', 'comm=']
             log.debug(' '.join(cmd))
             proc = sub.Popen(cmd, stdout=sub.PIPE, stderr=sub.PIPE)
