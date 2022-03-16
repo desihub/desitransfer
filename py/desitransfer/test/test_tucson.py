@@ -122,7 +122,7 @@ class TestTucson(unittest.TestCase):
                             call('foo.pid', 'w'),
                             call().__enter__(),
                             call().write(pid),
-                            call().__exit__(None, None, None),])
+                            call().__exit__(None, None, None)])
         # handle = m()
         # handle.read.assert_called()
         mock_log.debug.assert_has_calls([call('/usr/bin/ps -q 12345 -o comm='),
@@ -152,7 +152,7 @@ class TestTucson(unittest.TestCase):
         m.assert_has_calls([call('foo.pid'),
                             call().__enter__(),
                             call().read(),
-                            call().__exit__(None, None, None),])
+                            call().__exit__(None, None, None)])
         # handle = m()
         # handle.read.assert_called()
         mock_log.debug.assert_has_calls([call('/usr/bin/ps -q 12345 -o comm='),
