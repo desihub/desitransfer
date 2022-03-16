@@ -196,13 +196,15 @@ def main():
             with open(pid_file) as p:
                 pid = p.read()
             cmd = ['/usr/bin/ps', '-q', pid, '-o', 'comm=']
+            log.debug(' '.join(cmd))
             proc = sub.Popen(cmd, stdout=sub.PIPE, stderr=sub.PIPE)
             out, err = proc.communicate()
             if out:
+                log.debug(out)
                 log.critical("Running process detected (%s = %s), exiting.", pid, out)
                 return 1
             else:
-                log.debug("os.remove('%s')", pid_filse)
+                log.debug("os.remove('%s')", pid_file)
                 os.remove(pid_file)
         with open(pid_file, 'w') as p:
             p.write(str(os.getpid()))
