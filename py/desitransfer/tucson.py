@@ -200,8 +200,9 @@ def main():
             proc = sub.Popen(cmd, stdout=sub.PIPE, stderr=sub.PIPE)
             out, err = proc.communicate()
             if out:
-                log.debug(out)
-                log.critical("Running process detected (%s = %s), exiting.", pid, out)
+                pname = out.decode('utf-8').strip()
+                log.debug(pname)
+                log.critical("Running process detected (%s = %s), exiting.", pid, pname)
                 return 1
             else:
                 log.debug("os.remove('%s')", pid_file)
