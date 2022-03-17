@@ -935,7 +935,7 @@ total size is 118,417,836,324  speedup is 494,367.55
                                          call("os.chdir('%s')", '/desi/root/spectro/data'),
                                          call('%s -cvhf desi/spectro/data/desi_spectro_data_20190703.tar -H crc:verify=all 20190703' % htar),
                                          call("os.chdir('%s')", 'HOME')])
-        mock_log.critical.assert_has_calls([call(("HTAR Backup failed! Command was: {0} -cvhf desi/spectro/data/desi_spectro_data_20190703.tar -Hcrc:verify=all 20190703.".format(htar) +
+        mock_log.critical.assert_has_calls([call(("HTAR Backup failed! Command was: {0} -cvhf desi/spectro/data/desi_spectro_data_20190703.tar -H crc:verify=all 20190703.".format(htar) +
                                                   "\nHTAR error message was: Generating .netrc entry...\nMust run interactively to update .netrc\nUnable to update .netrc file\nFor help, see https://docs.nersc.gov/accounts/passwords/\n"))])
         mock_popen.assert_has_calls([call([htar, '-cvhf', 'desi/spectro/data/desi_spectro_data_20190703.tar', '-H', 'crc:verify=all', '20190703'])])
         mock_status.assert_not_called()
