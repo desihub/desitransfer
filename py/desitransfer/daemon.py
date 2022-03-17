@@ -471,7 +471,7 @@ The DESI Collaboration Account
                     os.chdir(d.destination)
                     cmd = [os.path.join(self.conf['common']['hpss'], 'htar'),
                            '-cvhf', os.path.join(d.hpss, backup_file),
-                           '-Hcrc:verify=all',  # Temporary hack due to htar bug.
+                           '-H', 'crc:verify=all',
                            night]
                     log.debug(' '.join(cmd))
                     if not self.test:
