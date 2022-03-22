@@ -116,35 +116,24 @@ def _config():
                                                 'engineering'))
     spectro = os.path.realpath(os.path.join(os.environ['DESI_ROOT'],
                                             'spectro'))
-    return [DailyDirectory('/exposures/desi/sps',
-                           os.path.join(engineering, 'spectrograph', 'sps')),
-            # DailyDirectory('/exposures/nightwatch',
-            #                os.path.join(spectro, 'nightwatch', 'kpno'),
-            #                extra=['--exclude-from', nightwatch_exclude]),
-            DailyDirectory('/data/dts/exposures/lost+found',
+    return [DailyDirectory('/data/dts/exposures/lost+found',
                            os.path.join(spectro, 'staging', 'lost+found'),
                            dirlinks=True),
-            DailyDirectory('/data/donut/images',
-                           os.path.join(engineering, 'donut', 'images')),
             DailyDirectory('/data/focalplane/calibration',
                            os.path.join(engineering, 'focalplane', 'calibration')),
             DailyDirectory('/data/focalplane/logs/calib_logs',
                            os.path.join(engineering, 'focalplane', 'logs', 'calib_logs')),
             DailyDirectory('/data/focalplane/logs/kpno',
                            os.path.join(engineering, 'focalplane', 'logs', 'kpno')),
-            DailyDirectory('/data/focalplane/logs/xytest_data',
-                           os.path.join(engineering, 'focalplane', 'logs', 'xytest_data')),
-            DailyDirectory('/data/fvc/data',
-                           os.path.join(engineering, 'fvc', 'images'))]
+            DailyDirectory('/data/focalplane/logs/sequence_logs',
+                           os.path.join(engineering, 'focalplane', 'logs', 'sequence_logs')),
+            DailyDirectory('/data/focalplane/fp_temp_files',
+                           os.path.join(engineering, 'focalplane', 'hwtables'),
+                           extra=['--include', '*.csv', '--exclude', '*'])]
 
 
-def _options(*args):
+def _options():
     """Parse command-line options for :command:`desi_daily_transfer`.
-
-    Parameters
-    ----------
-    args : iterable
-        Arguments to the function will be parsed for testing purposes.
 
     Returns
     -------

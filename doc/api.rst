@@ -22,3 +22,6 @@ desitransfer API
 
 .. automodule:: desitransfer.status
     :members:
+
+.. automodule:: desitransfer.tucson
+    :members:

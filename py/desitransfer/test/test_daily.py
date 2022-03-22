@@ -34,12 +34,11 @@ class TestDaily(unittest.TestCase):
         with patch.dict('os.environ',
                         {'DESI_ROOT': '/desi/root'}):
             c = _config()
-            self.assertEqual(c[0].source, '/exposures/desi/sps')
+            self.assertEqual(c[0].source, '/data/dts/exposures/lost+found')
             self.assertEqual(c[0].destination, os.path.join(os.environ['DESI_ROOT'],
-                                                            'engineering', 'spectrograph', 'sps'))
-            # self.assertEqual(c[1].extra[0], '--exclude-from')
-            # self.assertTrue(c[2].dirlinks)
-            self.assertTrue(c[1].dirlinks)
+                                                            'spectro', 'staging', 'lost+found'))
+            self.assertTrue(c[0].dirlinks)
+            self.assertFalse(c[1].dirlinks)
 
     def test_options(self):
         """Test command-line arguments.

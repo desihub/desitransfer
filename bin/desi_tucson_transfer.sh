@@ -5,13 +5,13 @@
 function usage() {
     local execName=$(basename $0)
     (
-    echo "${execName} [-c] [-d DIR] [-e DIR] [-h] [-l DIR] [-s] [-S TIME] [-t] [-v]"
+    echo "${execName} [-c] [-d DIR] [-e DIR[,DIR]] [-h] [-l DIR] [-s] [-S TIME] [-t] [-v]"
     echo ""
     echo "Sync DESI data to Tucson mirror site."
     echo ""
     echo "     -c = Pass -c, --checksum to rsync command."
     echo " -d DIR = Use DIR as destination directory."
-    echo " -e DIR = Exclude DIR from sync."
+    echo " -e DIR = Exclude DIR from sync (comma-separated)."
     echo "     -h = Print this message and exit."
     echo " -l DIR = Use DIR for log files."
     echo "     -s = Also sync static data sets."
@@ -31,11 +31,47 @@ set -o noglob
 #
 # Static data sets don't need to be updated as frequently.
 #
-static='protodesi public/epo spectro/desi_spectro_calib spectro/redux/denali spectro/redux/everest spectro/templates/basis_templates'
+static=$(cat <<EOT
+cmx
+datachallenge
+engineering/2021_summer_illumination_checks
+engineering/donut
+engineering/fvc
+engineering/fvc_distortion
+engineering/gfa
+engineering/pfa2positioner
+engineering/platemaker
+engineering/spectrograph
+engineering/svn_export_focalplane_12302018
+engineering/umdata
+protodesi
+public/epo
+spectro/desi_spectro_calib
+spectro/redux/denali
+spectro/redux/everest
+spectro/templates/basis_templates
+sv
+target/cmx_files
+
+EOT
+)
 #
 # Dynamic data sets may change daily.
 #
-dynamic='cmx datachallenge engineering software/AnyConnect spectro/data spectro/nightwatch/kpno spectro/redux/daily spectro/staging/lost+found sv target/catalogs target/cmx_files target/secondary'
+dynamic=$(cat <<EOT
+engineering/focalplane
+software/AnyConnect
+spectro/data
+spectro/nightwatch/kpno
+spectro/redux/daily
+spectro/redux/daily/exposures
+spectro/redux/daily/preproc
+spectro/redux/daily/tiles
+spectro/staging/lost+found
+target/catalogs
+target/secondary
+EOT
+)
 #
 # Get options.
 #
@@ -109,11 +145,17 @@ echo $$ > ${p}
 #
 l=${log}/desi_tucson_transfer.log
 [[ -f ${l} ]] || /bin/touch ${l}
-until /usr/bin/wget -q -O ${CSCRATCH}/daily.txt ${DESISYNC_STATUS_URL}; do
-    stamp=$(/bin/date ${stampFormat})
-    ${verbose} && echo "DEBUG:${stamp}: Daily transfer incomplete, sleeping ${sleepTime}." >> ${l}
-    /bin/sleep ${sleepTime}
-done
+stamp=$(/bin/date ${stampFormat})
+if ${test}; then
+    ${verbose} && echo "DEBUG:${stamp}: /usr/bin/wget -q -O ${CSCRATCH}/daily.txt ${DESISYNC_STATUS_URL}" >> ${l}
+    ${verbose} && echo "DEBUG:${stamp}: Skipping NERSC wait due to test mode." >> ${l}
+else
+    until /usr/bin/wget -q -O ${CSCRATCH}/daily.txt ${DESISYNC_STATUS_URL}; do
+        stamp=$(/bin/date ${stampFormat})
+        ${verbose} && echo "DEBUG:${stamp}: Daily transfer incomplete, sleeping ${sleepTime}." >> ${l}
+        /bin/sleep ${sleepTime}
+    done
+fi
 #
 # Run rsync.
 #
@@ -125,7 +167,10 @@ for d in ${dynamic}; do
     case ${d} in
         spectro/desi_spectro_calib) inc="--exclude .svn" ;;
         # spectro/nightwatch) inc="--include kpno/*** --exclude *" ;;
-        spectro/redux/daily) inc="--exclude *.tmp --exclude preproc-*.fits" ;;
+        spectro/redux/daily) inc="--exclude *.tmp --exclude preproc-*.fits --exclude attic --exclude exposures --exclude preproc --exclude temp --exclude tiles" ;;
+        spectro/redux/daily/exposures) inc="--exclude *.tmp --exclude preproc-*.fits" ;;
+        spectro/redux/daily/preproc) inc="--exclude *.tmp --exclude preproc-*.fits" ;;
+        spectro/redux/daily/tiles) inc="--exclude *.tmp --exclude preproc-*.fits" ;;
         spectro/templates/basis_templates) inc="--exclude .svn --exclude basis_templates_svn-old" ;;
         *) inc='' ;;
     esac
@@ -137,9 +182,13 @@ for d in ${dynamic}; do
     #
     # rsync command.
     #
+    skipDir=''
+    for e in $(/usr/bin/tr ',' ' ' <<<${exclude}); do
+        [[ ${d} == ${e} ]] && skipDir=${e}
+    done
     stamp=$(/bin/date ${stampFormat})
-    if [[ ${d} == ${exclude} ]]; then
-        ${verbose} && echo "DEBUG:${stamp}: ${exclude} skipped at user request." >> ${l}
+    if [[ -n "${skipDir}" ]]; then
+        ${verbose} && echo "DEBUG:${stamp}: ${skipDir} skipped at user request." >> ${l}
     else
         ${verbose} && echo "DEBUG:${stamp}: ${rsync} ${inc} ${src}/${d}/ ${dst}/${d}/" >> ${l}
         ${test}    || ${rsync} ${inc} ${src}/${d}/ ${dst}/${d}/ >> ${l} 2>&1 || \
