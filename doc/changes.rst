@@ -2,7 +2,7 @@
 Change Log
 ==========
 
-0.7.0 (unreleased)
+0.7.0 (2022-03-22)
 ------------------
 
 * Update daily transfer data sets; migrate Tucson transfer script to
