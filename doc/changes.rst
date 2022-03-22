@@ -2,10 +2,10 @@
 Change Log
 ==========
 
-0.7.1 (unreleased)
+0.7.1 (2022-03-22)
 ------------------
 
-* No changes yet.
+* Minor fix to wait times for nightwatch transfer.  No other changes.
 
 0.7.0 (2022-03-22)
 ------------------
