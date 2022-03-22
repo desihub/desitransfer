@@ -140,7 +140,7 @@ def main():
         # See if we are in the idle period: 08:00 - 12:00 MST
         #
         idle_wait = idle_time()
-        if wait > 0:
+        if idle_wait > 0:
             log.info('Idle time detected. Sleeping until approximately 12:00 MST.')
             time.sleep(idle_wait)
         log.info('Starting nightwatch transfer loop; desitransfer version = %s.',
