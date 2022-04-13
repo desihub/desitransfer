@@ -67,7 +67,7 @@ class TestTucson(unittest.TestCase):
         gl().setLevel.assert_called_once_with(logging.DEBUG)
         email_from = 'NOIRLab Mirror Account <{0}@{1}>'.format(os.environ['USER'], getfqdn())
         smtp.assert_called_once_with('localhost', email_from,
-                                     ['benjamin.weaver@noirlab.edu'],
+                                     ['desi-alarms-transfer@desi.lbl.gov'],
                                      'Error reported by desi_tucson_transfer!')
 
     def test_rsync(self):
