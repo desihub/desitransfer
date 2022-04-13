@@ -43,15 +43,15 @@ static = ['cmx',
           'target/cmx_files']
 
 
-dynamic = ['engineering/focalplane',
-           'software/AnyConnect',
-           'spectro/data',
+dynamic = ['spectro/data',
            'spectro/nightwatch/kpno',
+           'spectro/staging/lost+found',
            'spectro/redux/daily',
            'spectro/redux/daily/exposures',
            'spectro/redux/daily/preproc',
            'spectro/redux/daily/tiles',
-           'spectro/staging/lost+found',
+           'engineering/focalplane',
+           'software/AnyConnect',
            'target/catalogs',
            'target/secondary']
 
