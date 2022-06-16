@@ -40,6 +40,8 @@ static = ['cmx',
           'spectro/redux/everest',
           'spectro/templates/basis_templates',
           'sv',
+          'target/catalogs',
+          'target/secondary',
           'target/cmx_files']
 
 
@@ -51,9 +53,7 @@ dynamic = ['spectro/data',
            'spectro/redux/daily/preproc',
            'spectro/redux/daily/tiles',
            'engineering/focalplane',
-           'software/AnyConnect',
-           'target/catalogs',
-           'target/secondary']
+           'software/AnyConnect']
 
 
 includes = {'spectro/desi_spectro_calib': ["--exclude", ".svn"],
@@ -62,7 +62,8 @@ includes = {'spectro/desi_spectro_calib': ["--exclude", ".svn"],
             'spectro/redux/daily/exposures': ["--exclude", "*.tmp"],
             'spectro/redux/daily/preproc': ["--exclude", "*.tmp", "--exclude", "preproc-*.fits"],
             'spectro/redux/daily/tiles': ["--exclude", "*.tmp"],
-            'spectro/templates/basis_templates': ["--exclude", ".svn", "--exclude", "basis_templates_svn-old"]}
+            'spectro/templates/basis_templates': ["--exclude", ".svn", "--exclude", "basis_templates_svn-old"],
+            'target/catalogs': ["--include", "dr8", "--include", "dr9", "--include", "gaiadr2", "--include", "subpriority", "--exclude", "*"]}
 
 
 def _configure_log(debug):
