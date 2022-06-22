@@ -58,9 +58,9 @@ dynamic = ['spectro/data',
 
 includes = {'spectro/desi_spectro_calib': ["--exclude", ".svn"],
             # 'spectro/nightwatch': ["--include", "kpno/***", "--exclude", "*"],
-            'spectro/redux/daily': ["--exclude", "*.tmp", "--exclude", "preproc-*.fits", "--exclude", "attic", "--exclude", "exposures", "--exclude", "preproc", "--exclude", "temp", "--exclude", "tiles"],
+            'spectro/redux/daily': ["--exclude", "*.tmp", "--exclude", "attic", "--exclude", "exposures", "--exclude", "preproc", "--exclude", "temp", "--exclude", "tiles"],
             'spectro/redux/daily/exposures': ["--exclude", "*.tmp"],
-            'spectro/redux/daily/preproc': ["--exclude", "*.tmp", "--exclude", "preproc-*.fits"],
+            'spectro/redux/daily/preproc': ["--exclude", "*.tmp", "--exclude", "preproc-*.fits", "--exclude", "preproc-*.fits.gz"],
             'spectro/redux/daily/tiles': ["--exclude", "*.tmp"],
             'spectro/templates/basis_templates': ["--exclude", ".svn", "--exclude", "basis_templates_svn-old"],
             'target/catalogs': ["--include", "dr8", "--include", "dr9", "--include", "gaiadr2", "--include", "subpriority", "--exclude", "*"]}
