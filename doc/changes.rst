@@ -2,10 +2,13 @@
 Change Log
 ==========
 
-0.7.2 (unreleased)
+0.7.2 (2022-08-05)
 ------------------
 
-* No changes yet.
+* Adjusted Tucson transfer configuration in light of upcoming public data
+  releases (PR `#48`_).
+
+.. _`#48`: https://github.com/desihub/desitransfer/pull/48
 
 0.7.1 (2022-03-22)
 ------------------
