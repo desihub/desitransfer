@@ -2,7 +2,7 @@
 Change Log
 ==========
 
-0.7.2 (2022-08-05)
+0.7.2 (2022-08-11)
 ------------------
 
 * Adjusted Tucson transfer configuration in light of upcoming public data
