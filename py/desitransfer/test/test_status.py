@@ -76,17 +76,19 @@ class TestStatus(unittest.TestCase):
         # New directory.
         #
         d = '/desi/spectro/status'
-        # with patch('desitransfer.status.log') as l:
-        with patch('os.makedirs') as m:
-            with patch('shutil.copy') as cp:
-                with patch('shutil.copyfile') as cf:
-                    s = TransferStatus(d)
-        # l.debug.assert_called_once_with("os.makedirs('%s')", d)
-        m.assert_called_once_with(d)
+        with patch('desitransfer.status.log') as l:
+            with patch('os.makedirs') as m:
+                with patch('shutil.copy') as cp:
+                    with patch('shutil.copyfile') as cf:
+                        s = TransferStatus(d)
+        l.debug.assert_has_calls([call("os.makedirs('%s', exist_ok=True)", d),
+                                  call("shutil.copyfile('%s', '%s')", h, os.path.join(d, 'index.html')),
+                                  call("shutil.copy('%s', '%s')", j, d)])
+        m.assert_called_once_with(d, exist_ok=True)
         cp.assert_called_once_with(j, d)
         cf.assert_called_once_with(h, os.path.join(d, 'index.html'))
 
-    @patch('desitransfer.daemon.log')
+    @patch('desitransfer.status.log')
     def test_TransferStatus_handle_malformed_with_log(self, mock_log):
         """Test handling of malformed JSON files.
         """
@@ -107,25 +109,6 @@ class TestStatus(unittest.TestCase):
                                                os.path.join(d, 'desi_transfer_status.json.bad'))
         mock_log.info.assert_called_once_with('Writing empty array to %s.',
                                               os.path.join(d, 'desi_transfer_status.json'))
-
-    @patch('builtins.print')
-    def test_TransferStatus_handle_malformed_without_log(self, mock_print):
-        """Test handling of malformed JSON files (no log object).
-        """
-        bad = resource_filename('desitransfer.test', 't/bad.json')
-        with TemporaryDirectory() as d:
-            shutil.copy(bad, os.path.join(d, 'desi_transfer_status.json'))
-            s = TransferStatus(d)
-            self.assertTrue(os.path.exists(os.path.join(d, 'desi_transfer_status.json.bad')))
-            self.assertListEqual(s.status, [])
-            self.assertSetEqual(frozenset(os.listdir(d)),
-                                frozenset(['desi_transfer_status.json.bad',
-                                           'desi_transfer_status.json']))
-        mock_print.assert_has_calls([call('ERROR: Malformed JSON file detected: %s; saving original file as %s.' % (os.path.join(d, 'desi_transfer_status.json'),
-                                                                                                                    os.path.join(d, 'desi_transfer_status.json.bad'))),
-                                     call("DEBUG: shutil.copy2('%s', '%s')" % (os.path.join(d, 'desi_transfer_status.json'),
-                                                                               os.path.join(d, 'desi_transfer_status.json.bad'))),
-                                     call("INFO: Writing empty array to %s." % (os.path.join(d, 'desi_transfer_status.json'),))])
 
     @patch('time.time')
     def test_TransferStatus_update(self, mock_time):
@@ -155,9 +138,9 @@ class TestStatus(unittest.TestCase):
             r = s.update('20200703', '12345681', 'pipeline')
             self.assertEqual(r, 1)
             self.assertEqual(s.status[0], [20200703, 12345681, 'pipeline', True, '', 1565300090000])
-            r = s.update('20200703', '12345681', 'pipeline', last='arcs')
-            self.assertEqual(r, 1)
-            self.assertEqual(s.status[0], [20200703, 12345681, 'pipeline', True, 'arcs', 1565300090000])
+            # r = s.update('20200703', '12345681', 'pipeline', last='arcs')
+            # self.assertEqual(r, 1)
+            # self.assertEqual(s.status[0], [20200703, 12345681, 'pipeline', True, 'arcs', 1565300090000])
             r = s.update('20200703', 'all', 'backup')
             self.assertEqual(r, 4)
             b = [i[3] for i in s.status if i[2] == 'backup']
@@ -186,8 +169,8 @@ class TestStatus(unittest.TestCase):
             self.assertEqual(s.status[1], [20200703, 12345678, 'checksum', False, '', 1565300090000])
             s.update('20200703', '12345681', 'pipeline')
             self.assertEqual(s.status[0], [20200703, 12345681, 'pipeline', True, '', 1565300090000])
-            s.update('20200703', '12345681', 'pipeline', last='arcs')
-            self.assertEqual(s.status[0], [20200703, 12345681, 'pipeline', True, 'arcs', 1565300090000])
+            # s.update('20200703', '12345681', 'pipeline', last='arcs')
+            # self.assertEqual(s.status[0], [20200703, 12345681, 'pipeline', True, 'arcs', 1565300090000])
             s.update('20200703', 'all', 'backup')
             b = [i[3] for i in s.status if i[2] == 'backup']
             self.assertTrue(all(b))
