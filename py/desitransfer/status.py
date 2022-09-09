@@ -13,6 +13,7 @@ import sys
 import time
 from argparse import ArgumentParser
 from pkg_resources import resource_filename
+from desiutil.log import log, DEBUG
 from . import __version__ as dtVersion
 
 
@@ -23,24 +24,28 @@ class TransferStatus(object):
     ----------
     directory : :class:`str`
         Retrieve and store JSON-encoded transfer status data in `directory`.
+    install : :class:`bool`, optional
+        If ``True``, install HTML and JS files.
     """
 
-    def __init__(self, directory):
+    def __init__(self, directory, install=False):
         self.directory = directory
         self.json = os.path.join(self.directory, 'desi_transfer_status.json')
         self.status = list()
-        if not os.path.exists(self.directory):
-            # log.debug("os.makedirs('%s')", self.directory)
-            os.makedirs(self.directory)
+        if not os.path.exists(self.directory) or install:
+            log.debug("os.makedirs('%s', exist_ok=True)", self.directory)
+            os.makedirs(self.directory, exist_ok=True)
             for ext in ('html', 'js'):
                 src = resource_filename('desitransfer',
                                         'data/desi_transfer_status.' + ext)
                 if ext == 'html':
+                    log.debug("shutil.copyfile('%s', '%s')", src,
+                              os.path.join(self.directory, 'index.html'))
                     shutil.copyfile(src,
                                     os.path.join(self.directory, 'index.html'))
                 else:
+                    log.debug("shutil.copy('%s', '%s')", src, self.directory)
                     shutil.copy(src, self.directory)
-            return
         try:
             with open(self.json) as j:
                 try:
@@ -57,31 +62,16 @@ class TransferStatus(object):
         This function will save the malformed file to a .bad file for
         later analysis, and write an empty array to a new status file.
         """
-        from .daemon import log
         bad = self.json + '.bad'
-        m = "Malformed JSON file detected: %s; saving original file as %s."
-        try:
-            log.error(m, self.json, bad)
-        except AttributeError:
-            # If the status code is running stand-alone, the log object
-            # will be None.
-            print("ERROR: " + (m % (self.json, bad)))
-        m = "shutil.copy2('%s', '%s')"
-        try:
-            log.debug(m, self.json, bad)
-        except AttributeError:
-            print("DEBUG: " + (m % (self.json, bad)))
+        log.error("Malformed JSON file detected: %s; saving original file as %s.", self.json, bad)
+        log.debug("shutil.copy2('%s', '%s')", self.json, bad)
         shutil.copy2(self.json, bad)
-        m = "Writing empty array to %s."
-        try:
-            log.info(m, self.json)
-        except AttributeError:
-            print("INFO: " + (m % (self.json,)))
+        log.info("Writing empty array to %s.", self.json)
         with open(self.json, 'w') as j:
             j.write('[]')
         return
 
-    def update(self, night, exposure, stage, failure=False, last=''):
+    def update(self, night, exposure, stage, failure=False):
         """Update the transfer status.
 
         Parameters
@@ -94,15 +84,13 @@ class TransferStatus(object):
             Stage of data transfer ('rsync', 'checksum', 'backup', ...).
         failure : :class:`bool`, optional
             Indicate failure.
-        last : :class:`str`, optional
-            Mark this exposure as the last of a given type for the night
-            ('arcs', 'flats', 'science').
 
         Returns
         -------
         :class:`int`
             The number of updates performed.
         """
+        last = ''
         ts = int(time.time() * 1000)  # Convert to milliseconds for JS.
         i = int(night)
         success = not failure
@@ -136,6 +124,7 @@ class TransferStatus(object):
         # Copy the original file before modifying.
         # This will overwrite any existing .bak file
         #
+        log.debug("shutil.copy2('%s', '%s')", self.json, self.json + '.bak')
         try:
             shutil.copy2(self.json, self.json + '.bak')
         except FileNotFoundError:
@@ -190,16 +179,15 @@ def _options():
     prsr.add_argument('-d', '--directory', dest='directory', metavar='DIR',
                       default=os.path.join(os.environ['DESI_ROOT'],
                                            'spectro', 'staging', 'status'),
-                      help="Install and update files in DIR.")
+                      help="Install and update files in DIR (default %(default)s).")
     prsr.add_argument('-f', '--failure', action='store_true', dest='failure',
                       help='Indicate that the transfer failed somehow.')
     prsr.add_argument('-i', '--install', action='store_true', dest='install',
                       help='Ensure that HTML and related files are in place.')
-    prsr.add_argument('-l', '--last', dest='last', default='',
-                      choices=['flats', 'arcs', 'science'],
-                      help='Indicate that a certain set of exposures is complete.')
     prsr.add_argument('-V', '--version', action='version',
                       version='%(prog)s {0}'.format(dtVersion))
+    prsr.add_argument('-v', '--verbose', action='store_true',
+                      help='Print debugging information.')
     prsr.add_argument('night', type=int, metavar='YYYYMMDD',
                       help="Night of observation.")
     prsr.add_argument('expid', metavar='EXPID',
@@ -218,10 +206,31 @@ def main():
     :class:`int`
         An integer suitable for passing to :func:`sys.exit`.
     """
-    # global log
+    global log
     options = _options()
-    # log = get_logger()
-    st = TransferStatus(options.directory)
-    st.update(options.night, options.expid, options.stage,
-              options.failure, options.last)
+    if options.verbose:
+        log.setLevel(DEBUG)
+    st = TransferStatus(options.directory, install=options.install)
+    st.update(options.night, options.expid, options.stage, options.failure)
     return 0
+
+
+# import os
+# import json
+# with open('desi_transfer_status.json') as j:
+#     data = json.load(j)
+#
+# statuses = {'rsync': 0, 'checksum': 1, 'backup': 2}
+# for year in ('2022', '2021', '2020', '2019', '2018', '2017'):
+#     nights = dict()
+#     for row in data:
+#         if str(row[0]).startswith(year):
+#             if row[0] in nights:
+#                 if row[1] in nights[row[0]]:
+#                     nights[row[0]][row[1]].append([statuses[row[2]], int(row[3]), row[5]])
+#                 else:
+#                     nights[row[0]][row[1]] = [[statuses[row[2]], int(row[3]), row[5]]]
+#             else:
+#                 nights[row[0]] = {row[1]: [[statuses[row[2]], int(row[3]), row[5]]]}
+#     with open(f'nights_{year}.json', 'w') as j:
+#         json.dump(nights, j, indent=None, separators=(',', ':'))
