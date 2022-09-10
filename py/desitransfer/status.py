@@ -11,6 +11,7 @@ import os
 import shutil
 import sys
 import time
+from datetime import date
 from argparse import ArgumentParser
 from pkg_resources import resource_filename
 from desiutil.log import log, DEBUG
@@ -32,6 +33,8 @@ class TransferStatus(object):
         self.directory = directory
         self.json = os.path.join(self.directory, 'desi_transfer_status.json')
         self.status = list()
+        self.current_year = str(date.today().year)
+        self.first_year = "2018"
         if not os.path.exists(self.directory) or install:
             log.debug("os.makedirs('%s', exist_ok=True)", self.directory)
             os.makedirs(self.directory, exist_ok=True)
@@ -71,7 +74,7 @@ class TransferStatus(object):
             j.write('[]')
         return
 
-    def update(self, night, exposure, stage, failure=False):
+    def update(self, night, exposure, stage, failure=False, year=None):
         """Update the transfer status.
 
         Parameters
@@ -84,12 +87,19 @@ class TransferStatus(object):
             Stage of data transfer ('rsync', 'checksum', 'backup', ...).
         failure : :class:`bool`, optional
             Indicate failure.
+        year : :class:`str` or :class:`int`
+            Update records belonging to `year`. If not set, the current
+            year is assumed.
 
         Returns
         -------
         :class:`int`
             The number of updates performed.
         """
+        if year is None:
+            year = self.current_year
+        else:
+            year = str(year)
         last = ''
         ts = int(time.time() * 1000)  # Convert to milliseconds for JS.
         i = int(night)
