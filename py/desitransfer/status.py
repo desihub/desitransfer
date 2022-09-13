@@ -27,14 +27,22 @@ class TransferStatus(object):
         Retrieve and store JSON-encoded transfer status data in `directory`.
     install : :class:`bool`, optional
         If ``True``, install HTML and JS files.
+    year : :class:`str` or :class:`int`
+        Update records belonging to `year`. If not set, the current
+        year is assumed.
     """
 
-    def __init__(self, directory, install=False):
+    def __init__(self, directory, install=False, year=None):
+        self._stages = {'rsync': 0, 'checksum': 1, 'backup': 2}
         self.directory = directory
-        self.json = os.path.join(self.directory, 'desi_transfer_status.json')
-        self.status = list()
-        self.current_year = str(date.today().year)
+        self.status = dict()
+        if year is None:
+            self.current_year = str(date.today().year)
+        else:
+            self.current_year = str(year)
         self.first_year = "2018"
+        self.json = os.path.join(self.directory,
+                                 f'desi_transfer_status_{self.current_year}.json')
         if not os.path.exists(self.directory) or install:
             log.debug("os.makedirs('%s', exist_ok=True)", self.directory)
             os.makedirs(self.directory, exist_ok=True)
@@ -71,10 +79,10 @@ class TransferStatus(object):
         shutil.copy2(self.json, bad)
         log.info("Writing empty array to %s.", self.json)
         with open(self.json, 'w') as j:
-            j.write('[]')
+            j.write('{}')
         return
 
-    def update(self, night, exposure, stage, failure=False, year=None):
+    def update(self, night, exposure, stage, failure=False):
         """Update the transfer status.
 
         Parameters
@@ -87,36 +95,28 @@ class TransferStatus(object):
             Stage of data transfer ('rsync', 'checksum', 'backup', ...).
         failure : :class:`bool`, optional
             Indicate failure.
-        year : :class:`str` or :class:`int`
-            Update records belonging to `year`. If not set, the current
-            year is assumed.
 
         Returns
         -------
         :class:`int`
             The number of updates performed.
         """
-        if year is None:
-            year = self.current_year
-        else:
-            year = str(year)
-        last = ''
         ts = int(time.time() * 1000)  # Convert to milliseconds for JS.
-        i = int(night)
         success = not failure
+        row = [self._stages[stage], int(success), ts]
         if exposure == 'all':
-            unique_ie = frozenset([self.status[k][1] for k in self.find(i)])
-            rows = [[i, ie, stage, success, last, ts]
-                    for ie in unique_ie]
+            rows = list()
+            for expid in self.find(night):
+                self.status[night][expid].insert(0, row)
+                rows.append(row)
         else:
-            ie = int(exposure)
-            r = [i, ie, stage, success, last, ts]
-            il = self.find(i, ie, stage)
+            il = self.find(night, exposure, stage)
             if il:
-                update = ((ts >= self.status[il[0]][5]) and
-                          (success is not self.status[il[0]][3]))
-                if last or update:
-                    self.status[il[0]] = r
+                old_row = self.status[night][exposure][il[0]]
+                log.info("self.status['%s']['%s'][%d] = [%d, %d, %d]", night, exposure, il[0], old_row[0], old_row[1], old_row[2])
+                update = (ts >= old_row[2]) and (int(success) != old_row[1])
+                if update:
+                    self.status[night][exposure][il[0]] = row
                     rows = []
                 else:
                     #
@@ -125,11 +125,11 @@ class TransferStatus(object):
                     #
                     return 0
             else:
-                rows = [r, ]
-        for row in rows:
-            self.status.insert(0, row)
-        self.status = sorted(self.status, key=lambda x: x[0]*10000000 + x[1],
-                             reverse=True)
+                try:
+                    self.status[night][exposure].insert(0, row)
+                except KeyError:
+                    self.status[night][exposure] = [row]
+                rows = [row, ]
         #
         # Copy the original file before modifying.
         # This will overwrite any existing .bak file
@@ -160,20 +160,39 @@ class TransferStatus(object):
 
         Returns
         -------
-        :class:`list`
-            A list of the *indexes* of matching status entries.
+        :class:`list` or class:`dict`
+            If only `night` is set, return a :class:`dict` containing
+            information on all exposures for that `night`. If `exposure`
+            is not set, return a :class:`dict` keyed by exposure containing
+            all data matching `stage` for that night. If `stage` is not set,
+            return a :class:`list` containing *indexes* pointing to
+            all data about that exposure. If both `exposure` and `stage` are set,
+            return a :class:`list` of *indexes* pointing to the data for `exposure`
+            filtered on `stage`.
         """
+        try:
+            n = self.status[night]
+        except KeyError:
+            n = self.status[night] = dict()
         if exposure is None and stage is None:
-            return [k for k, r in enumerate(self.status) if r[0] == night]
+            return n
         elif exposure is None:
-            return [k for k, r in enumerate(self.status) if r[0] == night
-                    and r[2] == stage]
+            e = dict()
+            for expid in n:
+                e[expid] = [k for k, r in enumerate(n[expid]) if r[0] == self._stages[stage]]
+            return e
         elif stage is None:
-            return [k for k, r in enumerate(self.status) if r[0] == night
-                    and r[1] == exposure]
+            try:
+                e = n[exposure]
+            except KeyError:
+                e = self.status[night][exposure] = list()
+            return e
         else:
-            return [k for k, r in enumerate(self.status) if r[0] == night
-                    and r[1] == exposure and r[2] == stage]
+            try:
+                r = [k for k, r in enumerate(n[exposure]) if r[0] == self._stages[stage]]
+            except KeyError:
+                r = list()
+            return r
 
 
 def _options():
@@ -220,7 +239,7 @@ def main():
     options = _options()
     if options.verbose:
         log.setLevel(DEBUG)
-    st = TransferStatus(options.directory, install=options.install)
+    st = TransferStatus(options.directory, install=options.install, year=str(options.night)[0:4])
     st.update(options.night, options.expid, options.stage, options.failure)
     return 0
 

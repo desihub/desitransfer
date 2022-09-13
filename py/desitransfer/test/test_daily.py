@@ -167,11 +167,3 @@ class TestDaily(unittest.TestCase):
                                      call(['fix_permissions.sh', '/dst/d0'],
                                           stdout=mo(), stderr=-2),
                                      call().wait()])
-
-
-def test_suite():
-    """Allows testing of only this module with the command::
-
-        python setup.py test -m <modulename>
-    """
-    return unittest.defaultTestLoader.loadTestsFromName(__name__)

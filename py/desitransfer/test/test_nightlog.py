@@ -62,11 +62,3 @@ class TestNightlog(unittest.TestCase):
                                     backupCount=100, maxBytes=100000000)
         gl.assert_called_once_with(timestamp=True)
         gl().setLevel.assert_called_once_with(logging.DEBUG)
-
-
-def test_suite():
-    """Allows testing of only this module with the command::
-
-        python setup.py test -m <modulename>
-    """
-    return unittest.defaultTestLoader.loadTestsFromName(__name__)
