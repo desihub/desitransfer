@@ -113,7 +113,7 @@ class TransferStatus(object):
             il = self.find(night, exposure, stage)
             if il:
                 old_row = self.status[night][exposure][il[0]]
-                log.info("self.status['%s']['%s'][%d] = [%d, %d, %d]", night, exposure, il[0], old_row[0], old_row[1], old_row[2])
+                log.debug("self.status['%s']['%s'][%d] = [%d, %d, %d]", night, exposure, il[0], old_row[0], old_row[1], old_row[2])
                 update = (ts >= old_row[2]) and (int(success) != old_row[1])
                 if update:
                     self.status[night][exposure][il[0]] = row
