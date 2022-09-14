@@ -106,12 +106,15 @@ class TransferStatus(object):
         row = [self._stages[stage], int(success), ts]
         if exposure == 'all':
             rows = list()
-            for expid in self.find(night):
+            for expid in self.status[night]:
                 log.debug("self.status['%s']['%s'].insert(0, [%d, %d, %d])", night, expid, row[0], row[1], row[2])
                 self.status[night][expid].insert(0, row)
                 rows.append(row)
         else:
             expid = str(int(exposure))
+            if night not in self.status:
+                log.debug("self.status['%s'] = {'%s': []}", night, expid)
+                self.status[night] = {expid: []}
             log.debug("il = self.find('%s', '%s', '%s')", night, expid, stage)
             il = self.find(night, expid, stage)
             if il:
@@ -175,31 +178,33 @@ class TransferStatus(object):
             all data about that exposure. If both `exposure` and `stage` are set,
             return a :class:`list` of *indexes* pointing to the data for `exposure`
             filtered on `stage`.
+
+        Raises
+        ------
+        :exc:`KeyError`
+            If `night` is not yet defined.
         """
-        try:
-            log.debug("n = self.status['%s']", night)
-            n = self.status[night]
-        except KeyError:
-            log.debug("n = self.status['%s'] = dict()", night)
-            n = self.status[night] = dict()
         if exposure is None and stage is None:
-            return n
+            try:
+                return self.status[night]
+            except KeyError:
+                raise KeyError(f"Undefined night = '{night}'!")
         elif exposure is None:
             e = dict()
-            for expid in n:
-                e[expid] = [k for k, r in enumerate(n[expid]) if r[0] == self._stages[stage]]
+            for expid in self.status[night]:
+                e[expid] = [k for k, r in enumerate(self.status[night][expid]) if r[0] == self._stages[stage]]
             return e
         elif stage is None:
             try:
-                log.debug("e = n['%s']", exposure)
-                e = n[exposure]
+                log.debug("e = self.status['%s']['%s']", night, exposure)
+                e = self.status[night][exposure]
             except KeyError:
                 log.debug("e = self.status['%s']['%s'] = list()", night, exposure)
                 e = self.status[night][exposure] = list()
             return e
         else:
             try:
-                r = [k for k, r in enumerate(n[exposure]) if r[0] == self._stages[stage]]
+                r = [k for k, r in enumerate(self.status[night][exposure]) if r[0] == self._stages[stage]]
             except KeyError:
                 r = list()
             return r

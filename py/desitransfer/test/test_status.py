@@ -211,8 +211,9 @@ class TestStatus(unittest.TestCase):
             with open(js, 'w') as f:
                 json.dump(st, f, indent=None, separators=(',', ':'))
             s = TransferStatus(d, year=2020)
-            i = s.find('20200702')
-            self.assertEqual(len(i), 0)
+            with self.assertRaises(KeyError) as cm:
+                i = s.find('20200702')
+            self.assertEqual(cm.exception.args[0], "Undefined night = '20200702'!")
             i = s.find('20200703')
             self.assertEqual(len(i), 2)
             i = s.find('20200703', '12345678')
