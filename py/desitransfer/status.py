@@ -254,8 +254,10 @@ def main():
     options = _options()
     if options.verbose:
         log.setLevel(DEBUG)
+    log.debug("st = TransferStatus('%s', install=%s, year='%s')", options.directory, options.install, str(options.night)[0:4])
     st = TransferStatus(options.directory, install=options.install, year=str(options.night)[0:4])
-    st.update(options.night, options.expid, options.stage, options.failure)
+    log.debug("st.update('%s', '%s', '%s', %s)", str(options.night), options.expid, options.stage, options.failure)
+    st.update(str(options.night), options.expid, options.stage, options.failure)
     return 0
 
 
