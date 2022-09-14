@@ -274,7 +274,9 @@ $(function() {
     years();
     $(".displayYear").change(function() {
         Status.displayYear = $("input[name=displayYear]:checked").val();
-        if (!Status.raw.hasOwnProperty(Status.displayYear)) {
+        if (Status.raw.hasOwnProperty(Status.displayYear)) {
+            display();
+        } else {
             Status.nights[Status.displayYear] = [];
             $.getJSON(Status.dataFile(), {}, function(data) {Status.raw[Status.displayYear] = data;}).done(display);
         }

@@ -2,6 +2,11 @@
 Change Log
 ==========
 
+1.0.0 (unreleased)
+------------------
+
+* *Planned*: refactor package to deprecate ``setup.py``.
+
 0.8.0 (unreleased)
 ------------------
 
