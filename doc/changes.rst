@@ -10,9 +10,9 @@ Change Log
 0.8.0 (unreleased)
 ------------------
 
-* Use a more compact format for raw data transfer status (PR `#50`_).
+* Use a more compact format for raw data transfer status (PR `#49`_).
 
-.. _`#50`: https://github.com/desihub/desitransfer/pull/50
+.. _`#49`: https://github.com/desihub/desitransfer/pull/49
 
 0.7.2 (2022-08-11)
 ------------------

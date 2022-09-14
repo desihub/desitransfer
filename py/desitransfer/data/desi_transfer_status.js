@@ -123,6 +123,7 @@ $(function() {
         }
         var E = Exposure, Ep = Exposure.prototype;
         E.padding = 8;
+        E.rawBaseURL = "https://data.desi.lbl.gov/desi/spectro/data/";
         E.stages = ["rsync", "checksum", "backup"];
         //
         // Pad integers out to 8 characters.
@@ -131,6 +132,12 @@ $(function() {
             var pe = ("" + this.e).split("");
             while (pe.length < Exposure.padding) pe.unshift("0");
             return pe.join("");
+        };
+        //
+        // URL for actual raw data.
+        //
+        Ep.rawURL = function() {
+            return Exposure.rawBaseURL + this.n + "/" + this.pad() + "/";
         };
         //
         // Header for status table.
@@ -150,7 +157,8 @@ $(function() {
         //
         Ep.row = function() {
             var r = $("<tr/>", {"id": "e" + this.toString()});
-            r.append($("<td/>").html(this.pad()));
+            var link = $("<a/>", {"href": this.rawURL()}).html(this.pad());
+            r.append($("<td/>").html(link));
             for (var k = 0; k < Exposure.stages.length; k++) {
                 var c = "table-warning";
                 var stamp = "INCOMPLETE";
