@@ -177,8 +177,10 @@ class TransferStatus(object):
             filtered on `stage`.
         """
         try:
+            log.debug("n = self.status['%s']", night)
             n = self.status[night]
         except KeyError:
+            log.debug("n = self.status['%s'] = dict()", night)
             n = self.status[night] = dict()
         if exposure is None and stage is None:
             return n
@@ -189,8 +191,10 @@ class TransferStatus(object):
             return e
         elif stage is None:
             try:
+                log.debug("e = n['%s']", exposure)
                 e = n[exposure]
             except KeyError:
+                log.debug("e = self.status['%s']['%s'] = list()", night, exposure)
                 e = self.status[night][exposure] = list()
             return e
         else:
