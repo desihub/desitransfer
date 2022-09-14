@@ -111,15 +111,16 @@ class TransferStatus(object):
                 self.status[night][expid].insert(0, row)
                 rows.append(row)
         else:
-            log.debug("il = self.find('%s', '%s', '%s')", night, exposure, stage)
-            il = self.find(night, exposure, stage)
+            expid = str(int(exposure))
+            log.debug("il = self.find('%s', '%s', '%s')", night, expid, stage)
+            il = self.find(night, expid, stage)
             if il:
-                old_row = self.status[night][exposure][il[0]]
-                log.debug("self.status['%s']['%s'][%d] = [%d, %d, %d]", night, exposure, il[0], old_row[0], old_row[1], old_row[2])
+                old_row = self.status[night][expid][il[0]]
+                log.debug("self.status['%s']['%s'][%d] = [%d, %d, %d]", night, expid, il[0], old_row[0], old_row[1], old_row[2])
                 update = (ts >= old_row[2]) and (int(success) != old_row[1])
                 if update:
-                    log.debug("self.status['%s']['%s'][%d] = [%d, %d, %d]", night, exposure, il[0], row[0], row[1], row[2])
-                    self.status[night][exposure][il[0]] = row
+                    log.debug("self.status['%s']['%s'][%d] = [%d, %d, %d]", night, expid, il[0], row[0], row[1], row[2])
+                    self.status[night][expid][il[0]] = row
                     rows = []
                 else:
                     #
@@ -129,11 +130,11 @@ class TransferStatus(object):
                     return 0
             else:
                 try:
-                    log.debug("self.status['%s']['%s'].insert(0, [%d, %d, %d])", night, exposure, row[0], row[1], row[2])
-                    self.status[night][exposure].insert(0, row)
+                    log.debug("self.status['%s']['%s'].insert(0, [%d, %d, %d])", night, expid, row[0], row[1], row[2])
+                    self.status[night][expid].insert(0, row)
                 except KeyError:
-                    log.debug("self.status['%s']['%s'] = [%d, %d, %d]", night, exposure, row[0], row[1], row[2])
-                    self.status[night][exposure] = [row]
+                    log.debug("self.status['%s']['%s'] = [%d, %d, %d]", night, expid, row[0], row[1], row[2])
+                    self.status[night][expid] = [row]
                 rows = [row, ]
         #
         # Copy the original file before modifying.
