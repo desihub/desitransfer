@@ -167,7 +167,7 @@ $(function() {
                     var d = new Date(this.stage[Exposure.stages[k]].stamp);
                     stamp = d.toISOString();
                 }
-                r.append($("<td/>", {"class": c}).html(stamp));
+                r.append($("<td/>", {"class": c}).html("<small>" + stamp + "</small>"));
             }
             return r;
         };
