@@ -179,6 +179,14 @@ $(function() {
         };
         return Exposure;
     })();
+    //
+    // Current year.
+    //
+    var d = new Date();
+    var currentYear = "" + d.getFullYear();
+    //
+    // Object to store status data.
+    //
     var Status = {
         //
         // Display status.
@@ -187,16 +195,16 @@ $(function() {
         //
         // Display year.
         //
-        displayYear: "2022",
+        displayYear: currentYear,
         //
         // Raw data read from JSON file.
         //
         // raw: [],
-        raw: {"2022": {}},
+        raw: {currentYear: {}},
         //
         // List of Night objects.
         //
-        nights: {"2022": []},
+        nights: {currentYear: []},
         //
         // If a night already exists in the nights array, return the index.
         //
@@ -264,8 +272,6 @@ $(function() {
     //
     var years = function() {
         var firstYear = 2018;
-        var d = new Date();
-        var currentYear = d.getFullYear();
         $("#years").empty();
         $("#years").append($("<legend/>").html("Display Year"));
         for (var year = currentYear; year >= firstYear; year--) {
