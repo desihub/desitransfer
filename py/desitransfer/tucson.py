@@ -234,7 +234,7 @@ def main():
     except ValueError:
         suffix = {'s': 1, 'm': 60, 'h': 3600, 'd': 86400}
         for s in suffix:
-            if option.sleep.endswith(s):
+            if options.sleep.endswith(s):
                 try:
                     sleepy_time = int(options.sleep[0:-1])*suffix[s]
                 except ValueError:
