@@ -9,6 +9,7 @@ Entry point for :command:`desi_tucson_transfer`.
 import logging
 import os
 import subprocess as sub
+import time
 from argparse import ArgumentParser
 from socket import getfqdn
 from logging.handlers import SMTPHandler
@@ -228,12 +229,22 @@ def main():
     #
     # Wait for daily KPNO -> NERSC transfer to finish.
     #
+    try:
+        sleepy_time = int(options.sleep)
+    except ValueError:
+        suffix = {'s': 1, 'm': 60, 'h': 3600, 'd': 86400}
+        for s in suffix:
+            if option.sleep.endswith(s):
+                try:
+                    sleepy_time = int(options.sleep[0:-1])*suffix[s]
+                except ValueError:
+                    log.error("Invalid value for sleep interval: '%s'!", options.sleep)
+                    return 1
     log.debug("requests.get('%s')", os.environ['DESISYNC_STATUS_URL'])
     if not options.test:
         while requests.get(os.environ['DESISYNC_STATUS_URL']).status_code != 200:
-            if options.debug:
-                log.info("Daily transfer incomplete, sleeping %s.", options.sleep)
-                time.sleep()
+            log.debug("Daily transfer incomplete, sleeping %s.", options.sleep)
+            time.sleep(sleepy_time)
     #
     # Main transfer
     #
