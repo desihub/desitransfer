@@ -7,7 +7,7 @@ Change Log
 
 * *Planned*: refactor package to deprecate ``setup.py``.
 
-0.8.0 (unreleased)
+0.8.0 (2022-09-21)
 ------------------
 
 * Use a more compact format for raw data transfer status (PR `#49`_).
