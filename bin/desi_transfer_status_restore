@@ -45,19 +45,18 @@ def main():
     """
     bt = backup_times()
     nights = os.listdir(os.environ['DESI_SPECTRO_DATA'])
-    status = list()
+    status = dict()
     for night in nights:
+        status[night] = dict()
         if night != 'README.html':
             exposures = os.listdir(os.path.join(os.environ['DESI_SPECTRO_DATA'], night))
             for exp in exposures:
                 rt = int(os.stat(os.path.join(os.environ['DESI_SPECTRO_DATA'], night, exp)).st_mtime * 1000)
-                status.append([int(night), int(exp), 'rsync', True, '', rt])
-                status.append([int(night), int(exp), 'checksum', True, '', rt])
+                status[night][exposure] = [[0, 1, rt], [1, 1, rt]]
                 try:
-                    status.append([int(night), int(exp), 'backup', True, '', bt[night]])
+                    status[night][exposure].append([2, 1, bt[night]])
                 except KeyError:
                     pass
-    status = sorted(status, key=lambda x: x[0]*10000000 + x[1], reverse=True)
     with open('desi_transfer_status_restore.json', 'w') as j:
         json.dump(status, j, indent=None, separators=(',', ':'))
     return 0

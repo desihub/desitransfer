@@ -2,10 +2,17 @@
 Change Log
 ==========
 
-0.7.3 (unreleased)
+1.0.0 (unreleased)
 ------------------
 
-* No changes yet.
+* *Planned*: refactor package to deprecate ``setup.py``.
+
+0.8.0 (unreleased)
+------------------
+
+* Use a more compact format for raw data transfer status (PR `#49`_).
+
+.. _`#49`: https://github.com/desihub/desitransfer/pull/49
 
 0.7.2 (2022-08-11)
 ------------------

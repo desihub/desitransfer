@@ -1160,11 +1160,3 @@ total size is 118,417,836,324  speedup is 494,367.55
                                                   '1', '20190703')
         mock_log.error.assert_has_calls([call('rsync STDOUT = \n%s', 'stdout'),
                                          call('rsync STDERR = \n%s', 'stderr')])
-
-
-def test_suite():
-    """Allows testing of only this module with the command::
-
-        python setup.py test -m <modulename>
-    """
-    return unittest.defaultTestLoader.loadTestsFromName(__name__)

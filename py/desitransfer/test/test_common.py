@@ -175,11 +175,3 @@ total size is 118,417,836,324  speedup is 494,367.55
         # mock_datetime.return_value = datetime(2021, 7, 3, 13, 0, 0, tzinfo=MST)
         i = idle_time(tz='US/Pacific')
         self.assertEqual(i, -3600)
-
-
-def test_suite():
-    """Allows testing of only this module with the command::
-
-        python setup.py test -m <modulename>
-    """
-    return unittest.defaultTestLoader.loadTestsFromName(__name__)

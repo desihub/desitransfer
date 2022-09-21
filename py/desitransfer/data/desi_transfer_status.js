@@ -7,8 +7,8 @@ $(function() {
             this.n = n;
             this.exposures = [];
             this.div = $("<div/>", {"id": ""+this.n, "class": "row"});
-            this.buttons = $("<div/>", {"class": "col-4"});
-            this.table = $("<div/>", {"class": "col-8"});
+            this.buttons = $("<div/>", {"class": "col-md-4"});
+            this.table = $("<div/>", {"class": "col-md-8"});
         }
         var N = Night, Np = Night.prototype;
         //
@@ -19,7 +19,7 @@ $(function() {
             if (i == -1) {
                 this.exposures.push(E);
             } else {
-                this.exposures[i].addStage(E);
+                alert("Trying to add duplicate exposure " + E.e + " to Night " + this.n + "!");
             }
         };
         //
@@ -84,12 +84,13 @@ $(function() {
         // Table of individual exposures.
         //
         Np.table_rows = function() {
-            var r = "<table id=\"t" + this.n + "\" class=\"table table-borderless table-sm\"style=\"display:none;\">" +
-                    this.exposures[0].header() + "<tbody>";
+            var r = $("<table/>", {"id": "t" + this.n, "class": "table table-borderless table-sm", "style": "display:none;"});
+            r.append(this.exposures[0].header());
+            var body = $("<tbody/>");
             for (var k = 0; k < this.exposures.length; k++) {
-                r += this.exposures[k].row();
+                body.append(this.exposures[k].row());
             }
-            r += "</tbody></table>";
+            r.append(body);
             return r;
         };
         return Night;
@@ -98,23 +99,31 @@ $(function() {
         //
         // Constructor.
         //
-        function Exposure(r) {
-            this.n = r[0];
-            this.e = r[1];
+        function Exposure(n, e, r) {
+            this.n = n;
+            this.e = e;
             this.stage = {};
-            for (var k = 0; k < Exposure.stages.length; k++) {
-                this.stage[Exposure.stages[k]] = {"success": false, "stamp": 0};
+            for (var i = 0; i < r.length; i++) {
+                var s = Exposure.stages[r[i][0]];
+                if (this.stage.hasOwnProperty(s)) {
+                    if (r[i][2] > this.stage[s].stamp) {
+                        this.stage[s].success = r[i][1] == 1;
+                        this.stage[s].stamp = r[i][2];
+                    }
+                } else {
+                    this.stage[s] = {"success": r[i][1] == 1, "stamp": r[i][2]};
+                }
             }
-            if (Exposure.stages.indexOf(r[2]) == -1) {
-                alert("Invalid stage '" + r[2] + "' in " + r[0] + "/" + r[1] + "!");
-            } else {
-                this.stage[r[2]] = {"success": r[3], "stamp": r[5]};
+            for (var j = 0; j < Exposure.stages.length; j++) {
+                var s = Exposure.stages[j];
+                if (!this.stage.hasOwnProperty(s)) {
+                    this.stage[s] = {"success": false, "stamp": 0};
+                }
             }
-            // this.c = this.status ? "bg-success" : "bg-danger";
-            // this.l = r[4].length > 0 ? " Last " + r[4] + " exposure." : "";
         }
         var E = Exposure, Ep = Exposure.prototype;
         E.padding = 8;
+        E.rawBaseURL = "https://data.desi.lbl.gov/desi/spectro/data/";
         E.stages = ["rsync", "checksum", "backup"];
         //
         // Pad integers out to 8 characters.
@@ -125,23 +134,31 @@ $(function() {
             return pe.join("");
         };
         //
+        // URL for actual raw data.
+        //
+        Ep.rawURL = function() {
+            return Exposure.rawBaseURL + this.n + "/" + this.pad() + "/";
+        };
+        //
         // Header for status table.
         //
         Ep.header = function() {
-            var h = "<thead><tr><th class=\"text-uppercase\">exposure</th>";
+            var h = $("<thead/>");
+            var r = $("<tr/>");
+            r.append($("<th/>", {"class": "text-uppercase"}).html("exposure"));
             for (var k = 0; k < Exposure.stages.length; k++) {
-                h += "<th class=\"text-uppercase\">" + Exposure.stages[k] + "</th>";
+                r.append($("<th/>", {"class": "text-uppercase"}).html(Exposure.stages[k]));
             }
-            // h += "<th class=\"text-uppercase\">comment</th></tr></thead>";
-            h += "</tr></thead>";
+            h.append(r);
             return h;
         };
         //
         // Row in the status table.
         //
         Ep.row = function() {
-            var r = "<tr id=\"e" + this.toString() +"\">" +
-                    "<td>" + this.pad() + "</td>";
+            var r = $("<tr/>", {"id": "e" + this.toString()});
+            var link = $("<a/>", {"href": this.rawURL()}).html(this.pad());
+            r.append($("<td/>").html(link));
             for (var k = 0; k < Exposure.stages.length; k++) {
                 var c = "table-warning";
                 var stamp = "INCOMPLETE";
@@ -150,36 +167,9 @@ $(function() {
                     var d = new Date(this.stage[Exposure.stages[k]].stamp);
                     stamp = d.toISOString();
                 }
-                r +=  "<td class=\"" + c + "\">" + stamp + "</td>";
+                r.append($("<td/>", {"class": c}).html("<small>" + stamp + "</small>"));
             }
-            // r += "<td>" + this.l + "</td></tr>";
-            r += "</tr>";
             return r;
-        };
-        //
-        // Add additional stage data to an existing exposure.
-        //
-        Ep.addStage = function(stage) {
-            if (stage.n == this.n && stage.e == this.e) {
-                for (var k = 0; k < Exposure.stages.length; k++) {
-                    var s = Exposure.stages[k]
-                    //
-                    // Does stage have a defined timestamp?
-                    //
-                    if (stage.stage[s].stamp != 0) {
-                        //
-                        // Is it more recent?  This will also be true if this
-                        // has an undefined timestamp.
-                        //
-                        if (stage.stage[s].stamp > this.stage[s].stamp) {
-                            this.stage[s].success = stage.stage[s].success;
-                            this.stage[s].stamp = stage.stage[s].stamp;
-                        }
-                    }
-                }
-            } else {
-                alert("Can't add " + stage.toString() + " to " + this.toString() + "!");
-            }
         };
         //
         // Format night/exposure.
@@ -189,19 +179,32 @@ $(function() {
         };
         return Exposure;
     })();
+    //
+    // Current year.
+    //
+    var d = new Date();
+    var currentYear = "" + d.getFullYear();
+    //
+    // Object to store status data.
+    //
     var Status = {
         //
         // Display status.
         //
         displayAll: false,
         //
+        // Display year.
+        //
+        displayYear: currentYear,
+        //
         // Raw data read from JSON file.
         //
-        raw: [],
+        // raw: [],
+        raw: {currentYear: {}},
         //
         // List of Night objects.
         //
-        nights: [],
+        nights: {currentYear: []},
         //
         // If a night already exists in the nights array, return the index.
         //
@@ -210,44 +213,53 @@ $(function() {
                 if (this.nights[k].n == n) return k;
             }
             return -1;
+        },
+        //
+        // Per-year data file.
+        //
+        dataFile: function() {
+            return "desi_transfer_status_" + this.displayYear + ".json";
         }
     };
     //
     // Main display function.
     //
-    display = function() {
+    var display = function() {
+        var default_display = 10;
         $("#content").empty();
+        var h2 = "Showing " +
+                 (Status.displayAll ? "all" : "most recent 10") +
+                 " Nights from " +
+                 Status.displayYear;
+        $("#displayTitle").html(h2);
+        var nights = Status.nights[Status.displayYear];
+        nights = [];
         var night;
-        Status.nights = [];
-        var N_nights = 0;
-        var N_display = 10;
-        for (var k = 0; k < Status.raw.length; k++) {
-            var n = Status.raw[k][0];
-            if (Status.hasNight(n) == -1) {
+        var raw = Status.raw[Status.displayYear];
+        var all_nights = Object.keys(raw).sort().reverse();
+        // alert(all_nights.join(","));
+        var n_display = Status.displayAll ? all_nights.length : default_display;
+        if (all_nights.length < default_display) n_display = all_nights.length;
+        for (var k = 0; k < n_display; k++) {
+            var n = all_nights[k];
+            //
+            // Start a new night
+            //
+            night = new Night(n);
+            nights.push(night);
+            var exposures = Object.keys(raw[n]).sort().reverse();
+            for (var l = 0; l < exposures.length; l++) {
                 //
-                // Finish previous night
+                // Add exposure to existing night.
                 //
-                if (Status.nights.length > 0) {
-                    night.finish();
-                    if (!Status.displayAll && N_nights >= N_display) break;
-                }
-                //
-                // Start a new night
-                //
-                night = new Night(n);
-                Status.nights.push(night);
-                N_nights += 1;
+                var e = new Exposure(n, exposures[l], raw[n][exposures[l]]);
+                night.addExposure(e);
             }
             //
-            // Add exposure to existing night.
+            // Finish the current night.
             //
-            var e = new Exposure(Status.raw[k]);
-            night.addExposure(e);
+            night.finish();
         }
-        //
-        // Finish the final night
-        //
-        if (Status.displayAll) night.finish();
     };
     //
     // Display Mode.
@@ -255,6 +267,38 @@ $(function() {
     $(".displayMode").change(function() {
         return Status.displayAll = $("input[name=displayMode]:checked").val() === "displayAll";
     }).change(display);
-    $.getJSON("desi_transfer_status.json", {}, function(data) { Status.raw = data; }).always(display);
+    //
+    // Dynamically generate year selection.
+    //
+    var years = function() {
+        var firstYear = 2018;
+        $("#years").empty();
+        $("#years").append($("<legend/>").html("Display Year"));
+        for (var year = currentYear; year >= firstYear; year--) {
+            var d = $("<div/>", {"class": "form-check form-check-inline"});
+            var io = {"class": "form-check-input displayYear", "type": "radio", "name": "displayYear", "id": "display" + year, "value": "" + year}
+            if (year == currentYear) io["checked"] = "checked";
+            var i = $("<input/>", io);
+            var l = $("<label/>", {"class": "form-check-label displayYear", "for": "display" + year}).html("" + year);
+            d.append(i);
+            d.append(l);
+            $("#years").append(d);
+        }
+    };
+    years();
+    $(".displayYear").change(function() {
+        Status.displayYear = $("input[name=displayYear]:checked").val();
+        if (Status.raw.hasOwnProperty(Status.displayYear)) {
+            display();
+        } else {
+            Status.nights[Status.displayYear] = [];
+            $.getJSON(Status.dataFile(), {}, function(data) {Status.raw[Status.displayYear] = data;}).done(display);
+        }
+        return true;
+    });
+    //
+    // Load initial data.
+    //
+    $.getJSON(Status.dataFile(), {}, function(data) {Status.raw[Status.displayYear] = data;}).done(display);
     return true;
 });
