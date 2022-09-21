@@ -7,6 +7,11 @@ Change Log
 
 * *Planned*: refactor package to deprecate ``setup.py``.
 
+0.8.1 (unreleased)
+------------------
+
+* No changes yet.
+
 0.8.0 (2022-09-21)
 ------------------
 
