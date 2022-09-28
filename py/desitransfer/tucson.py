@@ -81,7 +81,7 @@ def _configure_log(debug):
     if debug:
         log.setLevel(logging.DEBUG)
     email_from = 'NOIRLab Mirror Account <{0}@{1}>'.format(os.environ['USER'], getfqdn())
-    email_to = ['desi-alarms-transfer@desi.lbl.gov']
+    email_to = [os.environ['DESI_MAILTO']]
     handler2 = SMTPHandler('localhost', email_from, email_to,
                            'Error reported by desi_tucson_transfer!')
     fmt = """Greetings,
