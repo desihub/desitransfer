@@ -42,7 +42,7 @@ if [[ "${year}" == "2021" ]]; then
             expid_size=$(du -k -s ${e} | awk '{print $1}')
             number_of_fire_exposures=$(( number_of_fire_exposures + 1 ))
             total_fire_data=$(( total_fire_data + expid_size ))
-    done
+        done
     done
     echo "Number of nights during fire recovery = ${number_of_fire_nights}."
     echo "Number of exposures during fire recovery = ${number_of_fire_exposures}."
