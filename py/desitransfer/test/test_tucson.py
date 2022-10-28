@@ -62,7 +62,8 @@ class TestTucson(unittest.TestCase):
     def test_configure_log(self, mock_log, gl, smtp):
         """Test logging configuration.
         """
-        _configure_log(True)
+        with patch.dict('os.environ', {'DESI_MAILTO': 'desi-alarms-transfer@desi.lbl.gov'}):
+            _configure_log(True)
         gl.assert_called_once_with(timestamp=True)
         gl().setLevel.assert_called_once_with(logging.DEBUG)
         email_from = 'NOIRLab Mirror Account <{0}@{1}>'.format(os.environ['USER'], getfqdn())
