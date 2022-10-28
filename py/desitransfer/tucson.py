@@ -80,8 +80,8 @@ def _configure_log(debug):
     log = get_logger(timestamp=True)
     if debug:
         log.setLevel(logging.DEBUG)
-    email_from = 'NOIRLab Mirror Account <{0}@{1}>'.format(os.environ['USER'], getfqdn())
-    email_to = [os.environ['DESI_MAILTO']]
+    email_from = 'NOIRLab Mirror Account <{0}>'.format(os.environ['MAILFROM'])
+    email_to = [os.environ['MAILTO']]
     handler2 = SMTPHandler('localhost', email_from, email_to,
                            'Error reported by desi_tucson_transfer!')
     fmt = """Greetings,
