@@ -62,13 +62,14 @@ class TestTucson(unittest.TestCase):
     def test_configure_log(self, mock_log, gl, smtp):
         """Test logging configuration.
         """
-        with patch.dict('os.environ', {'DESI_MAILTO': 'desi-alarms-transfer@desi.lbl.gov'}):
+        with patch.dict('os.environ', {'MAILTO': 'alerts@my.org',
+                                       'MAILFROM': 'from.me@example.com'}):
             _configure_log(True)
         gl.assert_called_once_with(timestamp=True)
         gl().setLevel.assert_called_once_with(logging.DEBUG)
-        email_from = 'NOIRLab Mirror Account <{0}@{1}>'.format(os.environ['USER'], getfqdn())
+        email_from = 'NOIRLab Mirror Account <from.me@example.com>'
         smtp.assert_called_once_with('localhost', email_from,
-                                     ['desi-alarms-transfer@desi.lbl.gov'],
+                                     ['alerts@me.org'],
                                      'Error reported by desi_tucson_transfer!')
 
     def test_rsync(self):
