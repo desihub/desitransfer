@@ -116,9 +116,12 @@ def _config():
                                                 'engineering'))
     spectro = os.path.realpath(os.path.join(os.environ['DESI_ROOT'],
                                             'spectro'))
+    survey = os.path.realpath(os.path.join(os.environ['DESI_ROOT'], 'survey'))
     return [DailyDirectory('/data/dts/exposures/lost+found',
                            os.path.join(spectro, 'staging', 'lost+found'),
                            dirlinks=True),
+            DailyDirectory('/software/www2/html/nightlogs',
+                           os.path.join(survey, 'ops', 'nightlogs')),
             DailyDirectory('/data/focalplane/calibration',
                            os.path.join(engineering, 'focalplane', 'calibration')),
             DailyDirectory('/data/focalplane/logs/calib_logs',
