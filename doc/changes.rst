@@ -12,7 +12,9 @@ Change Log
 ------------------
 
 * Nightlog data is now included in the daily transfer, instead of a
-  separate process.
+  separate process (PR `#50`_).
+
+.. _`#50`: https://github.com/desihub/desitransfer/pull/50
 
 0.8.0 (2022-09-21)
 ------------------
