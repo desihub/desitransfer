@@ -13,6 +13,8 @@ Change Log
 
 * Nightlog data is now included in the daily transfer, instead of a
   separate process (PR `#50`_).
+* Add annual transfer statistics script.
+* Tweak mail handling for Tucson transfer.
 
 .. _`#50`: https://github.com/desihub/desitransfer/pull/50
 
