@@ -110,6 +110,8 @@ def _config():
     """Wrap configuration so that module can be imported without
     environment variables set.
     """
+    nightlog_include = resource_filename('desitransfer',
+                                         'data/desi_nightlog_transfer_kpno.txt')
     nightwatch_exclude = resource_filename('desitransfer',
                                            'data/desi_nightwatch_transfer_exclude.txt')
     engineering = os.path.realpath(os.path.join(os.environ['DESI_ROOT'],
@@ -121,7 +123,8 @@ def _config():
                            os.path.join(spectro, 'staging', 'lost+found'),
                            dirlinks=True),
             DailyDirectory('/software/www2/html/nightlogs',
-                           os.path.join(survey, 'ops', 'nightlogs')),
+                           os.path.join(survey, 'ops', 'nightlogs'),
+                           extra=['--include-from', nightlog_include, '--exclude', '*']),
             DailyDirectory('/data/focalplane/calibration',
                            os.path.join(engineering, 'focalplane', 'calibration')),
             DailyDirectory('/data/focalplane/logs/calib_logs',
