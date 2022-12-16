@@ -8,7 +8,7 @@ Change Log
 * *Planned*: refactor package to deprecate ``setup.py``.
 * *Planned*: remove deprecated code such as ``nightlog.py``.
 
-0.9.0 (unreleased)
+0.9.0 (2022-12-16)
 ------------------
 
 * Nightlog data is now included in the daily transfer, instead of a
