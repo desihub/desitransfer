@@ -58,7 +58,7 @@ dynamic = ['spectro/data',
 
 
 includes = {'spectro/desi_spectro_calib': ["--exclude", ".svn"],
-            'spectro/data': ["--exclude", "2018*", "--exclude", "2019*", "--exclude", "2020*", "--exclude", "2021*"],
+            'spectro/data': ["--exclude", "2018*", "--exclude", "2019*", "--exclude", "2020*", "--exclude", "2021*", "--exclude", "2022*"],
             # 'spectro/nightwatch': ["--include", "kpno/***", "--exclude", "*"],
             'spectro/redux/daily': ["--exclude", "*.tmp", "--exclude", "attic", "--exclude", "exposures", "--exclude", "preproc", "--exclude", "temp", "--exclude", "tiles"],
             'spectro/redux/daily/exposures': ["--exclude", "*.tmp"],

@@ -11,7 +11,8 @@ Change Log
 0.9.1 (unreleased)
 ------------------
 
-* No changes yet.
+* Exclude ``2022*`` from raw data transfers to Tucson; add API documentation
+  completeness test.
 
 0.9.0 (2022-12-16)
 ------------------
