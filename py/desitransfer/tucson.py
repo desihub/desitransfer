@@ -40,6 +40,7 @@ static = ['cmx',
           'spectro/redux/denali',
           'spectro/redux/everest',
           'spectro/templates/basis_templates',
+          'survey/ops/surveyops/trunk',
           'sv',
           'target/catalogs',
           'target/secondary',
@@ -65,6 +66,7 @@ includes = {'spectro/desi_spectro_calib': ["--exclude", ".svn"],
             'spectro/redux/daily/preproc': ["--exclude", "*.tmp", "--exclude", "preproc-*.fits", "--exclude", "preproc-*.fits.gz"],
             'spectro/redux/daily/tiles': ["--exclude", "*.tmp", "--exclude", "temp"],
             'spectro/templates/basis_templates': ["--exclude", ".svn", "--exclude", "basis_templates_svn-old"],
+            'survey/ops/surveyops/trunk': ["--exclude", ".svn", "--exclude", "cronupdate.log"],
             'target/catalogs': ["--include", "dr8", "--include", "dr9", "--include", "gaiadr2", "--include", "subpriority", "--exclude", "*"]}
 
 
