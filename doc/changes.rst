@@ -8,11 +8,11 @@ Change Log
 * *Planned*: refactor package to deprecate ``setup.py``.
 * *Planned*: remove deprecated code such as ``nightlog.py``.
 
-0.9.1 (unreleased)
+0.9.1 (2023-04-24)
 ------------------
 
 * Exclude ``2022*`` from raw data transfers to Tucson; add API documentation
-  completeness test.
+  completeness test; other minor changes to Tucson transfers.
 
 0.9.0 (2022-12-16)
 ------------------
