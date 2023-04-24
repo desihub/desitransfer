@@ -40,6 +40,7 @@ static = ['cmx',
           'spectro/redux/denali',
           'spectro/redux/everest',
           'spectro/templates/basis_templates',
+          'survey/ops/surveyops/trunk',
           'sv',
           'target/catalogs',
           'target/secondary',
@@ -58,13 +59,14 @@ dynamic = ['spectro/data',
 
 
 includes = {'spectro/desi_spectro_calib': ["--exclude", ".svn"],
-            'spectro/data': ["--exclude", "2018*", "--exclude", "2019*", "--exclude", "2020*", "--exclude", "2021*"],
+            'spectro/data': (' '.join([f'--exclude {y:d}*' for y in range(2018, time.localtime().tm_year)])).split(),
             # 'spectro/nightwatch': ["--include", "kpno/***", "--exclude", "*"],
             'spectro/redux/daily': ["--exclude", "*.tmp", "--exclude", "attic", "--exclude", "exposures", "--exclude", "preproc", "--exclude", "temp", "--exclude", "tiles"],
             'spectro/redux/daily/exposures': ["--exclude", "*.tmp"],
             'spectro/redux/daily/preproc': ["--exclude", "*.tmp", "--exclude", "preproc-*.fits", "--exclude", "preproc-*.fits.gz"],
             'spectro/redux/daily/tiles': ["--exclude", "*.tmp", "--exclude", "temp"],
             'spectro/templates/basis_templates': ["--exclude", ".svn", "--exclude", "basis_templates_svn-old"],
+            'survey/ops/surveyops/trunk': ["--exclude", ".svn", "--exclude", "cronupdate.log"],
             'target/catalogs': ["--include", "dr8", "--include", "dr9", "--include", "gaiadr2", "--include", "subpriority", "--exclude", "*"]}
 
 
