@@ -17,7 +17,7 @@ kill_switch=${HOME}/stop_desi_transfer
 #
 # Determine the version of pgrep to select options.
 #
-PGREP_VERSION=$(pgrep -V | sed -r 's/[^0-9]+([0-9]+)\.([0-9]+)\.([0-9]+)[^0-9]+/\1\2/')
+PGREP_VERSION=$(pgrep -V | sed -r 's/[^0-9]+([0-9]+)\.([0-9]+)\.([0-9]+)[^0-9]*/\1\2/')
 PGREP_OPTIONS='-a -f'
 [[ ${PGREP_VERSION} == "32" ]] && PGREP_OPTIONS='-l -f'
 #
@@ -28,8 +28,13 @@ start() {
         echo "${kill_switch} detected, will not attempt to start ${PRGFILE}."
         return 0
     fi
-    if [[ -n "$(pgrep ${PGREP_OPTIONS} ${PRGFILE} 2> /dev/null | grep ${DESITRANSFER})" ]]; then
+    local process=$(pgrep ${PGREP_OPTIONS} ${PRGFILE} 2> /dev/null)
+    if [[ -n "$(grep ${DESITRANSFER} <<<${process})" ]]; then
         echo "${THISHOST} ${PRGFILE} is already started."
+        return 1
+    fi
+    if [[ -n "$(grep $(dirname ${DESITRANSFER}) <<<${process})" ]]; then
+        echo "${THISHOST} another version of ${PRGFILE} may already be running."
         return 1
     fi
     #
