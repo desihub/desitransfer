@@ -162,8 +162,6 @@ def _options():
     prsr.add_argument('-k', '--kill', metavar='FILE',
                       default=os.path.join(os.environ['HOME'], 'stop_desi_transfer'),
                       help="Exit the script when FILE is detected (default %(default)s).")
-    # prsr.add_argument('-n', '--nersc', default='cori', metavar='NERSC_HOST',
-    #                   help="Trigger DESI pipeline on this NERSC system (default %(default)s).")
     prsr.add_argument('-P', '--no-permission', action='store_false', dest='permission',
                       help='Do not set permissions for DESI collaboration access.')
     # prsr.add_argument('-s', '--sleep', metavar='H', type=int, default=24,
