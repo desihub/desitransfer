@@ -81,7 +81,7 @@ class TransferDaemon(object):
         self.tape = options.backup
         getlist = lambda x: x.split(',')
         getdict = lambda x: dict([tuple(i.split(':')) for i in x.split(',')])
-        self.conf = ConfigParser(defaults=os.environ,
+        self.conf = ConfigParser(defaults=os.environ, strict=True,
                                  interpolation=ExtendedInterpolation(),
                                  converters={'list': getlist, 'dict': getdict})
         files = self.conf.read(self._ini)
@@ -94,7 +94,7 @@ class TransferDaemon(object):
                                             self.conf[s]['hpss'],
                                             self.conf[s]['checksum_file'])
                             for s in self.sections]
-        self.scratch = ensure_scratch(self.conf['common'].getlist('scratch'))
+        self.scratch = ensure_scratch(self.conf['common'].getlist('temporary'))
         self._configure_log(options.debug)
         return
 

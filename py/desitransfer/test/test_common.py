@@ -32,7 +32,7 @@ class TestCommon(unittest.TestCase):
         pass
 
     def setUp(self):
-        """Create a temporary directory to simulate CSCRATCH.
+        """Create a temporary directory to simulate SCRATCH.
         """
         self.tmp = TemporaryDirectory()
 

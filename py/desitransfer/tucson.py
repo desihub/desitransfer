@@ -204,7 +204,7 @@ def main():
     #
     # Check for required environment variables
     #
-    for e in ('DESISYNC_HOSTNAME', 'DESISYNC_STATUS_URL', 'CSCRATCH'):
+    for e in ('DESISYNC_HOSTNAME', 'DESISYNC_STATUS_URL', 'SCRATCH'):
         try:
             foo = os.environ[e]
         except KeyError:
