@@ -8,16 +8,20 @@ Change Log
 * *Planned*: refactor package to deprecate ``setup.py``.
 * *Planned*: remove deprecated code such as ``nightlog.py``.
 
-0.9.2 (unreleased)
+0.9.2 (2023-05-31)
 ------------------
 
-* No changes yet.
+* Eliminate references to cori and :envvar:`CSCRATCH` (PR `#52`_).
+
+.. _`#52`: https://github.com/desihub/desitransfer/pull/52
 
 0.9.1 (2023-04-24)
 ------------------
 
 * Exclude ``2022*`` from raw data transfers to Tucson; add API documentation
-  completeness test; other minor changes to Tucson transfers.
+  completeness test; other minor changes to Tucson transfers (PR `#51`_).
+
+.. _`#51`: https://github.com/desihub/desitransfer/pull/51
 
 0.9.0 (2022-12-16)
 ------------------
