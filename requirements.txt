@@ -1,4 +1,4 @@
 setuptools
 requests
 pytz
-git+https://github.com/desihub/desiutil.git@3.2.6
+git+https://github.com/desihub/desiutil.git@3.3.0
