@@ -8,6 +8,11 @@ Change Log
 * *Planned*: refactor package to deprecate ``setup.py``.
 * *Planned*: remove deprecated code such as ``nightlog.py``.
 
+0.9.3 (unreleased)
+------------------
+
+* No changes yet.
+
 0.9.2 (2023-05-31)
 ------------------
 
