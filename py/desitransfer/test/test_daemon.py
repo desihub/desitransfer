@@ -36,7 +36,7 @@ desi_spectro_data_20190702.tar.idx
         pass
 
     def setUp(self):
-        """Create a temporary directory to simulate CSCRATCH.
+        """Create a temporary directory to simulate SCRATCH.
         """
         self.tmp = TemporaryDirectory()
 
@@ -60,7 +60,7 @@ desi_spectro_data_20190702.tar.idx
         """Test reading configuration file.
         """
         with patch.dict('os.environ',
-                        {'CSCRATCH': self.tmp.name,
+                        {'SCRATCH': self.tmp.name,
                          'DESI_ROOT': '/desi/root',
                          'DESI_SPECTRO_DATA': '/desi/root/spectro/data'}):
             with patch.object(sys, 'argv', ['desi_transfer_daemon', '--debug']):
@@ -83,7 +83,7 @@ desi_spectro_data_20190702.tar.idx
             shutil.copy(TransferDaemon._default_configuration,
                         ini)
             with patch.dict('os.environ',
-                            {'CSCRATCH': self.tmp.name,
+                            {'SCRATCH': self.tmp.name,
                              'DESI_ROOT': '/desi/root',
                              'DESI_SPECTRO_DATA': '/desi/root/spectro/data'}):
                 with patch.object(sys, 'argv', ['desi_transfer_daemon', '--debug', '--configuration', ini]):
@@ -104,7 +104,7 @@ desi_spectro_data_20190702.tar.idx
         """Test logging configuration.
         """
         with patch.dict('os.environ',
-                        {'CSCRATCH': self.tmp.name,
+                        {'SCRATCH': self.tmp.name,
                          'DESI_ROOT': '/desi/root',
                          'DESI_SPECTRO_DATA': '/desi/root/spectro/data'}):
             with patch.object(sys, 'argv', ['desi_transfer_daemon', '--debug']):
@@ -123,7 +123,7 @@ desi_spectro_data_20190702.tar.idx
         """Test loop over all configured directories.
         """
         with patch.dict('os.environ',
-                        {'CSCRATCH': self.tmp.name,
+                        {'SCRATCH': self.tmp.name,
                          'DESI_ROOT': '/desi/root',
                          'DESI_SPECTRO_DATA': '/desi/root/spectro/data'}):
             with patch.object(sys, 'argv', ['desi_transfer_daemon', '--debug']):
@@ -156,7 +156,7 @@ desi_spectro_data_20190702.tar.idx
         """Test checksum locking mechanism.
         """
         with patch.dict('os.environ',
-                        {'CSCRATCH': self.tmp.name,
+                        {'SCRATCH': self.tmp.name,
                          'DESI_ROOT': '/desi/root',
                          'DESI_SPECTRO_DATA': '/desi/root/spectro/data'}):
             with patch.object(sys, 'argv', ['desi_transfer_daemon', '--debug']):
@@ -175,7 +175,7 @@ desi_spectro_data_20190702.tar.idx
         """Test HPSS status mechanism.
         """
         with patch.dict('os.environ',
-                        {'CSCRATCH': self.tmp.name,
+                        {'SCRATCH': self.tmp.name,
                          'DESI_ROOT': '/desi/root',
                          'DESI_SPECTRO_DATA': '/desi/root/spectro/data'}):
             with patch.object(sys, 'argv', ['desi_transfer_daemon', '--debug']):
@@ -227,7 +227,7 @@ desi_spectro_data_20190702.tar.idx
         links2 = "\n"
         links3 = "20190702/00000123.tmp\n20190702/0000012\n"
         with patch.dict('os.environ',
-                        {'CSCRATCH': self.tmp.name,
+                        {'SCRATCH': self.tmp.name,
                          'DESI_ROOT': '/desi/root',
                          'DESI_SPECTRO_DATA': '/desi/root/spectro/data'}):
             with patch.object(sys, 'argv', ['desi_transfer_daemon', '--debug']):
@@ -272,7 +272,7 @@ desi_spectro_data_20190702.tar.idx
         """Test single exposure that already exists.
         """
         with patch.dict('os.environ',
-                        {'CSCRATCH': self.tmp.name,
+                        {'SCRATCH': self.tmp.name,
                          'DESI_ROOT': '/desi/root',
                          'DESI_SPECTRO_DATA': '/desi/root/spectro/data'}):
             with patch.object(sys, 'argv', ['desi_transfer_daemon', '--debug']):
@@ -298,7 +298,7 @@ desi_spectro_data_20190702.tar.idx
         """Test normal transfer of a single exposure.
         """
         with patch.dict('os.environ',
-                        {'CSCRATCH': self.tmp.name,
+                        {'SCRATCH': self.tmp.name,
                          'DESI_ROOT': '/desi/root',
                          'DESI_SPECTRO_DATA': '/desi/root/spectro/data'}):
             with patch.object(sys, 'argv', ['desi_transfer_daemon', '--debug']):
@@ -351,7 +351,7 @@ desi_spectro_data_20190702.tar.idx
         """Test normal transfer of a single exposure in test mode.
         """
         with patch.dict('os.environ',
-                        {'CSCRATCH': self.tmp.name,
+                        {'SCRATCH': self.tmp.name,
                          'DESI_ROOT': '/desi/root',
                          'DESI_SPECTRO_DATA': '/desi/root/spectro/data'}):
             with patch.object(sys, 'argv', ['desi_transfer_daemon', '--debug', '--test']):
@@ -398,7 +398,7 @@ desi_spectro_data_20190702.tar.idx
         """Test transfer of a single exposure with an rsync failure.
         """
         with patch.dict('os.environ',
-                        {'CSCRATCH': self.tmp.name,
+                        {'SCRATCH': self.tmp.name,
                          'DESI_ROOT': '/desi/root',
                          'DESI_SPECTRO_DATA': '/desi/root/spectro/data'}):
             with patch.object(sys, 'argv', ['desi_transfer_daemon', '--debug']):
@@ -447,7 +447,7 @@ desi_spectro_data_20190702.tar.idx
         """Test normal transfer of a single exposure with missing checksum file.
         """
         with patch.dict('os.environ',
-                        {'CSCRATCH': self.tmp.name,
+                        {'SCRATCH': self.tmp.name,
                          'DESI_ROOT': '/desi/root',
                          'DESI_SPECTRO_DATA': '/desi/root/spectro/data'}):
             with patch.object(sys, 'argv', ['desi_transfer_daemon', '--debug']):
@@ -501,7 +501,7 @@ desi_spectro_data_20190702.tar.idx
         """Test normal transfer of a single exposure with bad checksum file.
         """
         with patch.dict('os.environ',
-                        {'CSCRATCH': self.tmp.name,
+                        {'SCRATCH': self.tmp.name,
                          'DESI_ROOT': '/desi/root',
                          'DESI_SPECTRO_DATA': '/desi/root/spectro/data'}):
             with patch.object(sys, 'argv', ['desi_transfer_daemon', '--debug']):
@@ -548,7 +548,7 @@ desi_spectro_data_20190702.tar.idx
         """Test morning catch-up pass with no data for the night.
         """
         with patch.dict('os.environ',
-                        {'CSCRATCH': self.tmp.name,
+                        {'SCRATCH': self.tmp.name,
                          'DESI_ROOT': '/desi/root',
                          'DESI_SPECTRO_DATA': '/desi/root/spectro/data'}):
             with patch.object(sys, 'argv', ['desi_transfer_daemon', '--debug', '--test']):
@@ -571,7 +571,7 @@ desi_spectro_data_20190702.tar.idx
         """Test morning catch-up pass after catch-up completion.
         """
         with patch.dict('os.environ',
-                        {'CSCRATCH': self.tmp.name,
+                        {'SCRATCH': self.tmp.name,
                          'DESI_ROOT': '/desi/root',
                          'DESI_SPECTRO_DATA': '/desi/root/spectro/data'}):
             with patch.object(sys, 'argv', ['desi_transfer_daemon', '--debug', '--test']):
@@ -602,7 +602,7 @@ sent 765 bytes  received 238,769 bytes  159,689.33 bytes/sec
 total size is 118,417,836,324  speedup is 494,367.55
 """
         with patch.dict('os.environ',
-                        {'CSCRATCH': self.tmp.name,
+                        {'SCRATCH': self.tmp.name,
                          'DESI_ROOT': '/desi/root',
                          'DESI_SPECTRO_DATA': '/desi/root/spectro/data'}):
             with patch.object(sys, 'argv', ['desi_transfer_daemon', '--debug']):
@@ -633,7 +633,7 @@ sent 765 bytes  received 238,769 bytes  159,689.33 bytes/sec
 total size is 118,417,836,324  speedup is 494,367.55
 """
         with patch.dict('os.environ',
-                        {'CSCRATCH': self.tmp.name,
+                        {'SCRATCH': self.tmp.name,
                          'DESI_ROOT': '/desi/root',
                          'DESI_SPECTRO_DATA': '/desi/root/spectro/data'}):
             with patch.object(sys, 'argv', ['desi_transfer_daemon', '--debug']):
@@ -666,7 +666,7 @@ sent 765 bytes  received 238,769 bytes  159,689.33 bytes/sec
 total size is 118,417,836,324  speedup is 494,367.55
 """
         with patch.dict('os.environ',
-                        {'CSCRATCH': self.tmp.name,
+                        {'SCRATCH': self.tmp.name,
                          'DESI_ROOT': '/desi/root',
                          'DESI_SPECTRO_DATA': '/desi/root/spectro/data'}):
             with patch.object(sys, 'argv', ['desi_transfer_daemon', '--debug']):
@@ -701,7 +701,7 @@ sent 765 bytes  received 238,769 bytes  159,689.33 bytes/sec
 total size is 118,417,836,324  speedup is 494,367.55
 """
         with patch.dict('os.environ',
-                        {'CSCRATCH': self.tmp.name,
+                        {'SCRATCH': self.tmp.name,
                          'DESI_ROOT': '/desi/root',
                          'DESI_SPECTRO_DATA': '/desi/root/spectro/data'}):
             with patch.object(sys, 'argv', ['desi_transfer_daemon', '--debug']):
@@ -737,7 +737,7 @@ total size is 118,417,836,324  speedup is 494,367.55
         """Test HPSS backup with no data for the night.
         """
         with patch.dict('os.environ',
-                        {'CSCRATCH': self.tmp.name,
+                        {'SCRATCH': self.tmp.name,
                          'DESI_ROOT': '/desi/root',
                          'DESI_SPECTRO_DATA': '/desi/root/spectro/data'}):
             with patch.object(sys, 'argv', ['desi_transfer_daemon', '--debug', '--test']):
@@ -766,7 +766,7 @@ total size is 118,417,836,324  speedup is 494,367.55
         """Test HPSS backup with night already done.
         """
         with patch.dict('os.environ',
-                        {'CSCRATCH': self.tmp.name,
+                        {'SCRATCH': self.tmp.name,
                          'DESI_ROOT': '/desi/root',
                          'DESI_SPECTRO_DATA': '/desi/root/spectro/data'}):
             with patch.object(sys, 'argv', ['desi_transfer_daemon', '--debug', '--test']):
@@ -802,7 +802,7 @@ total size is 118,417,836,324  speedup is 494,367.55
         """Test HPSS backup of night in 'test' mode.
         """
         with patch.dict('os.environ',
-                        {'CSCRATCH': self.tmp.name,
+                        {'SCRATCH': self.tmp.name,
                          'DESI_ROOT': '/desi/root',
                          'DESI_SPECTRO_DATA': '/desi/root/spectro/data'}):
             with patch.object(sys, 'argv', ['desi_transfer_daemon', '--debug', '--test']):
@@ -853,7 +853,7 @@ total size is 118,417,836,324  speedup is 494,367.55
         """Test HPSS backup of night in 'real' mode.
         """
         with patch.dict('os.environ',
-                        {'CSCRATCH': self.tmp.name,
+                        {'SCRATCH': self.tmp.name,
                          'DESI_ROOT': '/desi/root',
                          'DESI_SPECTRO_DATA': '/desi/root/spectro/data'}):
             with patch.object(sys, 'argv', ['desi_transfer_daemon', '--debug']):
@@ -904,7 +904,7 @@ total size is 118,417,836,324  speedup is 494,367.55
         """Test HPSS backup of night with htar failure.
         """
         with patch.dict('os.environ',
-                        {'CSCRATCH': self.tmp.name,
+                        {'SCRATCH': self.tmp.name,
                          'DESI_ROOT': '/desi/root',
                          'DESI_SPECTRO_DATA': '/desi/root/spectro/data'}):
             with patch.object(sys, 'argv', ['desi_transfer_daemon', '--debug']):
@@ -957,7 +957,7 @@ total size is 118,417,836,324  speedup is 494,367.55
         """Test HPSS backup of night with delayed data.
         """
         with patch.dict('os.environ',
-                        {'CSCRATCH': self.tmp.name,
+                        {'SCRATCH': self.tmp.name,
                          'DESI_ROOT': '/desi/root',
                          'DESI_SPECTRO_DATA': '/desi/root/spectro/data'}):
             with patch.object(sys, 'argv', ['desi_transfer_daemon', '--debug']):
@@ -1008,7 +1008,7 @@ total size is 118,417,836,324  speedup is 494,367.55
         """Test disabling HPSS backups.
         """
         with patch.dict('os.environ',
-                        {'CSCRATCH': self.tmp.name,
+                        {'SCRATCH': self.tmp.name,
                          'DESI_ROOT': '/desi/root',
                          'DESI_SPECTRO_DATA': '/desi/root/spectro/data'}):
             with patch.object(sys, 'argv', ['desi_transfer_daemon', '--debug', '--test', '--no-backup']):

@@ -27,7 +27,7 @@ class TestNightwatch(unittest.TestCase):
         pass
 
     def setUp(self):
-        """Create a temporary directory to simulate CSCRATCH.
+        """Create a temporary directory to simulate SCRATCH.
         """
         self.tmp = TemporaryDirectory()
 
@@ -54,7 +54,7 @@ class TestNightwatch(unittest.TestCase):
         """Test logging configuration.
         """
         with patch.dict('os.environ',
-                        {'CSCRATCH': self.tmp.name,
+                        {'SCRATCH': self.tmp.name,
                          'DESI_ROOT': '/desi/root',
                          'DESI_SPECTRO_DATA': '/desi/root/spectro/data'}):
             with patch.object(sys, 'argv', ['desi_nightwatch_transfer', '--debug']):
