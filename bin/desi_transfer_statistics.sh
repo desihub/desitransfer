@@ -49,6 +49,36 @@ if [[ "${year}" == "2021" ]]; then
     echo "Total data during fire recovery = ${total_fire_data} KB."
 fi
 #
+# Statistics during security recovery period. 20230804 - 20230924
+#
+if [[ "${year}" == "2022" ]]; then
+    number_of_fire_nights=0
+    number_of_fire_exposures=0
+    total_fire_data=0
+    declare -a nights
+    for d in $(seq 4 31); do
+        nights+=( ${next_year}08$(printf "%02d" ${d}) )
+    done
+    for d in $(seq 1 24); do
+        nights+=( ${next_year}09$(printf "%02d" ${d}) )
+    done
+    for night in "${nights[@]}"; do
+        if [[ -d ${DESI_SPECTRO_DATA}/${night} ]]; then
+            number_of_fire_nights=$(( number_of_fire_nights + 1 ))
+            for e in ${DESI_SPECTRO_DATA}/${night}/*; do
+                echo ${e}
+                expid=$(basename ${e})
+                expid_size=$(du -k -s ${e} | awk '{print $1}')
+                number_of_fire_exposures=$(( number_of_fire_exposures + 1 ))
+                total_fire_data=$(( total_fire_data + expid_size ))
+            done
+        fi
+    done
+    echo "Number of nights during security recovery = ${number_of_fire_nights}."
+    echo "Number of exposures during security recovery = ${number_of_fire_exposures}."
+    echo "Total data during security recovery = ${total_fire_data} KB."
+fi
+#
 # Nightwatch data.
 #
 NIGHTWATCH=${DESI_ROOT}/spectro/nightwatch/kpno
