@@ -21,6 +21,7 @@ By-hand startup sequence (bash shell)::
     tail -f ${DESI_ROOT}/spectro/nightwatch/desi_nightwatch_transfer.log
 
 """
+import importlib.resources as ir
 import logging
 import os
 import re
@@ -28,7 +29,6 @@ import stat
 import time
 from argparse import ArgumentParser
 from logging.handlers import RotatingFileHandler, SMTPHandler
-from pkg_resources import resource_filename
 from socket import getfqdn
 from desiutil.log import get_logger
 from .common import rsync, today, idle_time
@@ -118,8 +118,8 @@ def main():
     source = '/exposures/nightwatch'
     basedir = os.path.join(os.environ['DESI_ROOT'], 'spectro', 'nightwatch')
     kpnodir = os.path.join(basedir, 'kpno')
-    exclude = resource_filename('desitransfer', 'data/desi_nightwatch_transfer_exclude.txt')
-    include = resource_filename('desitransfer', 'data/desi_nightwatch_transfer_include.txt')
+    exclude = os.path.join(str(ir.files('desitransfer')), 'data', 'desi_nightwatch_transfer_exclude.txt')
+    include = os.path.join(str(ir.files('desitransfer')), 'data', 'desi_nightwatch_transfer_include.txt')
     with open(include) as i:
         top_level_files = i.read().strip().split('\n')
     log.debug(', '.join(top_level_files))

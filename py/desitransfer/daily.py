@@ -6,13 +6,11 @@ desitransfer.daily
 
 Entry point for :command:`desi_daily_transfer`.
 """
+import importlib.resources as ir
 import os
 import stat
 import subprocess as sub
-import sys
-import time
 from argparse import ArgumentParser
-from pkg_resources import resource_filename
 from .common import dir_perm, file_perm, rsync, stamp
 from . import __version__ as dtVersion
 
@@ -110,10 +108,10 @@ def _config():
     """Wrap configuration so that module can be imported without
     environment variables set.
     """
-    nightlog_include = resource_filename('desitransfer',
-                                         'data/desi_nightlog_transfer_kpno.txt')
-    nightwatch_exclude = resource_filename('desitransfer',
-                                           'data/desi_nightwatch_transfer_exclude.txt')
+    nightlog_include = os.path.join(str(ir.files('desitransfer')),
+                                    'data', 'desi_nightlog_transfer_kpno.txt')
+    nightwatch_exclude = os.path.join(str(ir.files('desitransfer')),
+                                      'data', 'desi_nightwatch_transfer_exclude.txt')
     engineering = os.path.realpath(os.path.join(os.environ['DESI_ROOT'],
                                                 'engineering'))
     spectro = os.path.realpath(os.path.join(os.environ['DESI_ROOT'],

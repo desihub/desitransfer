@@ -11,7 +11,6 @@ import os
 import subprocess as sub
 import time
 from argparse import ArgumentParser
-from socket import getfqdn
 from logging.handlers import SMTPHandler
 import requests
 from . import __version__ as dtVersion

@@ -6,14 +6,13 @@ desitransfer.status
 
 Entry point for :command:`desi_transfer_status`.
 """
+import importlib.resources as ir
 import json
 import os
 import shutil
-import sys
 import time
 from datetime import date
 from argparse import ArgumentParser
-from pkg_resources import resource_filename
 from desiutil.log import log, DEBUG
 from . import __version__ as dtVersion
 
@@ -47,8 +46,8 @@ class TransferStatus(object):
             log.debug("os.makedirs('%s', exist_ok=True)", self.directory)
             os.makedirs(self.directory, exist_ok=True)
             for ext in ('html', 'js'):
-                src = resource_filename('desitransfer',
-                                        'data/desi_transfer_status.' + ext)
+                src = os.path.join(str(ir.files('desitransfer')),
+                                   'data', 'desi_transfer_status.' + ext)
                 if ext == 'html':
                     log.debug("shutil.copyfile('%s', '%s')", src,
                               os.path.join(self.directory, 'index.html'))
