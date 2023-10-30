@@ -3,6 +3,7 @@
 """Test desitransfer.daemon.
 """
 import datetime
+import importlib.resources as ir
 import json
 import logging
 import os
@@ -12,7 +13,6 @@ import unittest
 import requests
 from tempfile import TemporaryDirectory
 from unittest.mock import call, patch, MagicMock
-from pkg_resources import resource_filename
 from ..daemon import (_options, TransferDaemon, _popen, log,
                       verify_checksum, lock_directory, unlock_directory,
                       rsync_night)
@@ -1041,7 +1041,7 @@ total size is 118,417,836,324  speedup is 494,367.55
     def test_verify_checksum(self):
         """Test checksum verification.
         """
-        c = resource_filename('desitransfer.test', 't/t.sha256sum')
+        c = os.path.join(str(ir.files('desitransfer.test')), 't', 't.sha256sum')
         d = os.path.dirname(c)
         with patch('os.listdir') as mock_listdir:
             mock_listdir.return_value = ['t.sha256sum', 'test_file_1.txt', 'test_file_2.txt']

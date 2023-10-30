@@ -3,7 +3,6 @@
 """Test desitransfer.common.
 """
 from datetime import datetime, timedelta
-import os
 import unittest
 from unittest.mock import patch
 from tempfile import TemporaryDirectory

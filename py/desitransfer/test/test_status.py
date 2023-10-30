@@ -2,6 +2,7 @@
 # -*- coding: utf-8 -*-
 """Test desitransfer.status.
 """
+import importlib.resources as ir
 import json
 import os
 import shutil
@@ -9,7 +10,6 @@ import sys
 import unittest
 from unittest.mock import patch, call
 from tempfile import TemporaryDirectory
-from pkg_resources import resource_filename
 from ..status import TransferStatus, _options
 
 
@@ -45,10 +45,8 @@ class TestStatus(unittest.TestCase):
     def test_TransferStatus_init(self):
         """Test status reporting mechanism setup.
         """
-        h = resource_filename('desitransfer',
-                              'data/desi_transfer_status.html')
-        j = resource_filename('desitransfer',
-                              'data/desi_transfer_status.js')
+        h = os.path.join(str(ir.files('desitransfer')), 'data', 'desi_transfer_status.html')
+        j = os.path.join(str(ir.files('desitransfer')), 'data', 'desi_transfer_status.html')
         #
         # Existing empty directory.
         #
@@ -93,7 +91,7 @@ class TestStatus(unittest.TestCase):
     def test_TransferStatus_handle_malformed_with_log(self, mock_log):
         """Test handling of malformed JSON files.
         """
-        bad = resource_filename('desitransfer.test', 't/bad.json')
+        bad = os.path.join(str(ir.files('desitransfer.test')), 't', 'bad.json')
         with TemporaryDirectory() as d:
             shutil.copy(bad, os.path.join(d, 'desi_transfer_status_2020.json'))
             s = TransferStatus(d, year=2020)
