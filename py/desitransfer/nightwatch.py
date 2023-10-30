@@ -4,25 +4,22 @@
 desitransfer.nightwatch
 =======================
 
-Sync KPNO nightwatch.  This module will hopefully be integrated into
-the standard transfer daemon.
+Sync KPNO nightwatch. Due to differences in timing and directory structure,
+this is kept separate from the raw data transfer daemon.
 
-Run as desi@dtn01.nersc.gov.
+A cronjob running as desi@dtn01.nersc.gov ensures that this daemon is running.
 
 Catchup on a specific night::
 
     NIGHT=20200124 && rsync -rlvt --exclude-from ${DESITRANSFER}/py/desitransfer/data/desi_nightwatch_transfer_exclude.txt dts:/exposures/nightwatch/${NIGHT}/ /global/cfs/cdirs/desi/spectro/nightwatch/kpno/${NIGHT}/
 
-
-Typical startup sequence (bash shell)::
+By-hand startup sequence (bash shell)::
 
     source /global/common/software/desi/desi_environment.sh datatran
     module load desitransfer
     nohup nice -19 ${DESITRANSFER}/bin/desi_nightwatch_transfer &> /dev/null &
     tail -f ${DESI_ROOT}/spectro/nightwatch/desi_nightwatch_transfer.log
 
-The above sequence is for starting by hand.  A cronjob on dtn01 should ensure
-that the script is running.
 """
 import logging
 import os
