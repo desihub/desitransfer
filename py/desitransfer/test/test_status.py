@@ -46,7 +46,7 @@ class TestStatus(unittest.TestCase):
         """Test status reporting mechanism setup.
         """
         h = os.path.join(str(ir.files('desitransfer')), 'data', 'desi_transfer_status.html')
-        j = os.path.join(str(ir.files('desitransfer')), 'data', 'desi_transfer_status.html')
+        j = os.path.join(str(ir.files('desitransfer')), 'data', 'desi_transfer_status.js')
         #
         # Existing empty directory.
         #
