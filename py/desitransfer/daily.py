@@ -199,8 +199,9 @@ def main():
         if s != 0:
             print(f"ERROR: rsync problem detected for {d.source} -> {d.destination}!")
             status |= s
-    if options.debug:
-        print(f"DEBUG: daily {options.timeframe} transfer complete at {stamp()}. Writing {options.completion}.")
-    with open(options.completion, 'w') as c:
-        c.write(stamp() + "\n")
+    if options.timeframe == 'noon':
+        if options.debug:
+            print(f"DEBUG: daily {options.timeframe} transfer complete at {stamp()}. Writing {options.completion}.")
+        with open(options.completion, 'w') as c:
+            c.write(stamp() + "\n")
     return status
