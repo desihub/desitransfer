@@ -33,12 +33,23 @@ class TestDaily(unittest.TestCase):
         """
         with patch.dict('os.environ',
                         {'DESI_ROOT': '/desi/root'}):
-            c = _config()
+            c = _config('noon')
             self.assertEqual(c[0].source, '/data/dts/exposures/lost+found')
             self.assertEqual(c[0].destination, os.path.join(os.environ['DESI_ROOT'],
                                                             'spectro', 'staging', 'lost+found'))
             self.assertTrue(c[0].dirlinks)
             self.assertFalse(c[1].dirlinks)
+
+    def test_config_morning(self):
+        """Test transfer directory configuration at a different time.
+        """
+        with patch.dict('os.environ',
+                        {'DESI_ROOT': '/desi/root'}):
+            c = _config('morning')
+            self.assertEqual(c[0].source, '/software/www2/html/nightlogs')
+            self.assertEqual(c[0].destination, os.path.join(os.environ['DESI_ROOT'],
+                                                            'survey', 'ops', 'nightlogs'))
+            self.assertFalse(c[0].dirlinks)
 
     def test_options(self):
         """Test command-line arguments.
@@ -47,7 +58,8 @@ class TestDaily(unittest.TestCase):
                         {'DESI_ROOT': '/desi/root'}):
             with patch.object(sys, 'argv',
                               ['desi_daily_transfer', '--debug', '--kill',
-                               os.path.expanduser('~/stop_daily_transfer')]):
+                               os.path.expanduser('~/stop_daily_transfer'),
+                               'noon']):
                 options = _options()
                 self.assertTrue(options.permission)
                 self.assertEqual(options.completion,

@@ -104,36 +104,48 @@ class DailyDirectory(object):
         return status
 
 
-def _config():
+def _config(timeframe):
     """Wrap configuration so that module can be imported without
     environment variables set.
+
+    Parameters
+    ----------
+    timeframe : :class:`str`
+        Return the set of directories associated with `timeframe`.
+
+    Returns
+    -------
+    :class:`list`
+        A list of directories to transfer.
     """
     nightlog_include = os.path.join(str(ir.files('desitransfer')),
                                     'data', 'desi_nightlog_transfer_kpno.txt')
-    nightwatch_exclude = os.path.join(str(ir.files('desitransfer')),
-                                      'data', 'desi_nightwatch_transfer_exclude.txt')
+    # nightwatch_exclude = os.path.join(str(ir.files('desitransfer')),
+    #                                   'data', 'desi_nightwatch_transfer_exclude.txt')
     engineering = os.path.realpath(os.path.join(os.environ['DESI_ROOT'],
                                                 'engineering'))
     spectro = os.path.realpath(os.path.join(os.environ['DESI_ROOT'],
                                             'spectro'))
     survey = os.path.realpath(os.path.join(os.environ['DESI_ROOT'], 'survey'))
-    return [DailyDirectory('/data/dts/exposures/lost+found',
-                           os.path.join(spectro, 'staging', 'lost+found'),
-                           dirlinks=True),
-            DailyDirectory('/software/www2/html/nightlogs',
-                           os.path.join(survey, 'ops', 'nightlogs'),
-                           extra=['--include-from', nightlog_include, '--exclude', '*']),
-            DailyDirectory('/data/focalplane/calibration',
-                           os.path.join(engineering, 'focalplane', 'calibration')),
-            DailyDirectory('/data/focalplane/logs/calib_logs',
-                           os.path.join(engineering, 'focalplane', 'logs', 'calib_logs')),
-            DailyDirectory('/data/focalplane/logs/kpno',
-                           os.path.join(engineering, 'focalplane', 'logs', 'kpno')),
-            DailyDirectory('/data/focalplane/logs/sequence_logs',
-                           os.path.join(engineering, 'focalplane', 'logs', 'sequence_logs')),
-            DailyDirectory('/data/focalplane/fp_temp_files',
-                           os.path.join(engineering, 'focalplane', 'hwtables'),
-                           extra=['--include', '*.csv', '--exclude', '*'])]
+    if timeframe == 'morning':
+        return [DailyDirectory('/software/www2/html/nightlogs',
+                               os.path.join(survey, 'ops', 'nightlogs'),
+                               extra=['--include-from', nightlog_include, '--exclude', '*']),]
+    else:
+        return [DailyDirectory('/data/dts/exposures/lost+found',
+                               os.path.join(spectro, 'staging', 'lost+found'),
+                               dirlinks=True),
+                DailyDirectory('/data/focalplane/calibration',
+                               os.path.join(engineering, 'focalplane', 'calibration')),
+                DailyDirectory('/data/focalplane/logs/calib_logs',
+                               os.path.join(engineering, 'focalplane', 'logs', 'calib_logs')),
+                DailyDirectory('/data/focalplane/logs/kpno',
+                               os.path.join(engineering, 'focalplane', 'logs', 'kpno')),
+                DailyDirectory('/data/focalplane/logs/sequence_logs',
+                               os.path.join(engineering, 'focalplane', 'logs', 'sequence_logs')),
+                DailyDirectory('/data/focalplane/fp_temp_files',
+                               os.path.join(engineering, 'focalplane', 'hwtables'),
+                               extra=['--include', '*.csv', '--exclude', '*'])]
 
 
 def _options():
@@ -146,28 +158,20 @@ def _options():
     """
     desc = "Transfer non-critical DESI data from KPNO to NERSC."
     prsr = ArgumentParser(description=desc)
-    # prsr.add_argument('-b', '--backup', metavar='H', type=int, default=20,
-    #                   help='UTC time in hours to trigger HPSS backups (default %(default)s:00 UTC).')
     prsr.add_argument('-c', '--completion', metavar='FILE',
                       default=os.path.join(os.environ['DESI_ROOT'], 'spectro', 'staging', 'status', 'daily.txt'),
                       help='Signal completion of transfer via FILE (default %(default)s).')
     prsr.add_argument('-d', '--debug', action='store_true',
                       help='Set log level to DEBUG.')
-    # prsr.add_argument('-D', '--daemon', action='store_true',
-    #                   help='Run in daemon mode.  If not specificed, the script will run once and exit.')
-    # prsr.add_argument('-e', '--rsh', metavar='COMMAND', dest='ssh', default='/bin/ssh',
-    #                   help="Use COMMAND for remote shell access (default '%(default)s').")
     prsr.add_argument('-k', '--kill', metavar='FILE',
                       default=os.path.join(os.environ['HOME'], 'stop_desi_transfer'),
                       help="Exit the script when FILE is detected (default %(default)s).")
     prsr.add_argument('-P', '--no-permission', action='store_false', dest='permission',
                       help='Do not set permissions for DESI collaboration access.')
-    # prsr.add_argument('-s', '--sleep', metavar='H', type=int, default=24,
-    #                   help='In daemon mode, sleep H hours before checking for new data (default %(default)s hours).')
-    # prsr.add_argument('-S', '--shadow', action='store_true',
-    #                   help='Observe the actions of another data transfer script but do not make any changes.')
     prsr.add_argument('-V', '--version', action='version',
                       version='%(prog)s {0}'.format(dtVersion))
+    prsr.add_argument('timeframe', choices=['morning', 'noon'],
+                      help="Run transfer tasks associated with a specific time.")
     return prsr.parse_args()
 
 
@@ -179,28 +183,24 @@ def main():
     :class:`int`
         An integer suitable for passing to :func:`sys.exit`.
     """
+    status = 0
     options = _options()
     if options.debug:
-        print("DEBUG: os.remove('%s')" % options.completion)
+        print(f"DEBUG: os.remove('{options.completion}')")
     try:
         os.remove(options.completion)
     except FileNotFoundError:
         pass
-    while True:
-        if os.path.exists(options.kill):
-            print("INFO: %s detected, shutting down daily transfer script." % options.kill)
-            return 0
-        for d in _config():
-            status = d.transfer(permission=options.permission)
-            if status != 0:
-                print("ERROR: rsync problem detected for {0.source} -> {0.destination}!".format(d))
-                # return status
-        # if options.daemon:
-        #     time.sleep(options.sleep*60*60)
-        # else:
-        #     return 0
-        if options.debug:
-            print("DEBUG: daily transfer complete at %s. Writing %s." % (stamp(), options.completion))
-        with open(options.completion, 'w') as c:
-            c.write(stamp() + "\n")
+    if os.path.exists(options.kill):
+        print(f"INFO: {options.kill} detected, shutting down daily {options.timeframe} transfer script.")
         return 0
+    for d in _config(options.timeframe):
+        s = d.transfer(permission=options.permission)
+        if s != 0:
+            print(f"ERROR: rsync problem detected for {d.source} -> {d.destination}!")
+            status |= s
+    if options.debug:
+        print(f"DEBUG: daily {options.timeframe} transfer complete at {stamp()}. Writing {options.completion}.")
+    with open(options.completion, 'w') as c:
+        c.write(stamp() + "\n")
+    return status
