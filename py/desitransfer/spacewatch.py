@@ -102,13 +102,15 @@ def download_jpg(files, destination, overwrite=False, test=False):
             log.debug("Skipping existing file: %s.", dst_jpg)
             pass
         else:
-            r = requests.get(jpg)
-            if r.status_code == 200:
-                downloaded += 1
-                timestamp = int(datetime.datetime.strptime(r.headers['Last-Modified'], '%a, %d %b %Y %H:%M:%S %Z').replace(tzinfo=utc).timestamp())
-                with open(dst_jpg, 'wb') as j:
-                    j.write(r.content)
-                os.utime(dst_jpg, (timestamp, timestamp))
+            log.debug("r = requests.get('%s')", jpg)
+            if not test:
+                r = requests.get(jpg)
+                if r.status_code == 200:
+                    downloaded += 1
+                    timestamp = int(datetime.datetime.strptime(r.headers['Last-Modified'], '%a, %d %b %Y %H:%M:%S %Z').replace(tzinfo=utc).timestamp())
+                    with open(dst_jpg, 'wb') as j:
+                        j.write(r.content)
+                    os.utime(dst_jpg, (timestamp, timestamp))
     return downloaded
 
 
