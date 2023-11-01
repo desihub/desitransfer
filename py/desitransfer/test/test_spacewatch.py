@@ -148,21 +148,35 @@ class TestSpacewatch(unittest.TestCase):
                                          'http://foo.bar/20231031_000405.jpg',
                                          'http://foo.bar/20231031_000605.jpg'])
 
-    # @patch('desitransfer.nightwatch.SMTPHandler')
-    # @patch('desitransfer.nightwatch.RotatingFileHandler')
-    # @patch('desitransfer.nightwatch.get_logger')
-    # @patch('desitransfer.nightwatch.log')  # Needed to restore the module-level log object after test.
-    # def test_configure_log(self, mock_log, gl, rfh, smtp):
-    #     """Test logging configuration.
-    #     """
-    #     with patch.dict('os.environ',
-    #                     {'SCRATCH': self.tmp.name,
-    #                      'DESI_ROOT': '/desi/root',
-    #                      'DESI_SPECTRO_DATA': '/desi/root/spectro/data'}):
-    #         with patch.object(sys, 'argv', ['desi_nightwatch_transfer', '--debug']):
-    #             options = _options()
-    #         _configure_log(options)
-    #     rfh.assert_called_once_with('/desi/root/spectro/nightwatch/desi_nightwatch_transfer.log',
-    #                                 backupCount=100, maxBytes=100000000)
-    #     gl.assert_called_once_with(timestamp=True)
-    #     gl().setLevel.assert_called_once_with(logging.DEBUG)
+    @patch('desitransfer.spacewatch.log')
+    @patch('os.utime')
+    @patch('desitransfer.spacewatch.requests')
+    @patch('os.path.exists')
+    def test_download_jpg(self, mock_exists, mock_requests, mock_utime, mock_log):
+        """Test downloads of JPEG files.
+        """
+        mock_exists.side_effect = [True, False, False, False]
+        mock_contents = Mock()
+        mock_contents.headers = {'Last-Modified': 'Mon, 30 Oct 2023 00:00:24 GMT'}
+        mock_contents.status_code = 200
+        mock_contents.content = b"""123456789"""
+        mock_requests.get.return_value = mock_contents
+        files = ['http://foo.bar/20231031_000005.jpg',
+                 'http://foo.bar/20231031_000205.jpg',
+                 'http://foo.bar/20231031_000405.jpg',
+                 'http://foo.bar/20231031_000605.jpg']
+        destination = self.tmp.name
+        n = download_jpg(files, destination)
+        self.assertEqual(n, 3)
+        mock_exists.assert_has_calls([call(os.path.join(destination, '20231031_000005.jpg')),
+                                      call(os.path.join(destination, '20231031_000205.jpg')),
+                                      call(os.path.join(destination, '20231031_000405.jpg')),
+                                      call(os.path.join(destination, '20231031_000605.jpg'))])
+        mock_requests.get.assert_has_calls([call('http://foo.bar/20231031_000205.jpg'),
+                                            call('http://foo.bar/20231031_000405.jpg'),
+                                            call('http://foo.bar/20231031_000605.jpg')])
+        mock_utime.assert_has_calls([call(os.path.join(destination, '20231031_000205.jpg'), (1698624024, 1698624024)),
+                                     call(os.path.join(destination, '20231031_000405.jpg'), (1698624024, 1698624024)),
+                                     call(os.path.join(destination, '20231031_000605.jpg'), (1698624024, 1698624024))])
+        mock_log.debug.assert_has_calls([call("Skipping existing file: %s.",
+                                              os.path.join(destination, '20231031_000005.jpg'))])
