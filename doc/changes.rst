@@ -5,13 +5,14 @@ Change Log
 1.0.0 (unreleased)
 ------------------
 
-* *Planned*: refactor package to deprecate ``setup.py``.
-* *Planned*: remove deprecated code such as ``nightlog.py``.
+* Refactor package to deprecate ``setup.py`` (PR `#58`_).
+* Remove deprecated code such as ``nightlog.py`` (PR `#58`_).
+* Add Spacewatch image download (PR `#58`_).
+* Download nightlog data earlier in the day (PR `#58`_).
+* Update engineering data transferred to Tucson (PR `#58`_).
+* Better logging of and resilience to nightwatch transfer errors (PR `#58`_).
 
-0.9.3 (unreleased)
-------------------
-
-* No changes yet.
+.. _`#58`: https://github.com/desihub/desitransfer/pull/58
 
 0.9.2 (2023-05-31)
 ------------------
