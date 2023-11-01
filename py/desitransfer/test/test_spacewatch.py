@@ -155,7 +155,8 @@ class TestSpacewatch(unittest.TestCase):
     def test_download_jpg(self, mock_exists, mock_requests, mock_utime, mock_log):
         """Test downloads of JPEG files.
         """
-        mock_exists.side_effect = [True, False, False, False]
+        mock_exists.side_effect = lambda x: x == os.path.join(destination, 'baz', '20231031_000005.jpg')
+        # mock_exists.return_value = False
         mock_contents = Mock()
         mock_contents.headers = {'Last-Modified': 'Mon, 30 Oct 2023 00:00:24 GMT'}
         mock_contents.status_code = 200
@@ -166,17 +167,21 @@ class TestSpacewatch(unittest.TestCase):
                  'http://foo.bar/20231031_000405.jpg',
                  'http://foo.bar/20231031_000605.jpg']
         destination = self.tmp.name
-        n = download_jpg(files, destination)
+        n = download_jpg(files, destination + '/baz')
         self.assertEqual(n, 3)
-        mock_exists.assert_has_calls([call(os.path.join(destination, '20231031_000005.jpg')),
-                                      call(os.path.join(destination, '20231031_000205.jpg')),
-                                      call(os.path.join(destination, '20231031_000405.jpg')),
-                                      call(os.path.join(destination, '20231031_000605.jpg'))])
+        mock_exists.assert_has_calls([call(os.path.join(destination, 'baz', '20231031_000005.jpg')),
+                                      call(os.path.join(destination, 'baz', '20231031_000205.jpg')),
+                                      call(os.path.join(destination, 'baz', '20231031_000405.jpg')),
+                                      call(os.path.join(destination, 'baz', '20231031_000605.jpg'))])
         mock_requests.get.assert_has_calls([call('http://foo.bar/20231031_000205.jpg'),
                                             call('http://foo.bar/20231031_000405.jpg'),
                                             call('http://foo.bar/20231031_000605.jpg')])
-        mock_utime.assert_has_calls([call(os.path.join(destination, '20231031_000205.jpg'), (1698624024, 1698624024)),
-                                     call(os.path.join(destination, '20231031_000405.jpg'), (1698624024, 1698624024)),
-                                     call(os.path.join(destination, '20231031_000605.jpg'), (1698624024, 1698624024))])
-        mock_log.debug.assert_has_calls([call("Skipping existing file: %s.",
-                                              os.path.join(destination, '20231031_000005.jpg'))])
+        mock_utime.assert_has_calls([call(os.path.join(destination, 'baz', '20231031_000205.jpg'), (1698624024, 1698624024)),
+                                     call(os.path.join(destination, 'baz', '20231031_000405.jpg'), (1698624024, 1698624024)),
+                                     call(os.path.join(destination, 'baz', '20231031_000605.jpg'), (1698624024, 1698624024))])
+        mock_log.debug.assert_has_calls([call("os.makedirs('%s')", os.path.join(destination, 'baz')),
+                                         call("Skipping existing file: %s.",
+                                              os.path.join(destination, 'baz', '20231031_000005.jpg')),
+                                         call("r = requests.get('%s')", 'http://foo.bar/20231031_000205.jpg'),
+                                         call("r = requests.get('%s')", 'http://foo.bar/20231031_000405.jpg'),
+                                         call("r = requests.get('%s')", 'http://foo.bar/20231031_000605.jpg')])

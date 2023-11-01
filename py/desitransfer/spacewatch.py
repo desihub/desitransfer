@@ -94,6 +94,9 @@ def download_jpg(files, destination, overwrite=False, test=False):
         The number of files downloaded.
     """
     downloaded = 0
+    if not test and not os.path.isdir(destination):
+        log.debug("os.makedirs('%s')", destination)
+        os.makedirs(destination)
     for jpg in files:
         base_jpg = jpg.split('/')[-1]
         dst_jpg = os.path.join(destination, base_jpg)
