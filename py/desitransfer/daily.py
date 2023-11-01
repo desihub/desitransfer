@@ -185,12 +185,13 @@ def main():
     """
     status = 0
     options = _options()
-    if options.debug:
-        print(f"DEBUG: os.remove('{options.completion}')")
-    try:
-        os.remove(options.completion)
-    except FileNotFoundError:
-        pass
+    if options.timeframe == 'noon':
+        if options.debug:
+            print(f"DEBUG: os.remove('{options.completion}')")
+        try:
+            os.remove(options.completion)
+        except FileNotFoundError:
+            pass
     if os.path.exists(options.kill):
         print(f"INFO: {options.kill} detected, shutting down daily {options.timeframe} transfer script.")
         return 0
