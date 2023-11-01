@@ -161,11 +161,11 @@ def main():
     ystrdy = f"{y[0:4]}/{y[4:6]}/{y[6:8]}"
     spacewatch_today = spacewatch_root + today + '/'
     spacewatch_yesterday = spacewatch_root + ystrdy + '/'
-    n_files = download_jpg(jpg_list(spacewatch_today), options.destination,
+    n_files = download_jpg(jpg_list(spacewatch_today), options.destination + today,
                            overwrite=options.overwrite, test=options.test)
     log.info("%d files downloaded for %s.", n_files, today)
     if options.date is None:
-        n_files = download_jpg(jpg_list(spacewatch_yesterday), options.destination,
+        n_files = download_jpg(jpg_list(spacewatch_yesterday), options.destination + ystrdy,
                                overwrite=options.overwrite, test=options.test)
         log.info("%d files downloaded for %s.", n_files, ystrdy)
     return 0
