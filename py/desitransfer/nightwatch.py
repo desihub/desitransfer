@@ -52,8 +52,8 @@ def _options():
     prsr = ArgumentParser(description=desc)
     prsr.add_argument('-d', '--debug', action='store_true',
                       help='Set log level to DEBUG.')
-    prsr.add_argument('-e', '--exit-after-errors', dest='maxerrors', metavar='N', type=int, default=10,
-                      help='Exit after N serious transfer errors (default %(default)s).')
+    prsr.add_argument('-e', '--alert-after-errors', dest='maxerrors', metavar='N', type=int, default=10,
+                      help='Send an alert after N serious transfer errors (default %(default)s).')
     prsr.add_argument('-k', '--kill', metavar='FILE',
                       default=os.path.join(os.environ['HOME'], 'stop_desi_transfer'),
                       help="Exit the script when FILE is detected (default %(default)s).")
@@ -175,11 +175,14 @@ def main():
         log.debug(' '.join(cmd))
         status, out, err = _popen(cmd)
         if status != '0':
-            errcount += 1
-            log.error('Error detected while syncing %s.', night)
-            log.error("STATUS = %s", status)
-            log.error("STDOUT = \n%s", out)
-            log.error("STDERR = \n%s", err)
+            if 'file has vanished' in err:
+                log.warning("File vanished while syncing %s; not serious.")
+            else:
+                errcount += 1
+                log.error('Unknown error detected while syncing %s.', night)
+                log.error("STATUS = %s", status)
+                log.error("STDOUT = \n%s", out)
+                log.error("STDERR = \n%s", err)
         #
         # Correct the permissions.
         #
@@ -190,7 +193,8 @@ def main():
                 log.debug(' '.join(cmd))
                 status, out, err = _popen(cmd)
                 if status != '0':
-                    log.error('Fixing permissions for %s.', nightdir)
+                    errcount += 1
+                    log.error('Errror detected while fixing permissions for %s.', nightdir)
                     log.error("STATUS = %s", status)
                     log.error("STDOUT = \n%s", out)
                     log.error("STDERR = \n%s", err)
@@ -226,7 +230,11 @@ def main():
         # Check for accumulated errors. Don't exit, but do send an alert email.
         #
         if errcount > options.maxerrors:
-            log.critical('More than %d serious transfer errors detected, check the logs!')
+            log.critical('More than %d serious transfer errors detected, check the logs!', errcount)
+            #
+            # Reset the count so we don't get email every minute.
+            #
+            errcount = 0
         #
         # If all that took less than options.sleep minutes, sleep a bit.
         #
