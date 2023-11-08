@@ -343,7 +343,7 @@ The DESI Collaboration Account
                     log.debug("status.update('%s', '%s', 'checksum', failure=True)", night, exposure)
                     status.update(night, exposure, 'checksum', failure=True)
             else:
-                log.warning("No checksum file for %s/%s!", night, exposure)
+                log.critical("No checksum file for %s/%s!", night, exposure)
                 log.debug("status.update('%s', '%s', 'checksum', failure=True)", night, exposure)
                 status.update(night, exposure, 'checksum', failure=True)
 
