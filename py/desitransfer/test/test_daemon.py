@@ -481,7 +481,7 @@ desi_spectro_data_20190702.tar.idx
         mock_lock.assert_called_once_with('/desi/root/spectro/staging/raw/20190703/00000127', False)
         mock_exists.assert_has_calls([call('/desi/root/spectro/staging/raw/20190703/00000127/checksum-00000127.sha256sum')])
         # mock_cksum.assert_called_once_with('/desi/root/spectro/staging/raw/20190703/00000127/checksum-00000127.sha256sum')
-        mock_log.warning.assert_called_once_with("No checksum file for %s/%s!", '20190703', '00000127')
+        mock_log.critical.assert_called_once_with("No checksum file for %s/%s!", '20190703', '00000127')
         mock_status.update.assert_has_calls([call('20190703', '00000127', 'rsync'),
                                              call('20190703', '00000127', 'checksum', failure=True)])
         mock_mv.assert_called_once_with('/desi/root/spectro/staging/raw/20190703/00000127', '/desi/root/spectro/data/20190703')
@@ -713,8 +713,8 @@ total size is 118,417,836,324  speedup is 494,367.55
         mock_popen.return_value = ('0', r1, '')
         transfer.catchup(c[0], '20190703', mock_status)
         mock_rsync.assert_called_once_with('/data/dts/exposures/raw', '/desi/root/spectro/data', '20190703', False)
-        mock_log.warning.assert_has_calls([call('New files detected in %s!', '20190703'),
-                                           call("No checksum file for %s/%s!", '20190703', '00001234'),
+        mock_log.warning.assert_called_once_with('New files detected in %s!', '20190703')
+        mock_log.critical.assert_has_calls([call("No checksum file for %s/%s!", '20190703', '00001234'),
                                            call("No checksum file for %s/%s!", '20190703', '00001235')], any_order=True)
         mock_log.debug.assert_has_calls([call("verify_checksum('%s')", '/desi/root/spectro/data/20190703/00001234/checksum-00001234.sha256sum'),
                                          call("status.update('%s', '%s', 'checksum', failure=True)", '20190703', '00001234'),
