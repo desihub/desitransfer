@@ -134,7 +134,7 @@ def _options():
     prsr.add_argument('-o', '--overwrite', action='store_true',
                       help='Overwrite any existing files.')
     prsr.add_argument('-s', '--server', metavar='SERVER',
-                      default=os.environ['SPACEWATCH_SERVER'],
+                      default=os.getenv('SPACEWATCH_SERVER', 'SPACEWATCH_SERVER'),
                       help='Set the Spacwatch server name to SERVER (default "%(default)s").')
     prsr.add_argument('-t', '--test', action='store_true',
                       help='Do not actually download any files; implies --debug.')
@@ -158,7 +158,7 @@ def main():
         log = get_logger(DEBUG)
     else:
         log = get_logger()
-    if options.server is None:
+    if options.server == 'SPACEWATCH_SERVER':
         log.critical("Spacewatch server name is not set!")
         return 1
     spacewatch_root = f'https://{options.server}/allsky-all/images/cropped/'

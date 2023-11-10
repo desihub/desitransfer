@@ -37,8 +37,18 @@ class TestSpacewatch(unittest.TestCase):
         """Test command-line arguments.
         """
         with patch.object(sys, 'argv', ['desi_spacewatch_transfer', '--debug', '/desi/external/spacewatch']):
+            with patch.dict('os.environ', {'SPACEWATCH_SERVER': 'www.example.com'}):
+                options = _options()
+        self.assertTrue(options.debug)
+        self.assertEqual(options.server, 'www.example.com')
+
+    def test_options_bad_env(self):
+        """Test command-line arguments with missing env variable.
+        """
+        with patch.object(sys, 'argv', ['desi_spacewatch_transfer', '--debug', '/desi/external/spacewatch']):
             options = _options()
-            self.assertTrue(options.debug)
+        self.assertTrue(options.debug)
+        self.assertEqual(options.server, 'SPACEWATCH_SERVER')
 
     @patch('desitransfer.spacewatch.requests')
     def test_jpg_files(self, mock_requests):
