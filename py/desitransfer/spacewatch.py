@@ -133,6 +133,9 @@ def _options():
                       help='Download files for a specific date instead of today.')
     prsr.add_argument('-o', '--overwrite', action='store_true',
                       help='Overwrite any existing files.')
+    prsr.add_argument('-s', '--server', metavar='SERVER',
+                      default=os.environ['SPACEWATCH_SERVER'],
+                      help='Set the Spacwatch server name to SERVER (default "%(default)s").')
     prsr.add_argument('-t', '--test', action='store_true',
                       help='Do not actually download any files; implies --debug.')
     prsr.add_argument('-V', '--version', action='version',
@@ -155,7 +158,10 @@ def main():
         log = get_logger(DEBUG)
     else:
         log = get_logger()
-    spacewatch_root = 'https://varuna.kpno.noirlab.edu/allsky-all/images/cropped/'
+    if options.server is None:
+        log.critical("Spacewatch server name is not set!")
+        return 1
+    spacewatch_root = f'https://{options.server}/allsky-all/images/cropped/'
     if options.date is not None:
         today = options.date
     else:
