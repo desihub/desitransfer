@@ -161,7 +161,7 @@ def main():
     if options.server == 'SPACEWATCH_SERVER':
         log.critical("Spacewatch server name is not set!")
         return 1
-    spacewatch_root = f'https://{options.server}/allsky-all/images/cropped/'
+    spacewatch_root = f'http://{options.server}/allsky-all/images/cropped/'
     if options.date is not None:
         today = options.date
     else:
