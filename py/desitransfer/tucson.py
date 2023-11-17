@@ -58,7 +58,8 @@ dynamic = ['spectro/data',
            'software/CiscoSecureClient']
 
 
-includes = {'engineering/focalplane': ["--exclude", "archive", "--exclude", ".ipynb_checkpoints", "--exclude", "*.ipynb"],
+includes = {'engineering/focalplane': ["--exclude", "archive", "--exclude", "hwtables", "--exclude", ".ipynb_checkpoints", "--exclude", "*.ipynb"],
+            'engineering/focalplane/hwtables': ["--include", "*.csv", "--exclude", "*"],
             'spectro/desi_spectro_calib': ["--exclude", ".svn"],
             'spectro/data': (' '.join([f'--exclude {y:d}*' for y in range(2018, time.localtime().tm_year)])).split(),
             'spectro/redux/daily': ["--exclude", "*.tmp", "--exclude", "attic", "--exclude", "exposures", "--exclude", "preproc", "--exclude", "temp", "--exclude", "tiles"],
