@@ -32,7 +32,7 @@ for d in engineering/focalplane engineering/focalplane/hwtables \
     log=${log_root}/catchup_$(tr '/' '_' <<<${d}).log
     [[ -f ${log} ]] || touch ${log}
     echo "${priority} ${syn} ${exclude} ${src}/${d}/ ${dst}/${d}/ &>> ${log} &"
-    # ${priority} ${syn} ${exclude} ${src}/${d}/ ${dst}/${d}/ &>> ${log} &
+    ${priority} ${syn} ${exclude} ${src}/${d}/ ${dst}/${d}/ &>> ${log} &
 done
 
 # log=${log_root}/catchup_engineering_focalplane.log
