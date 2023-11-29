@@ -67,11 +67,18 @@ def jpg_list(index):
         A list of JPEG files found in `index`. The `index` URL is attached
         to the file names.
     """
-    r = requests.get(index)
-    parser = SpacewatchHTMLParser()
+    try:
+        r = requests.get(index)
+    except (requests.RequestException, requests.ConnectionError, requests.HTTPError) as e:
+        log.critical(e.args[0])
+        return []
     if r.status_code == 200:
+        parser = SpacewatchHTMLParser()
         parser.feed(r.content.decode(r.headers['Content-Type'].split('=')[1]))
-    return [index + j for j in parser.jpg_files]
+        return [index + j for j in parser.jpg_files]
+    else:
+        log.critical("Unexpected status when listing JPEG files: %d!", r.status_code)
+        return []
 
 
 def download_jpg(files, destination, overwrite=False, test=False):
@@ -172,9 +179,9 @@ def main():
     spacewatch_yesterday = spacewatch_root + ystrdy + '/'
     n_files = download_jpg(jpg_list(spacewatch_today), os.path.join(options.destination, today),
                            overwrite=options.overwrite, test=options.test)
-    log.info("%d files downloaded for %s.", n_files, today)
+    log.debug("%d files downloaded for %s.", n_files, today)
     if options.date is None:
         n_files = download_jpg(jpg_list(spacewatch_yesterday), os.path.join(options.destination, ystrdy),
                                overwrite=options.overwrite, test=options.test)
-        log.info("%d files downloaded for %s.", n_files, ystrdy)
+        log.debug("%d files downloaded for %s.", n_files, ystrdy)
     return 0

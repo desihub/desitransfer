@@ -159,6 +159,38 @@ class TestSpacewatch(unittest.TestCase):
                                          'http://foo.bar/20231031_000605.jpg'])
 
     @patch('desitransfer.spacewatch.log')
+    @patch('desitransfer.spacewatch.requests')
+    def test_jpg_files_bad_status(self, mock_requests, mock_log):
+        """Test bad HTTP status on jpg file list.
+        """
+        mock_contents = Mock()
+        mock_contents.headers = {'Content-Type': 'text/html;charset=ISO-8859-1'}
+        mock_contents.status_code = 404
+        mock_contents.content = b''
+        mock_requests.get.return_value = mock_contents
+        jpg_files = jpg_list('http://foo.bar/')
+        self.assertListEqual(jpg_files, [])
+        mock_log.critical.assert_called_once_with("Unexpected status when listing JPEG files: %d!", 404)
+
+    @patch('desitransfer.spacewatch.log')
+    @patch('desitransfer.spacewatch.requests')
+    def test_jpg_files_request_exception(self, mock_requests, mock_log):
+        """Test requests exceptions for jpg list.
+        """
+        # mock_contents = Mock()
+        # mock_contents.headers = {'Content-Type': 'text/html;charset=ISO-8859-1'}
+        # mock_contents.status_code = 404
+        # mock_contents.content = b''
+        mock_requests.RequestException = Exception
+        mock_requests.ConnectionError = Exception
+        mock_requests.HTTPError = Exception
+        msg = "Exception thrown when attempting to access file list!"
+        mock_requests.get.side_effect = mock_requests.ConnectionError(msg)
+        jpg_files = jpg_list('http://foo.bar/')
+        self.assertListEqual(jpg_files, [])
+        mock_log.critical.assert_called_once_with(msg)
+
+    @patch('desitransfer.spacewatch.log')
     @patch('os.utime')
     @patch('desitransfer.spacewatch.requests')
     @patch('os.path.exists')
