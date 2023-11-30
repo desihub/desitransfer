@@ -2,7 +2,7 @@
 Change Log
 ==========
 
-1.0.0 (unreleased)
+1.0.0 (2023-11-30)
 ------------------
 
 * Refactor package to deprecate ``setup.py`` (PR `#58`_).
