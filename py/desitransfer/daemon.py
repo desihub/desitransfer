@@ -8,6 +8,7 @@ Entry point for :command:`desi_transfer_daemon`.
 """
 import datetime as dt
 import hashlib
+import importlib.resources as ir
 import json
 import logging
 import os
@@ -15,7 +16,6 @@ import re
 import shutil
 import stat
 import subprocess as sub
-import sys
 import time
 import traceback
 import requests
@@ -25,7 +25,6 @@ from configparser import ConfigParser, ExtendedInterpolation
 from logging.handlers import RotatingFileHandler, SMTPHandler
 from socket import getfqdn
 from tempfile import TemporaryFile
-from pkg_resources import resource_filename
 from desiutil.log import get_logger
 from .common import dir_perm, file_perm, rsync, yesterday, empty_rsync, new_exposures, ensure_scratch
 from .status import TransferStatus
@@ -70,7 +69,7 @@ class TransferDaemon(object):
     """
     _link_re = re.compile(r'[0-9]{8}/[0-9]{8}$')
     _directory = namedtuple('_directory', 'source, staging, destination, hpss, checksum')
-    _default_configuration = resource_filename('desitransfer', 'data/desi_transfer_daemon.ini')
+    _default_configuration = os.path.join(str(ir.files('desitransfer')), 'data', 'desi_transfer_daemon.ini')
 
     def __init__(self, options):
         if options.configuration is None:
@@ -344,7 +343,7 @@ The DESI Collaboration Account
                     log.debug("status.update('%s', '%s', 'checksum', failure=True)", night, exposure)
                     status.update(night, exposure, 'checksum', failure=True)
             else:
-                log.warning("No checksum file for %s/%s!", night, exposure)
+                log.critical("No checksum file for %s/%s!", night, exposure)
                 log.debug("status.update('%s', '%s', 'checksum', failure=True)", night, exposure)
                 status.update(night, exposure, 'checksum', failure=True)
 

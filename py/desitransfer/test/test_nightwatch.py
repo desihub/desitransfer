@@ -2,15 +2,12 @@
 # -*- coding: utf-8 -*-
 """Test desitransfer.nightwatch.
 """
-# import datetime
 import logging
 import os
-# import shutil
 import sys
 import unittest
 from tempfile import TemporaryDirectory
-from unittest.mock import call, patch, MagicMock
-from pkg_resources import resource_filename
+from unittest.mock import call, patch
 from ..nightwatch import (_options, _configure_log)
 
 

@@ -14,10 +14,10 @@ desitransfer API
 .. automodule:: desitransfer.daily
     :members:
 
-.. automodule:: desitransfer.nightlog
+.. automodule:: desitransfer.nightwatch
     :members:
 
-.. automodule:: desitransfer.nightwatch
+.. automodule:: desitransfer.spacewatch
     :members:
 
 .. automodule:: desitransfer.status

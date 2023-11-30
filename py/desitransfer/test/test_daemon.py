@@ -3,6 +3,7 @@
 """Test desitransfer.daemon.
 """
 import datetime
+import importlib.resources as ir
 import json
 import logging
 import os
@@ -12,7 +13,6 @@ import unittest
 import requests
 from tempfile import TemporaryDirectory
 from unittest.mock import call, patch, MagicMock
-from pkg_resources import resource_filename
 from ..daemon import (_options, TransferDaemon, _popen, log,
                       verify_checksum, lock_directory, unlock_directory,
                       rsync_night)
@@ -481,7 +481,7 @@ desi_spectro_data_20190702.tar.idx
         mock_lock.assert_called_once_with('/desi/root/spectro/staging/raw/20190703/00000127', False)
         mock_exists.assert_has_calls([call('/desi/root/spectro/staging/raw/20190703/00000127/checksum-00000127.sha256sum')])
         # mock_cksum.assert_called_once_with('/desi/root/spectro/staging/raw/20190703/00000127/checksum-00000127.sha256sum')
-        mock_log.warning.assert_called_once_with("No checksum file for %s/%s!", '20190703', '00000127')
+        mock_log.critical.assert_called_once_with("No checksum file for %s/%s!", '20190703', '00000127')
         mock_status.update.assert_has_calls([call('20190703', '00000127', 'rsync'),
                                              call('20190703', '00000127', 'checksum', failure=True)])
         mock_mv.assert_called_once_with('/desi/root/spectro/staging/raw/20190703/00000127', '/desi/root/spectro/data/20190703')
@@ -713,8 +713,8 @@ total size is 118,417,836,324  speedup is 494,367.55
         mock_popen.return_value = ('0', r1, '')
         transfer.catchup(c[0], '20190703', mock_status)
         mock_rsync.assert_called_once_with('/data/dts/exposures/raw', '/desi/root/spectro/data', '20190703', False)
-        mock_log.warning.assert_has_calls([call('New files detected in %s!', '20190703'),
-                                           call("No checksum file for %s/%s!", '20190703', '00001234'),
+        mock_log.warning.assert_called_once_with('New files detected in %s!', '20190703')
+        mock_log.critical.assert_has_calls([call("No checksum file for %s/%s!", '20190703', '00001234'),
                                            call("No checksum file for %s/%s!", '20190703', '00001235')], any_order=True)
         mock_log.debug.assert_has_calls([call("verify_checksum('%s')", '/desi/root/spectro/data/20190703/00001234/checksum-00001234.sha256sum'),
                                          call("status.update('%s', '%s', 'checksum', failure=True)", '20190703', '00001234'),
@@ -1041,7 +1041,7 @@ total size is 118,417,836,324  speedup is 494,367.55
     def test_verify_checksum(self):
         """Test checksum verification.
         """
-        c = resource_filename('desitransfer.test', 't/t.sha256sum')
+        c = os.path.join(str(ir.files('desitransfer.test')), 't', 't.sha256sum')
         d = os.path.dirname(c)
         with patch('os.listdir') as mock_listdir:
             mock_listdir.return_value = ['t.sha256sum', 'test_file_1.txt', 'test_file_2.txt']

@@ -7,8 +7,7 @@ import sys
 import unittest
 import logging
 import subprocess as sub
-from socket import getfqdn
-from unittest.mock import patch, call, mock_open, MagicMock
+from unittest.mock import patch, call, mock_open
 from ..tucson import _options, _rsync, _configure_log, running
 from .. import __version__ as dtVersion
 
