@@ -1,0 +1,8 @@
+dashboard
+exposure_tables
+processing_tables
+tiles/archive
+exposures-daily.*
+tiles.*
+tiles-daily.*
+tsnr-exposures.*
