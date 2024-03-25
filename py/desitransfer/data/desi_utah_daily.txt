@@ -1,6 +1,13 @@
+# dashboard/dashboard.html
 dashboard
+dashboard.html
+# exposure_tables/??????
 exposure_tables
+exposure_tables/??????
+exposure_table_*.csv
 processing_tables
+processing_table_daily-*.csv
+unprocessed_table_daily-*.csv
 tiles/archive
 exposures-daily.*
 tiles.*
