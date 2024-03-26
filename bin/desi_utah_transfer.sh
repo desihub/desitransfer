@@ -58,7 +58,6 @@ for d in spectro/redux/daily spectro/redux/daily/calibnight \
     spectro/redux/daily/exposure_tables spectro/redux/daily/exposures \
     spectro/redux/daily/preproc spectro/redux/daily/processing_tables \
     spectro/redux/daily/tiles/archive \
-    # spectro/redux/daily/tiles/cumulative \
     survey/GFA; do
     case ${d} in
         spectro/redux/daily) priority='nice'; exclude="--include-from ${DESITRANSFER}/py/desitransfer/data/desi_utah_daily.txt --exclude *" ;;
