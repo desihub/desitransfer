@@ -15,17 +15,17 @@
 #     --password-file ${HOME}/.desi rsync://${DESISYNC_HOSTNAME}/desi/spectro/redux/daily/processing_tables/ processing_tables/
 #
 # rsync --verbose --recursive --links --times --omit-dir-times --no-motd \
-#     --password-file $HOME/.desi --include 202403\?\? --include 202403\?\?/\?\?\?\?\?\?\?\? \
-#     --include fibermap-\*.fits --include preproc-\*.fits.gz --include tilepix-\*.json --exclude \*
+#     --password-file ${HOME}/.desi --include 202403\?\? --include 202403\?\?/\?\?\?\?\?\?\?\? \
+#     --include fibermap-\*.fits --include preproc-\*.fits.gz --include tilepix-\*.json --exclude \* \
 #     rsync://${DESISYNC_HOSTNAME}/desi/spectro/redux/daily/preproc/ preproc/
 #
 # rsync --verbose --recursive --links --times --omit-dir-times --no-motd \
-#     --password-file $HOME/.desi --include 202403\?\? --include 202403\?\?/\?\?\?\?\?\?\?\? \
+#     --password-file ${HOME}/.desi --include 202403\?\? --include 202403\?\?/\?\?\?\?\?\?\?\? \
 #     --include \*.fits --include \*.fits.gz --include \*.csv --exclude \*
 #     rsync://${DESISYNC_HOSTNAME}/desi/spectro/redux/daily/exposures/ exposures/
 #
 # rsync --verbose --recursive --links --times --omit-dir-times --no-motd \
-#     --password-file $HOME/.desi --include 202403\?\? --include \*.fits --include \*.fits.gz --include \*.csv --include tmp --include old --exclude \* \
+#     --password-file ${HOME}/.desi --include 202403\?\? --include \*.fits --include \*.fits.gz --include \*.csv --include tmp --include old --exclude \* \
 #     rsync://${DESISYNC_HOSTNAME}/desi/spectro/redux/daily/calibnight/ calibnight/
 #
 # tiles/cumulative has a lot of symlinks into tiles/archive.
