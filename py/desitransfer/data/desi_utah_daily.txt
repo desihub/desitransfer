@@ -1,36 +1,11 @@
 #
-# cd desi/spectro/redux/daily/
-#
-# rsync --verbose --recursive --links --times --omit-dir-times --no-motd \
-#     --password-file ${HOME}/.desi --include-from ${DESITRANSFER}/py/desitransfer/data/desi_utah_daily.txt \
-#     --exclude \* rsync://${DESISYNC_HOSTNAME}/desi/spectro/redux/daily/ ./
-#
-# rsync --verbose --recursive --links --times --omit-dir-times --no-motd \
-#     --password-file ${HOME}/.desi rsync://${DESISYNC_HOSTNAME}/desi/spectro/redux/daily/tiles/archive/ tiles/archive/
-#
-# rsync --verbose --recursive --links --times --omit-dir-times --no-motd \
-#     --password-file ${HOME}/.desi rsync://${DESISYNC_HOSTNAME}/desi/spectro/redux/daily/exposure_tables/ exposure_tables/
-#
-# rsync --verbose --recursive --links --times --omit-dir-times --no-motd \
-#     --password-file ${HOME}/.desi rsync://${DESISYNC_HOSTNAME}/desi/spectro/redux/daily/processing_tables/ processing_tables/
-#
-# rsync --verbose --recursive --links --times --omit-dir-times --no-motd \
-#     --password-file ${HOME}/.desi --include 202403\?\? --include 202403\?\?/\?\?\?\?\?\?\?\? \
-#     --include fibermap-\*.fits --include preproc-\*.fits.gz --include tilepix-\*.json --exclude \* \
-#     rsync://${DESISYNC_HOSTNAME}/desi/spectro/redux/daily/preproc/ preproc/
-#
-# rsync --verbose --recursive --links --times --omit-dir-times --no-motd \
-#     --password-file ${HOME}/.desi --include 202403\?\? --include 202403\?\?/\?\?\?\?\?\?\?\? \
-#     --include \*.fits --include \*.fits.gz --include \*.csv --exclude \*
-#     rsync://${DESISYNC_HOSTNAME}/desi/spectro/redux/daily/exposures/ exposures/
-#
-# rsync --verbose --recursive --links --times --omit-dir-times --no-motd \
-#     --password-file ${HOME}/.desi --include 202403\?\? --include \*.fits --include \*.fits.gz --include \*.csv --include tmp --include old --exclude \* \
-#     rsync://${DESISYNC_HOSTNAME}/desi/spectro/redux/daily/calibnight/ calibnight/
-#
 # tiles/cumulative has a lot of symlinks into tiles/archive.
 # * Save all symlinks
 # * Save only last 30 days of non-symlinks.
+#
+# find . -type l > ~/daily_tiles_cumulative.txt
+# find . -type f | grep -E '^\./[0-9]+/202403../' >> ~/daily_tiles_cumulative.txt
+# rsync -rlvtO --files-from $HOME/daily_tiles_cumulative.txt rsync://${DESISYNC_HOSTNAME}/desi/spectro/redux/daily/tiles/cumulative/ tiles/cumulative/
 #
 dashboard
 dashboard.html
