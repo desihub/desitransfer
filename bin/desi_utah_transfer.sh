@@ -19,6 +19,10 @@ function usage() {
     ) >&2
 }
 #
+# Do not expand globs, pass them on to rsync.
+#
+set -o noglob
+#
 # Environment variables.
 #
 if [[ -z "${DESITRANSFER}" ]]; then
