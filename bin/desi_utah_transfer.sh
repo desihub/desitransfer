@@ -37,6 +37,10 @@ if [[ -z "${DESI_ROOT}" ]]; then
     echo "ERROR: DESI_ROOT is undefined!"
     exit 1
 fi
+if [[ -z "${DAILY_TILES_CUMULATIVE_OUTPUT}" ]]; then
+    echo "ERROR: DAILY_TILES_CUMULATIVE_OUTPUT is undefined!"
+    exit 1
+fi
 #
 # Configuration.
 #
@@ -55,6 +59,10 @@ while getopts htv argname; do
     esac
 done
 shift $((OPTIND - 1))
+#
+# Copy the daily/tiles/cumulative description file from NERSC.
+#
+wget --quiet --unlink --output-document=${DESI_ROOT}/spectro/redux/daily_tiles_cumulative.txt ${DAILY_TILES_CUMULATIVE_OUTPUT}
 #
 # Execute rsync commands.
 #
