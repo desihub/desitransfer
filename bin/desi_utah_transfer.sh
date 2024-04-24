@@ -84,3 +84,8 @@ for d in spectro/redux/daily spectro/redux/daily/calibnight \
     ${verbose} && echo "${priority} ${syn} ${exclude} ${src}/${d}/ ${dst}/${d}/ &>> ${log} &"
     ${test}    || ${priority} ${syn} ${exclude} ${src}/${d}/ ${dst}/${d}/ &>> ${log} &
 done
+#
+# Set user-write on some files.
+#
+${verbose} && echo "chmod -R u+w ${dst}/spectro/redux/daily/tiles/cumulative"
+${test}    || chmod -R u+w ${dst}/spectro/redux/daily/tiles/cumulative
