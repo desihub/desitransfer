@@ -60,6 +60,11 @@ while getopts htv argname; do
 done
 shift $((OPTIND - 1))
 #
+# Set user-write on some files.
+#
+${verbose} && echo "chmod -R u+w ${dst}/spectro/redux/daily/tiles/cumulative"
+${test}    || chmod -R u+w ${dst}/spectro/redux/daily/tiles/cumulative
+#
 # Copy the daily/tiles/cumulative description file from NERSC.
 #
 wget --quiet --unlink --output-document=${DESI_ROOT}/spectro/redux/daily_tiles_cumulative.txt ${DAILY_TILES_CUMULATIVE_OUTPUT}
@@ -84,8 +89,3 @@ for d in spectro/redux/daily spectro/redux/daily/calibnight \
     ${verbose} && echo "${priority} ${syn} ${exclude} ${src}/${d}/ ${dst}/${d}/ &>> ${log} &"
     ${test}    || ${priority} ${syn} ${exclude} ${src}/${d}/ ${dst}/${d}/ &>> ${log} &
 done
-#
-# Set user-write on some files.
-#
-${verbose} && echo "chmod -R u+w ${dst}/spectro/redux/daily/tiles/cumulative"
-${test}    || chmod -R u+w ${dst}/spectro/redux/daily/tiles/cumulative
