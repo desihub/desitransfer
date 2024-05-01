@@ -2,10 +2,12 @@
 Change Log
 ==========
 
-1.0.1 (unreleased)
+1.0.1 (2024-05-01)
 ------------------
 
-* No changes yet.
+* Add scripts to support data transfers to Utah (PR `#59`_).
+
+.. _`#59`: https://github.com/desihub/desitransfer/pull/59
 
 1.0.0 (2023-11-30)
 ------------------
