@@ -1,0 +1,15 @@
+#
+# tiles/cumulative has a lot of symlinks into tiles/archive.
+# * Save all symlinks
+# * Save only last 30 days of non-symlinks.
+#
+# find . -type l > ~/daily_tiles_cumulative.txt
+# find . -type f | grep -E '^\./[0-9]+/202403../' >> ~/daily_tiles_cumulative.txt
+# rsync -rlvtO --files-from $HOME/daily_tiles_cumulative.txt rsync://${DESISYNC_HOSTNAME}/desi/spectro/redux/daily/tiles/cumulative/ tiles/cumulative/
+#
+dashboard
+dashboard.html
+exposures-daily.*
+tiles.*
+tiles-daily.*
+tsnr-exposures.*
