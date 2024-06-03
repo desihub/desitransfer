@@ -10,6 +10,7 @@ import datetime as dt
 import os
 import re
 import stat
+import time
 import pytz
 
 MST = pytz.timezone('America/Phoenix')
@@ -174,3 +175,20 @@ def idle_time(start=8, end=12, tz=None):
         return (i - s) // dt.timedelta(seconds=1)
     e = dt.datetime(i.year, i.month, i.day, end, 0, 0, tzinfo=tz)
     return (e - i) // dt.timedelta(seconds=1)
+
+
+def exclude_years(start_year):
+    """Generate rsync ``--exclude`` statements of the form ``--exclude 2020*``.
+
+    Parameters
+    ----------
+    start_year : :class:`int`
+        First year to exclude.
+
+    Returns
+    -------
+    :class:`list`
+        A list suitable for appending to a command.
+    """
+    return (' '.join([f'--exclude {y:d}*' for y in range(start_year, time.localtime().tm_year)])).split()
+
