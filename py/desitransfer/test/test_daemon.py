@@ -316,7 +316,7 @@ desi_spectro_data_20190702.tar.idx
         mock_log.debug.assert_has_calls([call("os.makedirs('%s', exist_ok=True)", '/desi/root/spectro/staging/raw/20190703'),
                                          call("os.makedirs('%s', exist_ok=True)", '/desi/root/spectro/data/20190703'),
                                          call("os.chmod('%s', 0o%o)", '/desi/root/spectro/data/20190703', 0o2750),
-                                         call('/bin/rsync --verbose --recursive --copy-dirlinks --times --omit-dir-times' +
+                                         call('/bin/rsync --verbose --recursive --copy-dirlinks --times --omit-dir-times ' +
                                               'dts:/data/dts/exposures/raw/20190703/00000127/ /desi/root/spectro/staging/raw/20190703/00000127/'),
                                          call("status.update('%s', '%s', 'rsync')", '20190703', '00000127'),
                                          call("lock_directory('%s', %s)", '/desi/root/spectro/staging/raw/20190703/00000127', 'False'),
