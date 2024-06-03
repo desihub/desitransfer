@@ -114,7 +114,7 @@ def main():
     options = _options()
     _configure_log(options.debug)
     errcount = 0
-    wait = options.sleep*60
+    wait = options.sleep * 60
     source = '/exposures/nightwatch'
     basedir = os.path.join(os.environ['DESI_ROOT'], 'spectro', 'nightwatch')
     kpnodir = os.path.join(basedir, 'kpno')

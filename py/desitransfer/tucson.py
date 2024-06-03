@@ -241,7 +241,7 @@ def main():
         for s in suffix:
             if options.sleep.endswith(s):
                 try:
-                    sleepy_time = int(options.sleep[0:-1])*suffix[s]
+                    sleepy_time = int(options.sleep[0:-1]) * suffix[s]
                 except ValueError:
                     log.error("Invalid value for sleep interval: '%s'!", options.sleep)
                     return 1

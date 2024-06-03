@@ -1045,49 +1045,48 @@ total size is 118,417,836,324  speedup is 494,367.55
         d = os.path.dirname(c)
         with patch('os.listdir') as mock_listdir:
             mock_listdir.return_value = ['t.sha256sum', 'test_file_1.txt', 'test_file_2.txt']
-            with patch('desitransfer.daemon.log') as l:
+            with patch('desitransfer.daemon.log') as mock_log:
                 o = verify_checksum(c)
         self.assertEqual(o, "")
-        l.debug.assert_has_calls([call("%s is valid.", os.path.join(d, 'test_file_1.txt')),
-                                  call("%s is valid.", os.path.join(d, 'test_file_2.txt'))])
+        mock_log.debug.assert_has_calls([call("%s is valid.", os.path.join(d, 'test_file_1.txt')),
+                                         call("%s is valid.", os.path.join(d, 'test_file_2.txt'))])
         #
         # Wrong number of files.
         #
         with patch('os.listdir') as mock_listdir:
             mock_listdir.return_value = ['t.sha256sum', 'test_file_1.txt']
-            with patch('desitransfer.daemon.log') as l:
+            with patch('desitransfer.daemon.log') as mock_log:
                 o = verify_checksum(c)
         self.assertEqual(o, "1 file(s) listed but not downloaded.\n")
-        l.error.assert_has_calls([call("%s lists %d file(s) that are not present!", c, 1)])
+        mock_log.error.assert_has_calls([call("%s lists %d file(s) that are not present!", c, 1)])
         with patch('os.listdir') as mock_listdir:
             mock_listdir.return_value = ['t.sha256sum', 'test_file_1.txt', 'test_file_2.txt', 'test_file_3.txt']
-            with patch('desitransfer.daemon.log') as l:
+            with patch('desitransfer.daemon.log') as mock_log:
                 o = verify_checksum(c)
         self.assertEqual(o, "1 file(s) downloaded but not listed.\ntest_file_3.txt not listed in checksum file.\n")
-        l.error.assert_has_calls([call("%d files are not listed in %s!", 1, c)])
+        mock_log.error.assert_has_calls([call("%d files are not listed in %s!", 1, c)])
         #
         # Bad list of files.
         #
         with patch('os.listdir') as mock_listdir:
             mock_listdir.return_value = ['t.sha256sum', 'test_file_1.txt', 'test_file_3.txt']
-            with patch('desitransfer.daemon.log') as l:
+            with patch('desitransfer.daemon.log') as mock_log:
                 o = verify_checksum(c)
         self.assertEqual(o, "test_file_3.txt not listed in checksum file.\n")
-        l.debug.assert_has_calls([call("%s is valid.", os.path.join(d, 'test_file_1.txt'))])
-        l.error.assert_has_calls([call("%s does not appear in %s!", os.path.join(d, 'test_file_3.txt'), c)])
+        mock_log.debug.assert_has_calls([call("%s is valid.", os.path.join(d, 'test_file_1.txt'))])
+        mock_log.error.assert_has_calls([call("%s does not appear in %s!", os.path.join(d, 'test_file_3.txt'), c)])
         #
         # Hack hashlib to produce incorrect checksums.
         #
         with patch('os.listdir') as mock_listdir:
             mock_listdir.return_value = ['t.sha256sum', 'test_file_1.txt', 'test_file_2.txt']
-            with patch('desitransfer.daemon.log') as l:
-                with patch('hashlib.sha256') as h:
-                    # h.sha256 = MagicMock()
-                    h.hexdigest.return_value = 'abcdef'
+            with patch('desitransfer.daemon.log') as mock_log:
+                with patch('hashlib.sha256') as mock_hash:
+                    mock_hash.hexdigest.return_value = 'abcdef'
                     o = verify_checksum(c)
         self.assertEqual(o, "test_file_1.txt had a checksum mismatch.\ntest_file_2.txt had a checksum mismatch.\n")
-        l.error.assert_has_calls([call("Checksum mismatch for %s in %s!", os.path.join(d, 'test_file_1.txt'), c),
-                                  call("Checksum mismatch for %s in %s!", os.path.join(d, 'test_file_2.txt'), c)])
+        mock_log.error.assert_has_calls([call("Checksum mismatch for %s in %s!", os.path.join(d, 'test_file_1.txt'), c),
+                                         call("Checksum mismatch for %s in %s!", os.path.join(d, 'test_file_2.txt'), c)])
 
     @patch('os.walk')
     @patch('os.chmod')
