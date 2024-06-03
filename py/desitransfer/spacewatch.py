@@ -117,7 +117,8 @@ def download_jpg(files, destination, overwrite=False, test=False):
                 r = requests.get(jpg)
                 if r.status_code == 200:
                     downloaded += 1
-                    timestamp = int(datetime.datetime.strptime(r.headers['Last-Modified'], '%a, %d %b %Y %H:%M:%S %Z').replace(tzinfo=utc).timestamp())
+                    timestamp = int(datetime.datetime.strptime(r.headers['Last-Modified'],
+                                                               '%a, %d %b %Y %H:%M:%S %Z').replace(tzinfo=utc).timestamp())
                     with open(dst_jpg, 'wb') as j:
                         j.write(r.content)
                     os.utime(dst_jpg, (timestamp, timestamp))
