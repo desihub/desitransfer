@@ -14,6 +14,7 @@ from argparse import ArgumentParser
 from logging.handlers import SMTPHandler
 import requests
 from . import __version__ as dtVersion
+from .common import exclude_years
 from desiutil.log import get_logger
 
 
@@ -58,17 +59,23 @@ dynamic = ['spectro/data',
            'software/CiscoSecureClient']
 
 
-includes = {'engineering/focalplane': ["--exclude", "archive", "--exclude", "hwtables", "--exclude", ".ipynb_checkpoints", "--exclude", "*.ipynb"],
+includes = {'engineering/focalplane': ["--exclude", "archive", "--exclude", "hwtables",
+                                       "--exclude", ".ipynb_checkpoints", "--exclude", "*.ipynb"],
             'engineering/focalplane/hwtables': ["--include", "*.csv", "--exclude", "*"],
             'spectro/desi_spectro_calib': ["--exclude", ".svn"],
-            'spectro/data': (' '.join([f'--exclude {y:d}*' for y in range(2018, time.localtime().tm_year)])).split(),
-            'spectro/redux/daily': ["--exclude", "*.tmp", "--exclude", "attic", "--exclude", "exposures", "--exclude", "preproc", "--exclude", "temp", "--exclude", "tiles"],
+            'spectro/data': exclude_years(2018),
+            'spectro/nightwatch/kpno': exclude_years(2021),
+            'spectro/redux/daily': ["--exclude", "*.tmp", "--exclude", "attic",
+                                    "--exclude", "exposures", "--exclude", "preproc",
+                                    "--exclude", "temp", "--exclude", "tiles"],
             'spectro/redux/daily/exposures': ["--exclude", "*.tmp"],
-            'spectro/redux/daily/preproc': ["--exclude", "*.tmp", "--exclude", "preproc-*.fits", "--exclude", "preproc-*.fits.gz"],
+            'spectro/redux/daily/preproc': ["--exclude", "*.tmp", "--exclude", "preproc-*.fits",
+                                            "--exclude", "preproc-*.fits.gz"],
             'spectro/redux/daily/tiles': ["--exclude", "*.tmp", "--exclude", "temp"],
             'spectro/templates/basis_templates': ["--exclude", ".svn", "--exclude", "basis_templates_svn-old"],
             'survey/ops/surveyops/trunk': ["--exclude", ".svn", "--exclude", "cronupdate.log"],
-            'target/catalogs': ["--include", "dr8", "--include", "dr9", "--include", "gaiadr2", "--include", "subpriority", "--exclude", "*"]}
+            'target/catalogs': ["--include", "dr8", "--include", "dr9",
+                                "--include", "gaiadr2", "--include", "subpriority", "--exclude", "*"]}
 
 
 def _configure_log(debug):
@@ -239,7 +246,7 @@ def main():
         for s in suffix:
             if options.sleep.endswith(s):
                 try:
-                    sleepy_time = int(options.sleep[0:-1])*suffix[s]
+                    sleepy_time = int(options.sleep[0:-1]) * suffix[s]
                 except ValueError:
                     log.error("Invalid value for sleep interval: '%s'!", options.sleep)
                     return 1

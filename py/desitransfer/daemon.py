@@ -78,11 +78,10 @@ class TransferDaemon(object):
             self._ini = options.configuration
         self.test = options.test
         self.tape = options.backup
-        getlist = lambda x: x.split(',')
-        getdict = lambda x: dict([tuple(i.split(':')) for i in x.split(',')])
         self.conf = ConfigParser(defaults=os.environ, strict=True,
                                  interpolation=ExtendedInterpolation(),
-                                 converters={'list': getlist, 'dict': getdict})
+                                 converters={'list': lambda x: x.split(','),
+                                             'dict': lambda x: dict([tuple(i.split(':')) for i in x.split(',')])})
         files = self.conf.read(self._ini)
         # assert files[0] == self._ini
         self.sections = [s for s in self.conf.sections()
@@ -183,11 +182,11 @@ The DESI Collaboration Account
         _, out, err = _popen(cmd)
         links = sorted([x for x in out.split('\n') if x])
         if links:
-            for l in links:
-                if self._link_re.search(l) is None:
-                    log.warning("Malformed symlink detected: %s. Skipping.", l)
+            for link in links:
+                if self._link_re.search(link) is None:
+                    log.warning("Malformed symlink detected: %s. Skipping.", link)
                 else:
-                    self.exposure(d, l, status)
+                    self.exposure(d, link, status)
         else:
             log.warning('No links found, check connection.')
         #
@@ -440,9 +439,9 @@ The DESI Collaboration Account
             if self.tape:
                 log.debug(' '.join(cmd))
                 _, out, err = _popen(cmd)
-                with open(ls_file) as l:
-                    data = l.read()
-                backup_files = [l.split()[-1] for l in data.split('\n') if l]
+                with open(ls_file) as ls_fileobj:
+                    data = ls_fileobj.read()
+                backup_files = [ls_out.split()[-1] for ls_out in data.split('\n') if ls_out]
             else:
                 backup_files = []
             backup_file = hpss_file + '_' + night + '.tar'
@@ -544,9 +543,9 @@ def verify_checksum(checksum_file):
                   checksum_file, n_lines)
         errors += "{0:d} file(s) listed but not downloaded.\n".format(n_lines)
     if n_lines < 0:
-        log.error("%d files are not listed in %s!", -1*n_lines, checksum_file)
-        errors += "{0:d} file(s) downloaded but not listed.\n".format(-1*n_lines)
-    digest = dict([(l.split()[1], l.split()[0]) for l in lines if l])
+        log.error("%d files are not listed in %s!", -1 * n_lines, checksum_file)
+        errors += "{0:d} file(s) downloaded but not listed.\n".format(-1 * n_lines)
+    digest = dict([(cl.split()[1], cl.split()[0]) for cl in lines if cl])
     for f in files:
         ff = os.path.join(d, f)
         if ff != checksum_file:
@@ -668,5 +667,5 @@ def main():
                      options.kill)
             return 0
         transfer.transfer()
-        time.sleep(sleep*60)
+        time.sleep(sleep * 60)
     return 0

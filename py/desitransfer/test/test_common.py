@@ -7,7 +7,7 @@ import unittest
 from unittest.mock import patch
 from tempfile import TemporaryDirectory
 from ..common import (dt, MST, dir_perm, file_perm, empty_rsync, new_exposures, rsync,
-                      stamp, ensure_scratch, yesterday, today, idle_time)
+                      stamp, ensure_scratch, yesterday, today, idle_time, exclude_years)
 
 
 class FakeDateTime(datetime):
@@ -135,7 +135,7 @@ total size is 118,417,836,324  speedup is 494,367.55
         """Test today's date.
         """
         mock_dt.datetime.utcnow.return_value = datetime(2019, 7, 3, 5, 0, 0)
-        mock_dt.timedelta.return_value = timedelta(7/24+0.5)
+        mock_dt.timedelta.return_value = timedelta(7 / 24 + 0.5)
         y = today()
         self.assertEqual(y, '20190702')
 
@@ -174,3 +174,11 @@ total size is 118,417,836,324  speedup is 494,367.55
         # mock_datetime.return_value = datetime(2021, 7, 3, 13, 0, 0, tzinfo=MST)
         i = idle_time(tz='US/Pacific')
         self.assertEqual(i, -3600)
+
+    def test_exclude_years(self):
+        """Test exclude statements for a range of years.
+        """
+        last_year = datetime.now().year - 1
+        ex = exclude_years(2018)
+        self.assertEqual(ex[1], '2018*')
+        self.assertEqual(ex[-1], f'{last_year:d}*')

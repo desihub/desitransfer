@@ -316,7 +316,8 @@ desi_spectro_data_20190702.tar.idx
         mock_log.debug.assert_has_calls([call("os.makedirs('%s', exist_ok=True)", '/desi/root/spectro/staging/raw/20190703'),
                                          call("os.makedirs('%s', exist_ok=True)", '/desi/root/spectro/data/20190703'),
                                          call("os.chmod('%s', 0o%o)", '/desi/root/spectro/data/20190703', 0o2750),
-                                         call('/bin/rsync --verbose --recursive --copy-dirlinks --times --omit-dir-times dts:/data/dts/exposures/raw/20190703/00000127/ /desi/root/spectro/staging/raw/20190703/00000127/'),
+                                         call('/bin/rsync --verbose --recursive --copy-dirlinks --times --omit-dir-times ' +
+                                              'dts:/data/dts/exposures/raw/20190703/00000127/ /desi/root/spectro/staging/raw/20190703/00000127/'),
                                          call("status.update('%s', '%s', 'rsync')", '20190703', '00000127'),
                                          call("lock_directory('%s', %s)", '/desi/root/spectro/staging/raw/20190703/00000127', 'False'),
                                          call("verify_checksum('%s')", '/desi/root/spectro/staging/raw/20190703/00000127/checksum-00000127.sha256sum'),
@@ -369,7 +370,8 @@ desi_spectro_data_20190702.tar.idx
         mock_log.debug.assert_has_calls([call("os.makedirs('%s', exist_ok=True)", '/desi/root/spectro/staging/raw/20190703'),
                                          call("os.makedirs('%s', exist_ok=True)", '/desi/root/spectro/data/20190703'),
                                          call("os.chmod('%s', 0o%o)", '/desi/root/spectro/data/20190703', 0o2750),
-                                         call('/bin/rsync --verbose --recursive --copy-dirlinks --times --omit-dir-times dts:/data/dts/exposures/raw/20190703/00000127/ /desi/root/spectro/staging/raw/20190703/00000127/'),
+                                         call('/bin/rsync --verbose --recursive --copy-dirlinks --times --omit-dir-times ' +
+                                              'dts:/data/dts/exposures/raw/20190703/00000127/ /desi/root/spectro/staging/raw/20190703/00000127/'),
                                          call("status.update('%s', '%s', 'rsync')", '20190703', '00000127'),
                                          call("lock_directory('%s', %s)", '/desi/root/spectro/staging/raw/20190703/00000127', 'True'),
                                          call("verify_checksum('%s')", '/desi/root/spectro/staging/raw/20190703/00000127/checksum-00000127.sha256sum'),
@@ -416,7 +418,8 @@ desi_spectro_data_20190702.tar.idx
         mock_log.debug.assert_has_calls([call("os.makedirs('%s', exist_ok=True)", '/desi/root/spectro/staging/raw/20190703'),
                                          call("os.makedirs('%s', exist_ok=True)", '/desi/root/spectro/data/20190703'),
                                          call("os.chmod('%s', 0o%o)", '/desi/root/spectro/data/20190703', 0o2750),
-                                         call('/bin/rsync --verbose --recursive --copy-dirlinks --times --omit-dir-times dts:/data/dts/exposures/raw/20190703/00000127/ /desi/root/spectro/staging/raw/20190703/00000127/'),
+                                         call('/bin/rsync --verbose --recursive --copy-dirlinks --times --omit-dir-times ' +
+                                              'dts:/data/dts/exposures/raw/20190703/00000127/ /desi/root/spectro/staging/raw/20190703/00000127/'),
                                          call("status.update('%s', '%s', 'rsync', failure=True)", '20190703', '00000127'),
                                          call("lock_directory('%s', %s)", '/desi/root/spectro/staging/raw/20190703/00000127', 'False'),
                                          call("verify_checksum('%s')", '/desi/root/spectro/staging/raw/20190703/00000127/checksum-00000127.sha256sum'),
@@ -465,7 +468,8 @@ desi_spectro_data_20190702.tar.idx
         mock_log.debug.assert_has_calls([call("os.makedirs('%s', exist_ok=True)", '/desi/root/spectro/staging/raw/20190703'),
                                          call("os.makedirs('%s', exist_ok=True)", '/desi/root/spectro/data/20190703'),
                                          call("os.chmod('%s', 0o%o)", '/desi/root/spectro/data/20190703', 0o2750),
-                                         call('/bin/rsync --verbose --recursive --copy-dirlinks --times --omit-dir-times dts:/data/dts/exposures/raw/20190703/00000127/ /desi/root/spectro/staging/raw/20190703/00000127/'),
+                                         call('/bin/rsync --verbose --recursive --copy-dirlinks --times --omit-dir-times ' +
+                                              'dts:/data/dts/exposures/raw/20190703/00000127/ /desi/root/spectro/staging/raw/20190703/00000127/'),
                                          call("status.update('%s', '%s', 'rsync')", '20190703', '00000127'),
                                          call("lock_directory('%s', %s)", '/desi/root/spectro/staging/raw/20190703/00000127', 'False'),
                                          call("verify_checksum('%s')", '/desi/root/spectro/staging/raw/20190703/00000127/checksum-00000127.sha256sum'),
@@ -519,7 +523,8 @@ desi_spectro_data_20190702.tar.idx
         mock_log.debug.assert_has_calls([call("os.makedirs('%s', exist_ok=True)", '/desi/root/spectro/staging/raw/20190703'),
                                          call("os.makedirs('%s', exist_ok=True)", '/desi/root/spectro/data/20190703'),
                                          call("os.chmod('%s', 0o%o)", '/desi/root/spectro/data/20190703', 0o2750),
-                                         call('/bin/rsync --verbose --recursive --copy-dirlinks --times --omit-dir-times dts:/data/dts/exposures/raw/20190703/00000127/ /desi/root/spectro/staging/raw/20190703/00000127/'),
+                                         call('/bin/rsync --verbose --recursive --copy-dirlinks --times --omit-dir-times ' +
+                                              'dts:/data/dts/exposures/raw/20190703/00000127/ /desi/root/spectro/staging/raw/20190703/00000127/'),
                                          call("status.update('%s', '%s', 'rsync')", '20190703', '00000127'),
                                          call("lock_directory('%s', %s)", '/desi/root/spectro/staging/raw/20190703/00000127', 'False'),
                                          call("verify_checksum('%s')", '/desi/root/spectro/staging/raw/20190703/00000127/checksum-00000127.sha256sum'),
@@ -830,7 +835,8 @@ total size is 118,417,836,324  speedup is 494,367.55
         mock_log.debug.assert_has_calls([call("os.remove('%s')", ls_file),
                                          call("Failed to remove %s because it didn't exist. That's OK.", ls_file),
                                          call("%s -O %s ls -l desi/spectro/data" % (hsi, ls_file)),
-                                         call('/bin/rsync --dry-run --verbose --recursive --copy-dirlinks --times --omit-dir-times dts:/data/dts/exposures/raw/20190703/ /desi/root/spectro/data/20190703/'),
+                                         call('/bin/rsync --dry-run --verbose --recursive --copy-dirlinks --times --omit-dir-times ' +
+                                              'dts:/data/dts/exposures/raw/20190703/ /desi/root/spectro/data/20190703/'),
                                          call("os.chdir('%s')", '/desi/root/spectro/data'),
                                          call('%s -cvhf desi/spectro/data/desi_spectro_data_20190703.tar -H crc:verify=all 20190703' % htar),
                                          call("os.chdir('%s')", self.tmp.name)])
@@ -877,7 +883,8 @@ total size is 118,417,836,324  speedup is 494,367.55
         mock_log.info.assert_has_calls([call('No files appear to have changed in %s.', '20190703')])
         mock_log.debug.assert_has_calls([call("os.remove('%s')", os.path.join(self.tmp.name, 'desi_spectro_data.txt')),
                                          call("%s -O %s ls -l desi/spectro/data" % (hsi, ls_file)),
-                                         call('/bin/rsync --dry-run --verbose --recursive --copy-dirlinks --times --omit-dir-times dts:/data/dts/exposures/raw/20190703/ /desi/root/spectro/data/20190703/'),
+                                         call('/bin/rsync --dry-run --verbose --recursive --copy-dirlinks --times --omit-dir-times ' +
+                                              'dts:/data/dts/exposures/raw/20190703/ /desi/root/spectro/data/20190703/'),
                                          call("os.chmod('%s', 0o%o)", '/desi/root/spectro/data/20190703', 0o2550),
                                          call("os.chmod('%s', 0o%o)", '/desi/root/spectro/data/20190703/00001234', 0o2550),
                                          call("os.chmod('%s', 0o%o)", '/desi/root/spectro/data/20190703/00001235', 0o2550),
@@ -900,7 +907,11 @@ total size is 118,417,836,324  speedup is 494,367.55
     @patch('desitransfer.daemon.TransferStatus')
     @patch('desitransfer.daemon.log')
     @patch.object(TransferDaemon, '_configure_log')
-    def test_TransferDaemon_backup_htar_failure(self, mock_cl, mock_log, mock_status, mock_isdir, mock_rm, mock_popen, mock_empty, mock_getcwd, mock_chdir, mock_rsync, mock_chmod, mock_walk):
+    def test_TransferDaemon_backup_htar_failure(self, mock_cl, mock_log,
+                                                mock_status, mock_isdir, mock_rm,
+                                                mock_popen, mock_empty, mock_getcwd,
+                                                mock_chdir, mock_rsync, mock_chmod,
+                                                mock_walk):
         """Test HPSS backup of night with htar failure.
         """
         with patch.dict('os.environ',
@@ -916,7 +927,9 @@ total size is 118,417,836,324  speedup is 494,367.55
                                   ('/desi/root/spectro/data/20190703/00001234', [], ['f1']),
                                   ('/desi/root/spectro/data/20190703/00001235', [], ['f2'])]
         mock_empty.return_value = True
-        mock_popen.return_value = ('1', '', 'Generating .netrc entry...\nMust run interactively to update .netrc\nUnable to update .netrc file\nFor help, see https://docs.nersc.gov/accounts/passwords/\n')
+        mock_popen.return_value = ('1', '', 'Generating .netrc entry...\n' +
+                                   'Must run interactively to update .netrc\n' +
+                                   'Unable to update .netrc file\nFor help, see https://docs.nersc.gov/accounts/passwords/\n')
         mock_getcwd.return_value = 'HOME'
         ls_file = os.path.join(self.tmp.name, 'desi_spectro_data.txt')
         with open(ls_file, 'w') as f:
@@ -928,15 +941,18 @@ total size is 118,417,836,324  speedup is 494,367.55
         mock_log.info.assert_has_calls([call('No files appear to have changed in %s.', '20190703')])
         mock_log.debug.assert_has_calls([call("os.remove('%s')", os.path.join(self.tmp.name, 'desi_spectro_data.txt')),
                                          call("%s -O %s ls -l desi/spectro/data" % (hsi, ls_file)),
-                                         call('/bin/rsync --dry-run --verbose --recursive --copy-dirlinks --times --omit-dir-times dts:/data/dts/exposures/raw/20190703/ /desi/root/spectro/data/20190703/'),
+                                         call('/bin/rsync --dry-run --verbose --recursive --copy-dirlinks --times --omit-dir-times ' +
+                                              'dts:/data/dts/exposures/raw/20190703/ /desi/root/spectro/data/20190703/'),
                                          call("os.chmod('%s', 0o%o)", '/desi/root/spectro/data/20190703', 0o2550),
                                          call("os.chmod('%s', 0o%o)", '/desi/root/spectro/data/20190703/00001234', 0o2550),
                                          call("os.chmod('%s', 0o%o)", '/desi/root/spectro/data/20190703/00001235', 0o2550),
                                          call("os.chdir('%s')", '/desi/root/spectro/data'),
                                          call('%s -cvhf desi/spectro/data/desi_spectro_data_20190703.tar -H crc:verify=all 20190703' % htar),
                                          call("os.chdir('%s')", 'HOME')])
-        mock_log.critical.assert_has_calls([call(("HTAR Backup failed! Command was: {0} -cvhf desi/spectro/data/desi_spectro_data_20190703.tar -H crc:verify=all 20190703.".format(htar) +
-                                                  "\nHTAR error message was: Generating .netrc entry...\nMust run interactively to update .netrc\nUnable to update .netrc file\nFor help, see https://docs.nersc.gov/accounts/passwords/\n"))])
+        mock_log.critical.assert_has_calls([call("HTAR Backup failed! Command was: {0} -cvhf desi/spectro/data/desi_spectro_data_20190703.tar -H crc:verify=all 20190703.".format(htar) +
+                                                 "\nHTAR error message was: Generating .netrc entry...\n" +
+                                                 "Must run interactively to update .netrc\n" +
+                                                 "Unable to update .netrc file\nFor help, see https://docs.nersc.gov/accounts/passwords/\n")])
         mock_popen.assert_has_calls([call([htar, '-cvhf', 'desi/spectro/data/desi_spectro_data_20190703.tar', '-H', 'crc:verify=all', '20190703'])])
         mock_status.assert_not_called()
         mock_status.update.assert_not_called()
@@ -953,7 +969,10 @@ total size is 118,417,836,324  speedup is 494,367.55
     @patch('desitransfer.daemon.TransferStatus')
     @patch('desitransfer.daemon.log')
     @patch.object(TransferDaemon, '_configure_log')
-    def test_TransferDaemon_backup_delayed_data(self, mock_cl, mock_log, mock_status, mock_isdir, mock_rm, mock_popen, mock_empty, mock_getcwd, mock_chdir, mock_rsync, mock_chmod, mock_walk):
+    def test_TransferDaemon_backup_delayed_data(self, mock_cl, mock_log, mock_status,
+                                                mock_isdir, mock_rm, mock_popen,
+                                                mock_empty, mock_getcwd, mock_chdir,
+                                                mock_rsync, mock_chmod, mock_walk):
         """Test HPSS backup of night with delayed data.
         """
         with patch.dict('os.environ',
@@ -979,7 +998,8 @@ total size is 118,417,836,324  speedup is 494,367.55
         htar = os.path.join(transfer.conf['common']['hpss'], 'htar')
         mock_log.debug.assert_has_calls([call("os.remove('%s')", os.path.join(self.tmp.name, 'desi_spectro_data.txt')),
                                          call("%s -O %s ls -l desi/spectro/data" % (hsi, ls_file)),
-                                         call('/bin/rsync --dry-run --verbose --recursive --copy-dirlinks --times --omit-dir-times dts:/data/dts/exposures/raw/20190703/ /desi/root/spectro/data/20190703/'),
+                                         call('/bin/rsync --dry-run --verbose --recursive --copy-dirlinks --times --omit-dir-times ' +
+                                              'dts:/data/dts/exposures/raw/20190703/ /desi/root/spectro/data/20190703/'),
                                          call("os.chmod('%s', 0o%o)", '/desi/root/spectro/data/20190703', 0o2550),
                                          call("os.chmod('%s', 0o%o)", '/desi/root/spectro/data/20190703/00001234', 0o2550),
                                          call("os.chmod('%s', 0o%o)", '/desi/root/spectro/data/20190703/00001235', 0o2550),
@@ -1045,49 +1065,48 @@ total size is 118,417,836,324  speedup is 494,367.55
         d = os.path.dirname(c)
         with patch('os.listdir') as mock_listdir:
             mock_listdir.return_value = ['t.sha256sum', 'test_file_1.txt', 'test_file_2.txt']
-            with patch('desitransfer.daemon.log') as l:
+            with patch('desitransfer.daemon.log') as mock_log:
                 o = verify_checksum(c)
         self.assertEqual(o, "")
-        l.debug.assert_has_calls([call("%s is valid.", os.path.join(d, 'test_file_1.txt')),
-                                  call("%s is valid.", os.path.join(d, 'test_file_2.txt'))])
+        mock_log.debug.assert_has_calls([call("%s is valid.", os.path.join(d, 'test_file_1.txt')),
+                                         call("%s is valid.", os.path.join(d, 'test_file_2.txt'))])
         #
         # Wrong number of files.
         #
         with patch('os.listdir') as mock_listdir:
             mock_listdir.return_value = ['t.sha256sum', 'test_file_1.txt']
-            with patch('desitransfer.daemon.log') as l:
+            with patch('desitransfer.daemon.log') as mock_log:
                 o = verify_checksum(c)
         self.assertEqual(o, "1 file(s) listed but not downloaded.\n")
-        l.error.assert_has_calls([call("%s lists %d file(s) that are not present!", c, 1)])
+        mock_log.error.assert_has_calls([call("%s lists %d file(s) that are not present!", c, 1)])
         with patch('os.listdir') as mock_listdir:
             mock_listdir.return_value = ['t.sha256sum', 'test_file_1.txt', 'test_file_2.txt', 'test_file_3.txt']
-            with patch('desitransfer.daemon.log') as l:
+            with patch('desitransfer.daemon.log') as mock_log:
                 o = verify_checksum(c)
         self.assertEqual(o, "1 file(s) downloaded but not listed.\ntest_file_3.txt not listed in checksum file.\n")
-        l.error.assert_has_calls([call("%d files are not listed in %s!", 1, c)])
+        mock_log.error.assert_has_calls([call("%d files are not listed in %s!", 1, c)])
         #
         # Bad list of files.
         #
         with patch('os.listdir') as mock_listdir:
             mock_listdir.return_value = ['t.sha256sum', 'test_file_1.txt', 'test_file_3.txt']
-            with patch('desitransfer.daemon.log') as l:
+            with patch('desitransfer.daemon.log') as mock_log:
                 o = verify_checksum(c)
         self.assertEqual(o, "test_file_3.txt not listed in checksum file.\n")
-        l.debug.assert_has_calls([call("%s is valid.", os.path.join(d, 'test_file_1.txt'))])
-        l.error.assert_has_calls([call("%s does not appear in %s!", os.path.join(d, 'test_file_3.txt'), c)])
+        mock_log.debug.assert_has_calls([call("%s is valid.", os.path.join(d, 'test_file_1.txt'))])
+        mock_log.error.assert_has_calls([call("%s does not appear in %s!", os.path.join(d, 'test_file_3.txt'), c)])
         #
         # Hack hashlib to produce incorrect checksums.
         #
         with patch('os.listdir') as mock_listdir:
             mock_listdir.return_value = ['t.sha256sum', 'test_file_1.txt', 'test_file_2.txt']
-            with patch('desitransfer.daemon.log') as l:
-                with patch('hashlib.sha256') as h:
-                    # h.sha256 = MagicMock()
-                    h.hexdigest.return_value = 'abcdef'
+            with patch('desitransfer.daemon.log') as mock_log:
+                with patch('hashlib.sha256') as mock_hash:
+                    mock_hash.hexdigest.return_value = 'abcdef'
                     o = verify_checksum(c)
         self.assertEqual(o, "test_file_1.txt had a checksum mismatch.\ntest_file_2.txt had a checksum mismatch.\n")
-        l.error.assert_has_calls([call("Checksum mismatch for %s in %s!", os.path.join(d, 'test_file_1.txt'), c),
-                                  call("Checksum mismatch for %s in %s!", os.path.join(d, 'test_file_2.txt'), c)])
+        mock_log.error.assert_has_calls([call("Checksum mismatch for %s in %s!", os.path.join(d, 'test_file_1.txt'), c),
+                                         call("Checksum mismatch for %s in %s!", os.path.join(d, 'test_file_2.txt'), c)])
 
     @patch('os.walk')
     @patch('os.chmod')

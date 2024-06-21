@@ -75,17 +75,17 @@ class TestStatus(unittest.TestCase):
         # New directory.
         #
         d = '/desi/spectro/status'
-        with patch('desitransfer.status.log') as l:
-            with patch('os.makedirs') as m:
-                with patch('shutil.copy') as cp:
-                    with patch('shutil.copyfile') as cf:
+        with patch('desitransfer.status.log') as mock_log:
+            with patch('os.makedirs') as mock_makedirs:
+                with patch('shutil.copy') as mock_copy:
+                    with patch('shutil.copyfile') as mock_copyfile:
                         s = TransferStatus(d)
-        l.debug.assert_has_calls([call("os.makedirs('%s', exist_ok=True)", d),
-                                  call("shutil.copyfile('%s', '%s')", h, os.path.join(d, 'index.html')),
-                                  call("shutil.copy('%s', '%s')", j, d)])
-        m.assert_called_once_with(d, exist_ok=True)
-        cp.assert_called_once_with(j, d)
-        cf.assert_called_once_with(h, os.path.join(d, 'index.html'))
+        mock_log.debug.assert_has_calls([call("os.makedirs('%s', exist_ok=True)", d),
+                                         call("shutil.copyfile('%s', '%s')", h, os.path.join(d, 'index.html')),
+                                         call("shutil.copy('%s', '%s')", j, d)])
+        mock_makedirs.assert_called_once_with(d, exist_ok=True)
+        mock_copy.assert_called_once_with(j, d)
+        mock_copyfile.assert_called_once_with(h, os.path.join(d, 'index.html'))
 
     @patch('desitransfer.status.log')
     def test_TransferStatus_handle_malformed_with_log(self, mock_log):

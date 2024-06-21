@@ -11,7 +11,8 @@ A cronjob running as desi@dtn01.nersc.gov ensures that this daemon is running.
 
 Catchup on a specific night::
 
-    NIGHT=20200124 && rsync -rlvt --exclude-from ${DESITRANSFER}/py/desitransfer/data/desi_nightwatch_transfer_exclude.txt dts:/exposures/nightwatch/${NIGHT}/ /global/cfs/cdirs/desi/spectro/nightwatch/kpno/${NIGHT}/
+    NIGHT=20200124 && rsync -rlvt --exclude-from ${DESITRANSFER}/py/desitransfer/data/desi_nightwatch_transfer_exclude.txt \
+        dts:/exposures/nightwatch/${NIGHT}/ /global/cfs/cdirs/desi/spectro/nightwatch/kpno/${NIGHT}/
 
 By-hand startup sequence (bash shell)::
 
@@ -114,7 +115,7 @@ def main():
     options = _options()
     _configure_log(options.debug)
     errcount = 0
-    wait = options.sleep*60
+    wait = options.sleep * 60
     source = '/exposures/nightwatch'
     basedir = os.path.join(os.environ['DESI_ROOT'], 'spectro', 'nightwatch')
     kpnodir = os.path.join(basedir, 'kpno')
