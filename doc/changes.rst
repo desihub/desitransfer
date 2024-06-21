@@ -2,10 +2,12 @@
 Change Log
 ==========
 
-1.0.2 (unreleased)
+1.0.2 (2024-06-21)
 ------------------
 
-* No changes yet.
+* Only sync the most recent year for nightwatch data (PR `#60`_).
+
+.. _`#60`: https://github.com/desihub/desitransfer/pull/60
 
 1.0.1 (2024-05-01)
 ------------------
