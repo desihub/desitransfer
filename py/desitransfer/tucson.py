@@ -316,14 +316,17 @@ def main():
     while any([v[0] is not None for v in proc_pool.values()]):
         for proc_key in proc_pool:
             proc, LOG, d = proc_pool[proc_key]
-            if options.test and proc is not None:
-                log.debug("%s: %s -> %s", d, ' '.join(proc), LOG)
             if proc is None:
                 status = None
             else:
-                status = proc.poll()
+                if options.test:
+                    log.debug("%s: %s -> %s", d, ' '.join(proc), LOG)
+                    status = 0
+                else:
+                    status = proc.poll()
             if status is not None:
-                LOG.close()
+                if not options.test:
+                    LOG.close()
                 if status != 0:
                     log.critical("rsync error detected for %s/%s/! Check logs!", dst, d)
                 proc_pool[proc_key] = _get_proc(directories, exclude, src, dst, options)
