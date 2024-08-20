@@ -7,8 +7,10 @@ import sys
 import unittest
 import logging
 import subprocess as sub
-from unittest.mock import patch, call, mock_open
-from ..tucson import _options, _rsync, _configure_log, running
+from tempfile import mkdtemp
+from shutil import rmtree
+from unittest.mock import patch, call, mock_open, MagicMock
+from ..tucson import _options, _rsync, _configure_log, running, _get_proc
 from .. import __version__ as dtVersion
 
 
@@ -18,11 +20,11 @@ class TestTucson(unittest.TestCase):
 
     @classmethod
     def setUpClass(cls):
-        pass
+        cls.temp_dir = mkdtemp()
 
     @classmethod
     def tearDownClass(cls):
-        pass
+        rmtree(cls.temp_dir)
 
     def setUp(self):
         pass
@@ -164,3 +166,34 @@ class TestTucson(unittest.TestCase):
                                           stdout=sub.PIPE, stderr=sub.PIPE),
                                      call().communicate()])
         mock_popen().communicate.assert_called_once()
+
+    @patch('subprocess.Popen')
+    @patch('desitransfer.tucson.log')
+    def test_get_proc(self, mock_log, mock_popen):
+        """Test the function for generating external procedures.
+        """
+        directories = ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i']
+        exclude = set(['d', 'g'])
+        options = MagicMock()
+        options.test = False
+        options.log = self.temp_dir
+        proc, LOG_A, d = _get_proc(directories, exclude, '/src', '/dst', options)
+        self.assertEqual(d, 'a')
+        LOG_A.close()
+        options.test = True
+        proc, LOG_B, d = _get_proc(directories, exclude, '/src', '/dst', options)
+        self.assertEqual(d, 'b')
+        self.assertEqual(LOG_B, os.path.join(self.temp_dir, 'desi_tucson_transfer_b.log'))
+        proc, LOG_C, d = _get_proc(directories, exclude, '/src', '/dst', options)
+        self.assertEqual(d, 'c')
+        proc, LOG_E, d = _get_proc(directories, exclude, '/src', '/dst', options)
+        self.assertEqual(d, 'e')
+        proc, LOG_F, d = _get_proc(directories, exclude, '/src', '/dst', options)
+        self.assertEqual(d, 'f')
+        proc, LOG_H, d = _get_proc(directories, exclude, '/src', '/dst', options)
+        self.assertEqual(d, 'h')
+        proc, LOG_I, d = _get_proc(directories, exclude, '/src', '/dst', options)
+        self.assertEqual(d, 'i')
+        proc, LOG_J, d = _get_proc(directories, exclude, '/src', '/dst', options)
+        self.assertIsNone(proc)
+

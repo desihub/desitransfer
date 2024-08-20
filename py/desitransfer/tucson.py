@@ -130,6 +130,9 @@ def _options():
     prsr.add_argument('-l', '--log', metavar='DIR',
                       default=os.path.join(os.environ['HOME'], 'Documents', 'Logfiles'),
                       help='Use DIR for log files (default %(default)s).')
+    prsr.add_argument('-p', '--processes', action='store', type=int,
+                      dest='nproc',  metavar="N", default=10,
+                      help="Number of simultaneous downloads (default %(default)s).")
     prsr.add_argument('-s', '--static', action='store_true', dest='static',
                       help='Also sync static data sets.')
     prsr.add_argument('-S', '--sleep', metavar='TIME', default='15m', dest='sleep',
@@ -164,6 +167,46 @@ def _rsync(src, dst, d, checksum=False):
         cmd += includes[d]
     cmd += [f'{src}/{d}/', f'{dst}/{d}/']
     return cmd
+
+
+def _get_proc(directories, exclude, src, dst, options):
+    """Prepare the next download directory for processing.
+
+    Parameters
+    ----------
+    directories : :class:`list`
+        A list of directories to process.
+    exclude : :class:`set`
+        Do not process directories in this set.
+    src : :class:`str`
+        Root source directory.
+    dst : :class:`str`
+        Root destination directory.
+    options : :class:`argparse.Namespace`
+        The parsed command-line options.
+
+    Returns
+    -------
+    :class:`tuple`
+        A tuple containing information about the process.
+    """
+    global log
+    try:
+        d = directories.pop(0)
+        while d in exclude:
+            log.warning("%s skipped at user request.", d)
+            d = directories.pop(0)
+        log_file = os.path.join(options.log,
+                                'desi_tucson_transfer_' + d.replace('/', '_') + '.log')
+        command = _rsync(src, dst, d, checksum=options.checksum)
+        if options.test:
+            return (command, log_file, d)
+        else:
+            log.info(' '.join(command))
+            LOG = open(log_file, 'ab')
+            return (sub.Popen(command, stdout=LOG, stderr=sub.STDOUT), LOG, d)
+    except IndexError:
+        return (None, None, None)
 
 
 def running(pid_file):
@@ -266,18 +309,24 @@ def main():
         directories = static + dynamic
     else:
         directories = dynamic
-    for d in directories:
-        if d in exclude:
-            log.warning("%s skipped at user request.", d)
-        else:
-            command = _rsync(src, dst, d, checksum=options.checksum)
-            log.info(' '.join(command))
-            if not options.test:
-                log_file = os.path.join(options.log,
-                                        'desi_tucson_transfer_' + d.replace('/', '_') + '.log')
-                with open(log_file, 'ab') as LOG:
-                    proc = sub.Popen(command, stdout=LOG, stderr=sub.STDOUT)
-                    status = proc.wait()
-                if status != 0:
-                    log.critical("rsync error detected for %s/%s/! Check logs!", dst, d)
+    proc_pool = dict()
+    for p in range(options.nproc):
+        proc_key = 'proc{0:03d}'.format(p)
+        proc_pool[proc_key] = _get_proc(directories, exclude, src, dst, options)
+    while any([v[0] is not None for v in proc_pool.values()]):
+        for proc_key in proc_pool:
+            proc, LOG, d = proc_pool[proc_key]
+            if options.test:
+                log.debug("%s: %s -> %s", d, ' '.join(proc), LOG)
+            else:
+                if proc is None:
+                    status = None
+                else:
+                    status = proc.poll()
+                if status is not None:
+                    LOG.close()
+                    if status != 0:
+                        log.critical("rsync error detected for %s/%s/! Check logs!", dst, d)
+            proc_pool[proc_key] = _get_proc(directories, exclude, src, dst, options)
+        time.sleep(sleepy_time)
     return 0
