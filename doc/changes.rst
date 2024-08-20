@@ -5,7 +5,7 @@ Change Log
 1.0.3 (unreleased)
 ------------------
 
-* No changes yet.
+* Convert Tucson transfer to parallel operation.
 
 1.0.2 (2024-06-21)
 ------------------

@@ -196,4 +196,3 @@ class TestTucson(unittest.TestCase):
         self.assertEqual(d, 'i')
         proc, LOG_J, d = _get_proc(directories, exclude, '/src', '/dst', options)
         self.assertIsNone(proc)
-

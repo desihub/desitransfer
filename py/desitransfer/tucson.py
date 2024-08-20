@@ -131,7 +131,7 @@ def _options():
                       default=os.path.join(os.environ['HOME'], 'Documents', 'Logfiles'),
                       help='Use DIR for log files (default %(default)s).')
     prsr.add_argument('-p', '--processes', action='store', type=int,
-                      dest='nproc',  metavar="N", default=10,
+                      dest='nproc', metavar="N", default=10,
                       help="Number of simultaneous downloads (default %(default)s).")
     prsr.add_argument('-s', '--static', action='store_true', dest='static',
                       help='Also sync static data sets.')
@@ -327,6 +327,8 @@ def main():
                     LOG.close()
                     if status != 0:
                         log.critical("rsync error detected for %s/%s/! Check logs!", dst, d)
-            proc_pool[proc_key] = _get_proc(directories, exclude, src, dst, options)
-        time.sleep(sleepy_time)
+                    proc_pool[proc_key] = _get_proc(directories, exclude, src, dst, options)
+        if not options.test:
+            log.debug("Waiting for jobs to complete, sleeping %s.", options.sleep)
+            time.sleep(sleepy_time)
     return 0
