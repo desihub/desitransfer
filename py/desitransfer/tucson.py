@@ -316,7 +316,7 @@ def main():
     while any([v[0] is not None for v in proc_pool.values()]):
         for proc_key in proc_pool:
             proc, LOG, d = proc_pool[proc_key]
-            if options.test:
+            if options.test and proc is not None:
                 log.debug("%s: %s -> %s", d, ' '.join(proc), LOG)
             else:
                 if proc is None:
