@@ -318,16 +318,15 @@ def main():
             proc, LOG, d = proc_pool[proc_key]
             if options.test and proc is not None:
                 log.debug("%s: %s -> %s", d, ' '.join(proc), LOG)
+            if proc is None:
+                status = None
             else:
-                if proc is None:
-                    status = None
-                else:
-                    status = proc.poll()
-                if status is not None:
-                    LOG.close()
-                    if status != 0:
-                        log.critical("rsync error detected for %s/%s/! Check logs!", dst, d)
-                    proc_pool[proc_key] = _get_proc(directories, exclude, src, dst, options)
+                status = proc.poll()
+            if status is not None:
+                LOG.close()
+                if status != 0:
+                    log.critical("rsync error detected for %s/%s/! Check logs!", dst, d)
+                proc_pool[proc_key] = _get_proc(directories, exclude, src, dst, options)
         if not options.test:
             log.debug("Waiting for jobs to complete, sleeping %s.", options.sleep)
             time.sleep(sleepy_time)
