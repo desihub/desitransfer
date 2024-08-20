@@ -5,7 +5,9 @@ Change Log
 1.0.3 (unreleased)
 ------------------
 
-* Convert Tucson transfer to parallel operation.
+* Convert Tucson transfer to parallel operation (PR `#61`_).
+
+.. _`#61`: https://github.com/desihub/desitransfer/pull/61
 
 1.0.2 (2024-06-21)
 ------------------
