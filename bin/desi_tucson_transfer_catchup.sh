@@ -27,7 +27,8 @@ log_root=${HOME}/Documents/Logfiles
 for d in engineering/focalplane engineering/focalplane/hwtables \
     spectro/data \
     spectro/redux/daily spectro/redux/daily/exposures spectro/redux/daily/preproc spectro/redux/daily/tiles \
-    spectro/nightwatch/kpno spectro/staging/lost+found; do
+    spectro/nightwatch/kpno spectro/staging/lost+found \
+    software/AnyConnect software/CiscoSecureClient; do
     case ${d} in
         engineering/focalplane) priority='nice'; exclude='--exclude archive --exclude hwtables --exclude *.ipynb --exclude .ipynb_checkpoints' ;;
         engineering/focalplane/hwtables) priority='nice'; exclude='--include *.csv --exclude *' ;;

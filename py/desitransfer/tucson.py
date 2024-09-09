@@ -55,6 +55,7 @@ dynamic = ['spectro/data',
            'spectro/redux/daily/preproc',
            'spectro/redux/daily/tiles',
            'engineering/focalplane',
+           'engineering/focalplane/hwtables',
            'software/AnyConnect',
            'software/CiscoSecureClient']
 
@@ -76,6 +77,13 @@ includes = {'engineering/focalplane': ["--exclude", "archive", "--exclude", "hwt
             'survey/ops/surveyops/trunk': ["--exclude", ".svn", "--exclude", "cronupdate.log"],
             'target/catalogs': ["--include", "dr8", "--include", "dr9",
                                 "--include", "gaiadr2", "--include", "subpriority", "--exclude", "*"]}
+
+
+priority = ('spectro/data',
+            'spectro/redux/daily',
+            'spectro/redux/daily/exposures',
+            'spectro/redux/daily/preproc',
+            'spectro/redux/daily/tiles')
 
 
 def _configure_log(debug):
@@ -169,7 +177,7 @@ def _rsync(src, dst, d, checksum=False):
     return cmd
 
 
-def _get_proc(directories, exclude, src, dst, options):
+def _get_proc(directories, exclude, src, dst, options, nice=5):
     """Prepare the next download directory for processing.
 
     Parameters
@@ -184,6 +192,9 @@ def _get_proc(directories, exclude, src, dst, options):
         Root destination directory.
     options : :class:`argparse.Namespace`
         The parsed command-line options.
+    nice : :class:`int`, optional.
+        Lower-priority transfers will be run with this value passed to :func:`os.nice`,
+        default 5.
 
     Returns
     -------
@@ -191,6 +202,13 @@ def _get_proc(directories, exclude, src, dst, options):
         A tuple containing information about the process.
     """
     global log
+
+    def preexec_nice():  # pragma: no cover
+        os.nice(nice)
+
+    def preexec_pass():  # pragma: no cover
+        pass
+
     try:
         d = directories.pop(0)
         while d in exclude:
@@ -204,7 +222,12 @@ def _get_proc(directories, exclude, src, dst, options):
         else:
             log.info(' '.join(command))
             LOG = open(log_file, 'ab')
-            return (sub.Popen(command, stdout=LOG, stderr=sub.STDOUT), LOG, d)
+            if d in priority:
+                preexec_fn = preexec_pass
+            else:
+                log.info("Directory '%s' will be transferred with os.nice(%d)", d, nice)
+                preexec_fn = preexec_nice
+            return (sub.Popen(command, preexec_fn=preexec_fn, stdout=LOG, stderr=sub.STDOUT), LOG, d)
     except IndexError:
         return (None, None, None)
 
