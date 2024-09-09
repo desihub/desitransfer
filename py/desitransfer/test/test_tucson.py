@@ -173,6 +173,7 @@ class TestTucson(unittest.TestCase):
     def test_get_proc(self, mock_priority, mock_log, mock_popen):
         """Test the function for generating external procedures.
         """
+        home = os.environ['HOME']
         directories = ['a', 'b', 'c', 'd', 'e', 'f', 'g', 'h', 'i']
         exclude = set(['d', 'g'])
         mock_priority.__contains__ = lambda self, x: x == 'e' or x == 'f'
@@ -200,13 +201,13 @@ class TestTucson(unittest.TestCase):
         self.assertEqual(d, 'i')
         proc, LOG_J, d = _get_proc(directories, exclude, '/src', '/dst', options)
         self.assertIsNone(proc)
-        mock_log.info.assert_has_calls([call('/usr/bin/rsync --archive --checksum --verbose --delete --delete-after --no-motd --password-file /Users/benjamin.weaver/.desi /src/a/ /dst/a/'),
+        mock_log.info.assert_has_calls([call(f'/usr/bin/rsync --archive --checksum --verbose --delete --delete-after --no-motd --password-file {home}/.desi /src/a/ /dst/a/'),
                                         call("Directory '%s' will be transferred with os.nice(%d)", 'a', 5),
-                                        call('/usr/bin/rsync --archive --checksum --verbose --delete --delete-after --no-motd --password-file /Users/benjamin.weaver/.desi /src/e/ /dst/e/'),
-                                        call('/usr/bin/rsync --archive --checksum --verbose --delete --delete-after --no-motd --password-file /Users/benjamin.weaver/.desi /src/f/ /dst/f/'),
-                                        call('/usr/bin/rsync --archive --checksum --verbose --delete --delete-after --no-motd --password-file /Users/benjamin.weaver/.desi /src/h/ /dst/h/'),
+                                        call(f'/usr/bin/rsync --archive --checksum --verbose --delete --delete-after --no-motd --password-file {home}/.desi /src/e/ /dst/e/'),
+                                        call(f'/usr/bin/rsync --archive --checksum --verbose --delete --delete-after --no-motd --password-file {home}/.desi /src/f/ /dst/f/'),
+                                        call(f'/usr/bin/rsync --archive --checksum --verbose --delete --delete-after --no-motd --password-file {home}/.desi /src/h/ /dst/h/'),
                                         call("Directory '%s' will be transferred with os.nice(%d)", 'h', 5),
-                                        call('/usr/bin/rsync --archive --checksum --verbose --delete --delete-after --no-motd --password-file /Users/benjamin.weaver/.desi /src/i/ /dst/i/'),
+                                        call(f'/usr/bin/rsync --archive --checksum --verbose --delete --delete-after --no-motd --password-file {home}/.desi /src/i/ /dst/i/'),
                                         call("Directory '%s' will be transferred with os.nice(%d)", 'i', 5)])
         mock_log.warning.assert_has_calls([call('%s skipped at user request.', 'd'),
                                            call('%s skipped at user request.', 'g')])
