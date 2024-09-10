@@ -282,8 +282,15 @@ def main():
         try:
             foo = os.environ[e]
         except KeyError:
-            log.error("%s must be set!", e)
+            log.critical("%s must be set!", e)
             return 1
+
+    #
+    # Check other options.
+    #
+    if options.nproc > 10:
+        log.critical("Number of simultaneous transfers %d > 10!", options.nproc)
+        return 1
     #
     # Source and destination.
     #
@@ -292,7 +299,7 @@ def main():
         if 'DESI_ROOT' in os.environ:
             dst = os.environ['DESI_ROOT']
         else:
-            log.error("DESI_ROOT must be set, or destination directory set on the command-line (-d DIR)!")
+            log.critical("DESI_ROOT must be set, or destination directory set on the command-line (-d DIR)!")
             return 1
     else:
         dst = options.destination
@@ -314,7 +321,7 @@ def main():
                 try:
                     sleepy_time = int(options.sleep[0:-1]) * suffix[s]
                 except ValueError:
-                    log.error("Invalid value for sleep interval: '%s'!", options.sleep)
+                    log.critical("Invalid value for sleep interval: '%s'!", options.sleep)
                     return 1
     log.debug("requests.get('%s')", os.environ['DESISYNC_STATUS_URL'])
     if not options.test:
