@@ -34,8 +34,8 @@ for d in engineering/focalplane engineering/focalplane/hwtables \
         spectro/data) priority=''; exclude='--exclude 2018* --exclude 2019* --exclude 2020* --exclude 2021* --exclude 2022* --exclude 2023*' ;;
         spectro/nightwatch/kpno) priority='nice'; exclude='--exclude 2021* --exclude 2022* --exclude 2023*' ;;
         spectro/redux/daily) priority=''; exclude='--exclude *.tmp --exclude attic --exclude exposures --exclude preproc --exclude temp --exclude tiles' ;;
-        spectro/redux/daily/exposures) priority=''; exclude='--exclude *.tmp' ;;
-        spectro/redux/daily/preproc) priority=''; exclude='--exclude *.tmp --exclude preproc-*.fits --exclude preproc-*.fits.gz' ;;
+        spectro/redux/daily/exposures) priority=''; exclude='--exclude 2019* --exclude 2020* --exclude 2021* --exclude 2022* --exclude 2023* --exclude *.tmp' ;;
+        spectro/redux/daily/preproc) priority=''; exclude='--exclude 2019* --exclude 2020* --exclude 2021* --exclude 2022* --exclude 2023* --exclude *.tmp --exclude preproc-*.fits --exclude preproc-*.fits.gz' ;;
         spectro/redux/daily/tiles) priority=''; exclude='--exclude *.tmp --exclude temp' ;;
         *) priority='nice'; exclude='' ;;
     esac
