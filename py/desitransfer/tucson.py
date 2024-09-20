@@ -62,7 +62,7 @@ dynamic = ['spectro/data',
 
 includes = {'engineering/focalplane': ["--exclude", "archive", "--exclude", "hwtables",
                                        "--exclude", ".ipynb_checkpoints", "--exclude", "*.ipynb"],
-            'engineering/focalplane/hwtables': ["--include", "*.csv", "--exclude", "*"],
+            # 'engineering/focalplane/hwtables': ["--include", "*.csv", "--exclude", "*"],
             'spectro/desi_spectro_calib': ["--exclude", ".svn"],
             'spectro/data': exclude_years(2018),
             'spectro/nightwatch/kpno': exclude_years(2021),
