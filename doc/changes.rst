@@ -2,7 +2,7 @@
 Change Log
 ==========
 
-1.0.3 (unreleased)
+1.0.3 (2024-09-26)
 ------------------
 
 * Convert Tucson transfer to parallel operation (PR `#61`_).
