@@ -55,27 +55,35 @@ dynamic = ['spectro/data',
            'spectro/redux/daily/preproc',
            'spectro/redux/daily/tiles',
            'engineering/focalplane',
+           'engineering/focalplane/hwtables',
            'software/AnyConnect',
            'software/CiscoSecureClient']
 
 
 includes = {'engineering/focalplane': ["--exclude", "archive", "--exclude", "hwtables",
                                        "--exclude", ".ipynb_checkpoints", "--exclude", "*.ipynb"],
-            'engineering/focalplane/hwtables': ["--include", "*.csv", "--exclude", "*"],
+            # 'engineering/focalplane/hwtables': ["--include", "*.csv", "--exclude", "*"],
             'spectro/desi_spectro_calib': ["--exclude", ".svn"],
             'spectro/data': exclude_years(2018),
             'spectro/nightwatch/kpno': exclude_years(2021),
             'spectro/redux/daily': ["--exclude", "*.tmp", "--exclude", "attic",
                                     "--exclude", "exposures", "--exclude", "preproc",
                                     "--exclude", "temp", "--exclude", "tiles"],
-            'spectro/redux/daily/exposures': ["--exclude", "*.tmp"],
-            'spectro/redux/daily/preproc': ["--exclude", "*.tmp", "--exclude", "preproc-*.fits",
-                                            "--exclude", "preproc-*.fits.gz"],
+            'spectro/redux/daily/exposures': exclude_years(2019) + ["--exclude", "*.tmp"],
+            'spectro/redux/daily/preproc': exclude_years(2019) + ["--exclude", "*.tmp", "--exclude", "preproc-*.fits",
+                                                                  "--exclude", "preproc-*.fits.gz"],
             'spectro/redux/daily/tiles': ["--exclude", "*.tmp", "--exclude", "temp"],
             'spectro/templates/basis_templates': ["--exclude", ".svn", "--exclude", "basis_templates_svn-old"],
             'survey/ops/surveyops/trunk': ["--exclude", ".svn", "--exclude", "cronupdate.log"],
             'target/catalogs': ["--include", "dr8", "--include", "dr9",
                                 "--include", "gaiadr2", "--include", "subpriority", "--exclude", "*"]}
+
+
+priority = ('spectro/data',
+            'spectro/redux/daily',
+            'spectro/redux/daily/exposures',
+            'spectro/redux/daily/preproc',
+            'spectro/redux/daily/tiles')
 
 
 def _configure_log(debug):
@@ -130,6 +138,9 @@ def _options():
     prsr.add_argument('-l', '--log', metavar='DIR',
                       default=os.path.join(os.environ['HOME'], 'Documents', 'Logfiles'),
                       help='Use DIR for log files (default %(default)s).')
+    prsr.add_argument('-p', '--processes', action='store', type=int,
+                      dest='nproc', metavar="N", default=10,
+                      help="Number of simultaneous downloads (default %(default)s).")
     prsr.add_argument('-s', '--static', action='store_true', dest='static',
                       help='Also sync static data sets.')
     prsr.add_argument('-S', '--sleep', metavar='TIME', default='15m', dest='sleep',
@@ -164,6 +175,61 @@ def _rsync(src, dst, d, checksum=False):
         cmd += includes[d]
     cmd += [f'{src}/{d}/', f'{dst}/{d}/']
     return cmd
+
+
+def _get_proc(directories, exclude, src, dst, options, nice=5):
+    """Prepare the next download directory for processing.
+
+    Parameters
+    ----------
+    directories : :class:`list`
+        A list of directories to process.
+    exclude : :class:`set`
+        Do not process directories in this set.
+    src : :class:`str`
+        Root source directory.
+    dst : :class:`str`
+        Root destination directory.
+    options : :class:`argparse.Namespace`
+        The parsed command-line options.
+    nice : :class:`int`, optional.
+        Lower-priority transfers will be run with this value passed to :func:`os.nice`,
+        default 5.
+
+    Returns
+    -------
+    :class:`tuple`
+        A tuple containing information about the process.
+    """
+    global log
+
+    def preexec_nice():  # pragma: no cover
+        os.nice(nice)
+
+    def preexec_pass():  # pragma: no cover
+        pass
+
+    try:
+        d = directories.pop(0)
+        while d in exclude:
+            log.warning("%s skipped at user request.", d)
+            d = directories.pop(0)
+        log_file = os.path.join(options.log,
+                                'desi_tucson_transfer_' + d.replace('/', '_') + '.log')
+        command = _rsync(src, dst, d, checksum=options.checksum)
+        if options.test:
+            return (command, log_file, d)
+        else:
+            log.info(' '.join(command))
+            LOG = open(log_file, 'ab')
+            if d in priority:
+                preexec_fn = preexec_pass
+            else:
+                log.info("Directory '%s' will be transferred with os.nice(%d)", d, nice)
+                preexec_fn = preexec_nice
+            return (sub.Popen(command, preexec_fn=preexec_fn, stdout=LOG, stderr=sub.STDOUT), LOG, d)
+    except IndexError:
+        return (None, None, None)
 
 
 def running(pid_file):
@@ -216,8 +282,15 @@ def main():
         try:
             foo = os.environ[e]
         except KeyError:
-            log.error("%s must be set!", e)
+            log.critical("%s must be set!", e)
             return 1
+
+    #
+    # Check other options.
+    #
+    if options.nproc > 10:
+        log.critical("Number of simultaneous transfers %d > 10!", options.nproc)
+        return 1
     #
     # Source and destination.
     #
@@ -226,7 +299,7 @@ def main():
         if 'DESI_ROOT' in os.environ:
             dst = os.environ['DESI_ROOT']
         else:
-            log.error("DESI_ROOT must be set, or destination directory set on the command-line (-d DIR)!")
+            log.critical("DESI_ROOT must be set, or destination directory set on the command-line (-d DIR)!")
             return 1
     else:
         dst = options.destination
@@ -248,7 +321,7 @@ def main():
                 try:
                     sleepy_time = int(options.sleep[0:-1]) * suffix[s]
                 except ValueError:
-                    log.error("Invalid value for sleep interval: '%s'!", options.sleep)
+                    log.critical("Invalid value for sleep interval: '%s'!", options.sleep)
                     return 1
     log.debug("requests.get('%s')", os.environ['DESISYNC_STATUS_URL'])
     if not options.test:
@@ -266,18 +339,28 @@ def main():
         directories = static + dynamic
     else:
         directories = dynamic
-    for d in directories:
-        if d in exclude:
-            log.warning("%s skipped at user request.", d)
-        else:
-            command = _rsync(src, dst, d, checksum=options.checksum)
-            log.info(' '.join(command))
-            if not options.test:
-                log_file = os.path.join(options.log,
-                                        'desi_tucson_transfer_' + d.replace('/', '_') + '.log')
-                with open(log_file, 'ab') as LOG:
-                    proc = sub.Popen(command, stdout=LOG, stderr=sub.STDOUT)
-                    status = proc.wait()
+    proc_pool = dict()
+    for p in range(options.nproc):
+        proc_key = 'proc{0:03d}'.format(p)
+        proc_pool[proc_key] = _get_proc(directories, exclude, src, dst, options)
+    while any([v[0] is not None for v in proc_pool.values()]):
+        for proc_key in proc_pool:
+            proc, LOG, d = proc_pool[proc_key]
+            if proc is None:
+                status = None
+            else:
+                if options.test:
+                    log.debug("%s: %s -> %s", d, ' '.join(proc), LOG)
+                    status = 0
+                else:
+                    status = proc.poll()
+            if status is not None:
+                if not options.test:
+                    LOG.close()
                 if status != 0:
                     log.critical("rsync error detected for %s/%s/! Check logs!", dst, d)
+                proc_pool[proc_key] = _get_proc(directories, exclude, src, dst, options)
+        if not options.test:
+            log.debug("Waiting for jobs to complete, sleeping %s.", options.sleep)
+            time.sleep(sleepy_time)
     return 0
