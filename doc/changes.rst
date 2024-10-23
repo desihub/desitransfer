@@ -2,10 +2,12 @@
 Change Log
 ==========
 
-1.0.4 (unreleased)
+1.0.4 (2024-10-23)
 ------------------
 
-* No changes yet.
+* Add ``engineering/focalplane/endofnight`` to morning engineering transfers (PR `#63`_).
+
+.. _`#63`: https://github.com/desihub/desitransfer/pull/63
 
 1.0.3 (2024-09-26)
 ------------------

@@ -130,7 +130,9 @@ def _config(timeframe):
     if timeframe == 'morning':
         return [DailyDirectory('/software/www2/html/nightlogs',
                                os.path.join(survey, 'ops', 'nightlogs'),
-                               extra=['--include-from', nightlog_include, '--exclude', '*']),]
+                               extra=['--include-from', nightlog_include, '--exclude', '*']),
+                DailyDirectory('/data/focalplane/endofnight',
+                               os.path.join(engineering, 'focalplane', 'endofnight'))]
     else:
         return [DailyDirectory('/data/dts/exposures/lost+found',
                                os.path.join(spectro, 'staging', 'lost+found'),
