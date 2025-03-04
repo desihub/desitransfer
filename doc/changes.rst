@@ -5,7 +5,9 @@ Change Log
 1.0.5 (unreleased)
 ------------------
 
-* No changes yet.
+* Update ReadTheDocs theme configuration (PR `#64`_).
+
+.. _`#64`: https://github.com/desihub/desitransfer/pull/64
 
 1.0.4 (2024-10-23)
 ------------------
