@@ -1,4 +1,0 @@
-setuptools
-requests
-pytz
-git+https://github.com/desihub/desiutil.git@3.3.0
