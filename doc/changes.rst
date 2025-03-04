@@ -5,7 +5,7 @@ Change Log
 1.0.5 (unreleased)
 ------------------
 
-* No changes yet.
+* Update ReadTheDocs theme configuration.
 
 1.0.4 (2024-10-23)
 ------------------
