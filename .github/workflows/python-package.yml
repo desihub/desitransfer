@@ -17,7 +17,7 @@ jobs:
             fail-fast: true
             matrix:
                 os: [ubuntu-latest]
-                python-version: ['3.9', '3.10', '3.11']
+                python-version: ['3.10', '3.11', '3.12']
 
         env:
             DESIUTIL_VERSION: 3.5.0
@@ -36,7 +36,6 @@ jobs:
                 python -m pip install --upgrade pip setuptools wheel
                 python -m pip install git+https://github.com/desihub/desiutil.git@${DESIUTIL_VERSION}
                 python -m pip install .[test]
-                if [ -f requirements.txt ]; then python -m pip install -r requirements.txt; fi
             - name: Run the test
               run: pytest
 
