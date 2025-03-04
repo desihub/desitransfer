@@ -7,7 +7,7 @@ Change Log
 
 * Update ReadTheDocs theme configuration (PR `#64`_).
 
-.. _`#63`: https://github.com/desihub/desitransfer/pull/64
+.. _`#64`: https://github.com/desihub/desitransfer/pull/64
 
 1.0.4 (2024-10-23)
 ------------------
