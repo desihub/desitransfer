@@ -56,7 +56,6 @@ dynamic = ['spectro/data',
            'spectro/redux/daily/tiles',
            'engineering/focalplane',
            'engineering/focalplane/hwtables',
-           'software/AnyConnect',
            'software/CiscoSecureClient']
 
 
