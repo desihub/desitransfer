@@ -25,5 +25,6 @@ set -o noglob
 #
 src=${NERSC_USER}@${NERSC_HOST}:/global/cfs/cdirs/desi/engineering/focalplane/hwtables
 dst=${DESI_ROOT}/engineering/focalplane/hwtables
-/usr/bin/rsync --verbose --archive --delete --delete-after --include *.csv --exclude * \
+/usr/bin/rsync --verbose --archive --delete --delete-after --no-motd \
+    --include *.csv --exclude * \
     --rsh='ssh -i ~/.ssh/nersc -o IdentitiesOnly=yes' ${src}/ ${dst}/
