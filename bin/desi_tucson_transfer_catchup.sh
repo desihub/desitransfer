@@ -24,13 +24,12 @@ log_root=${HOME}/Documents/Logfiles
 #
 # Execute rsync commands. Do not exceed 10 commands!
 #
-for d in engineering/focalplane engineering/focalplane/hwtables \
+for d in engineering/focalplane \
     spectro/data \
     spectro/redux/daily spectro/redux/daily/exposures spectro/redux/daily/preproc spectro/redux/daily/tiles \
     spectro/nightwatch/kpno spectro/staging/lost+found; do
     case ${d} in
         engineering/focalplane) priority='nice'; exclude='--exclude archive --exclude hwtables --exclude *.ipynb --exclude .ipynb_checkpoints' ;;
-        # engineering/focalplane/hwtables) priority='nice'; exclude='--include *.csv --exclude *' ;;
         spectro/data) priority=''; exclude='--exclude 2018* --exclude 2019* --exclude 2020* --exclude 2021* --exclude 2022* --exclude 2023* --exclude 2024*' ;;
         spectro/nightwatch/kpno) priority='nice'; exclude='--exclude 2021* --exclude 2022* --exclude 2023* --exclude 2024*' ;;
         spectro/redux/daily) priority=''; exclude='--exclude *.tmp --exclude attic --exclude exposures --exclude preproc --exclude temp --exclude tiles' ;;
