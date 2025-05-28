@@ -9,7 +9,7 @@ if [[ -z "${NERSC_USER}" ]]; then
     exit 1
 fi
 if [[ -z "${NERSC_HOST}" ]]; then
-    echo "ERROR: NERSC_USER is undefined!"
+    echo "ERROR: NERSC_HOST is undefined!"
     exit 1
 fi
 if [[ -z "${DESI_ROOT}" ]]; then
