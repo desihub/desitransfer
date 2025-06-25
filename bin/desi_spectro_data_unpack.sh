@@ -46,7 +46,7 @@ shift $((OPTIND - 1))
 #
 # Set up environment.
 #
-[[ -z "${DESIUTIL}" ]] && source /global/common/software/desi/desi_environment.sh datatran-test
+[[ -z "${DESIUTIL}" ]] && source /global/common/software/desi/desi_environment.sh datatran
 [[ -z "${DESITRANSFER}" ]] && module load desitransfer/main
 #
 # Find tarballs.
