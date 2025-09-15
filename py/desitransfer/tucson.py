@@ -66,6 +66,7 @@ includes = {'engineering/focalplane': ["--exclude", "archive", "--exclude", "hwt
             'spectro/data': exclude_years(2018),
             'spectro/nightwatch/kpno': exclude_years(2021),
             'spectro/redux/daily': ["--exclude", "*.tmp", "--exclude", "attic",
+                                    "--exclude", "dark_preproc",
                                     "--exclude", "exposures", "--exclude", "preproc",
                                     "--exclude", "temp", "--exclude", "tiles"],
             'spectro/redux/daily/exposures': exclude_years(2019) + ["--exclude", "*.tmp"],
