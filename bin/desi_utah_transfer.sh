@@ -74,7 +74,7 @@ fi
 #
 # Configuration.
 #
-syn="/usr/bin/rsync --archive --verbose --delete --delete-after --no-motd --password-file ${HOME}/.desi"
+syn="/usr/bin/rsync --archive --verbose --delete --delete-after --delete-excluded --no-motd --password-file ${HOME}/.desi"
 src=rsync://${DESISYNC_HOSTNAME}/desi
 dst=${DESI_ROOT}
 log_root=${HOME}/Documents/Logfiles
