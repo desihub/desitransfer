@@ -90,6 +90,20 @@ while getopts htv argname; do
 done
 shift $((OPTIND - 1))
 #
+# Check for running process.
+#
+pid_file=${log_root}/desi_utah_transfer.pid
+if [[ -f ${pid_file} ]]; then
+    pid=$(<pid_file)
+    process=$(ps -p ${pid} -o args=)
+    if [[ -n "${process}" ]]; then
+        echo "ERROR: Running process detected (${pid} = ${process}), exiting!"
+        exit 1
+    fi
+fi
+truncate -s 0 ${pid_file}
+echo $$ >> ${pid_file}
+#
 # Set user-write on some files.
 #
 ${verbose} && echo "chmod -R u+w ${dst}/spectro/redux/daily/tiles/cumulative"
