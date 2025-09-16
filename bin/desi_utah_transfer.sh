@@ -19,6 +19,36 @@ function usage() {
     ) >&2
 }
 #
+# Create a local include file with a running set of dates.
+#
+function local_include_file() {
+    local path=$1
+    local now=$(date +%s)
+    local include_file=${DESI_ROOT}/spectro/redux/daily_${path}.txt
+    truncate -s 0 ${include_file}
+    for _day in $(seq 30); do
+        _past=$(( now - (_day * 86400) ))
+        _night=$(date -d @${_past} +%Y%m%d)
+        echo "${_night}" >> ${include_file}
+        if [[ "${path}" != "calibnight" ]]; then
+            echo "${_night}/????????" >> ${include_file}
+        fi
+    done
+    if [[ "${path}" == "preproc" ]]; then
+        echo "fibermap-*.fits" >> ${include_file}
+        echo "preproc-*.fits.gz" >> ${include_file}
+        echo "tilepix-*.json" >> ${include_file}
+    else
+        echo "*.fits" >> ${include_file}
+        echo "*.fits.gz" >> ${include_file}
+        echo "*.csv" >> ${include_file}
+        if [[ "${path}" == "calibnight" ]]; then
+            echo "tmp" >> ${include_file}
+            echo "old" >> ${include_file}
+        fi
+    fi
+}
+#
 # Do not expand globs, pass them on to rsync.
 #
 set -o noglob
@@ -67,7 +97,15 @@ ${test}    || chmod -R u+w ${dst}/spectro/redux/daily/tiles/cumulative
 #
 # Copy the daily/tiles/cumulative description file from NERSC.
 #
-wget --quiet --unlink --output-document=${DESI_ROOT}/spectro/redux/daily_tiles_cumulative.txt ${DAILY_TILES_CUMULATIVE_OUTPUT}
+${verbose} && echo "wget --quiet --unlink --output-document=${DESI_ROOT}/spectro/redux/daily_tiles_cumulative.txt ${DAILY_TILES_CUMULATIVE_OUTPUT}"
+${test}    || wget --quiet --unlink --output-document=${DESI_ROOT}/spectro/redux/daily_tiles_cumulative.txt ${DAILY_TILES_CUMULATIVE_OUTPUT}
+#
+# Prepare local include files.
+#
+for path in calibnight exposures preproc; do
+    ${verbose} && echo "local_include_file ${path}"
+    local_include_file ${path}
+done
 #
 # Execute rsync commands.
 #
@@ -78,9 +116,9 @@ for d in spectro/redux/daily spectro/redux/daily/calibnight \
     survey/GFA; do
     case ${d} in
         spectro/redux/daily) priority='nice'; exclude="--include-from ${DESITRANSFER}/py/desitransfer/data/desi_utah_daily.txt --exclude *" ;;
-        spectro/redux/daily/calibnight) priority='nice'; exclude='--include 202403?? --include *.fits --include *.fits.gz --include *.csv --include tmp --include old --exclude *' ;;
-        spectro/redux/daily/exposures) priority='nice'; exclude='--include 202403?? --include 202403??/???????? --include *.fits --include *.fits.gz --include *.csv --exclude *' ;;
-        spectro/redux/daily/preproc) priority='nice'; exclude='--include 202403?? --include 202403??/???????? --include fibermap-*.fits --include preproc-*.fits.gz --include tilepix-*.json --exclude *' ;;
+        spectro/redux/daily/calibnight) priority='nice'; exclude="--include-from ${DESI_ROOT}/spectro/redux/daily_calibnight.txt --exclude *" ;;
+        spectro/redux/daily/exposures) priority='nice'; exclude="--include-from ${DESI_ROOT}/spectro/redux/daily_exposures.txt --exclude *" ;;
+        spectro/redux/daily/preproc) priority='nice'; exclude="--include-from ${DESI_ROOT}/spectro/redux/daily_preproc.txt --exclude *" ;;
         spectro/redux/daily/tiles/cumulative) priority='nice'; exclude="--files-from ${DESI_ROOT}/spectro/redux/daily_tiles_cumulative.txt" ;;
         *) priority=''; exclude='' ;;
     esac
@@ -89,3 +127,4 @@ for d in spectro/redux/daily spectro/redux/daily/calibnight \
     ${verbose} && echo "${priority} ${syn} ${exclude} ${src}/${d}/ ${dst}/${d}/ &>> ${log} &"
     ${test}    || ${priority} ${syn} ${exclude} ${src}/${d}/ ${dst}/${d}/ &>> ${log} &
 done
+
