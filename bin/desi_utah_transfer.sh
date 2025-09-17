@@ -94,8 +94,8 @@ shift $((OPTIND - 1))
 #
 pid_file=${log_root}/desi_utah_transfer.pid
 if [[ -f ${pid_file} ]]; then
-    pid=$(<pid_file)
-    process=$(ps -p ${pid} -o args=)
+    pid=$(<${pid_file})
+    process=$(ps -p ${pid} -o args= 2>/dev/null)
     if [[ -n "${process}" ]]; then
         echo "ERROR: Running process detected (${pid} = ${process}), exiting!"
         exit 1
