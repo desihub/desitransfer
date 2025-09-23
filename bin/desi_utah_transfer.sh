@@ -138,7 +138,7 @@ for d in spectro/redux/daily spectro/redux/daily/calibnight \
     esac
     log=${log_root}/utah_$(tr '/' '_' <<<${d}).log
     [[ -f ${log} ]] || touch ${log}
-    ${verbose} && echo "nohup ${priority} ${syn} ${exclude} ${src}/${d}/ ${dst}/${d}/ &>> ${log} &"
-    ${test}    || nohup ${priority} ${syn} ${exclude} ${src}/${d}/ ${dst}/${d}/ &>> ${log} &
+    ${verbose} && echo "nohup ${priority} time ${syn} ${exclude} ${src}/${d}/ ${dst}/${d}/ &>> ${log} &"
+    ${test}    || nohup ${priority} time ${syn} ${exclude} ${src}/${d}/ ${dst}/${d}/ &>> ${log} &
 done
 
