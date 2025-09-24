@@ -90,19 +90,13 @@ while getopts htv argname; do
 done
 shift $((OPTIND - 1))
 #
-# Check for running process.
+# Check for running rsync process.
 #
-pid_file=${log_root}/desi_utah_transfer.pid
-if [[ -f ${pid_file} ]]; then
-    pid=$(<${pid_file})
-    process=$(ps -p ${pid} -o args= 2>/dev/null)
-    if [[ -n "${process}" ]]; then
-        echo "ERROR: Running process detected (${pid} = ${process}), exiting!"
-        exit 1
-    fi
+n_rsync=$(/usr/bin/ps -U ${USER} -u ${USER} -o args= 2>/dev/null | /usr/bin/grep /usr/bin/rsync | /usr/bin/wc -l)
+if (( n_rsync > 0 )); then
+    echo "ERROR: Some running rsync processes detected, exiting!"
+    exit 1
 fi
-truncate -s 0 ${pid_file}
-echo $$ >> ${pid_file}
 #
 # Set user-write on some files.
 #
