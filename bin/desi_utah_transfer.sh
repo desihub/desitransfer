@@ -74,7 +74,7 @@ fi
 #
 # Configuration.
 #
-syn="/usr/bin/rsync --archive --verbose --delete --delete-after --delete-excluded --no-motd --password-file ${HOME}/.desi"
+syn="/usr/bin/rsync --archive --verbose --no-motd --password-file ${HOME}/.desi --delete --delete-after"
 src=rsync://${DESISYNC_HOSTNAME}/desi
 dst=${DESI_ROOT}
 log_root=${HOME}/Documents/Logfiles
@@ -130,15 +130,15 @@ for d in spectro/redux/daily spectro/redux/daily/calibnight \
     survey/GFA; do
     case ${d} in
         spectro/redux/daily) priority='nice'; exclude="--include-from ${DESITRANSFER}/py/desitransfer/data/desi_utah_daily.txt --exclude *" ;;
-        spectro/redux/daily/calibnight) priority='nice'; exclude="--include-from ${DESI_ROOT}/spectro/redux/daily_calibnight.txt --exclude *" ;;
-        spectro/redux/daily/exposures) priority='nice'; exclude="--include-from ${DESI_ROOT}/spectro/redux/daily_exposures.txt --exclude *" ;;
-        spectro/redux/daily/preproc) priority='nice'; exclude="--include-from ${DESI_ROOT}/spectro/redux/daily_preproc.txt --exclude *" ;;
-        spectro/redux/daily/tiles/cumulative) priority='nice'; exclude="--files-from ${DESI_ROOT}/spectro/redux/daily_tiles_cumulative.txt" ;;
+        spectro/redux/daily/calibnight) priority='nice'; exclude="--delete-excluded --include-from ${DESI_ROOT}/spectro/redux/daily_calibnight.txt --exclude *" ;;
+        spectro/redux/daily/exposures) priority='nice'; exclude="--delete-excluded --include-from ${DESI_ROOT}/spectro/redux/daily_exposures.txt --exclude *" ;;
+        spectro/redux/daily/preproc) priority='nice'; exclude="--delete-excluded --include-from ${DESI_ROOT}/spectro/redux/daily_preproc.txt --exclude *" ;;
+        spectro/redux/daily/tiles/cumulative) priority='nice'; exclude="--delete-excluded --files-from ${DESI_ROOT}/spectro/redux/daily_tiles_cumulative.txt" ;;
         *) priority=''; exclude='' ;;
     esac
     log=${log_root}/utah_$(tr '/' '_' <<<${d}).log
     [[ -f ${log} ]] || touch ${log}
-    ${verbose} && echo "nohup ${priority} time ${syn} ${exclude} ${src}/${d}/ ${dst}/${d}/ &>> ${log} &"
-    ${test}    || nohup ${priority} time ${syn} ${exclude} ${src}/${d}/ ${dst}/${d}/ &>> ${log} &
+    ${verbose} && echo "${priority} time ${syn} ${exclude} ${src}/${d}/ ${dst}/${d}/ &>> ${log} &"
+    ${test}    || ${priority} time ${syn} ${exclude} ${src}/${d}/ ${dst}/${d}/ &>> ${log} &
 done
 
