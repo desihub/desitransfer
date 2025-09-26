@@ -92,7 +92,7 @@ shift $((OPTIND - 1))
 #
 # Check for running rsync process.
 #
-n_rsync=$(/usr/bin/ps -U ${USER} -u ${USER} -o args= 2>/dev/null | /usr/bin/grep /usr/bin/rsync | /usr/bin/wc -l)
+n_rsync=$(/usr/bin/ps -U ${USER} -u ${USER} -o args= 2>/dev/null | /usr/bin/grep /usr/bin/rsync | /usr/bin/grep -v grep | /usr/bin/wc -l)
 if (( n_rsync > 0 )); then
     echo "ERROR: Some running rsync processes detected, exiting!"
     exit 1
