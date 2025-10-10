@@ -19,6 +19,36 @@ function usage() {
     ) >&2
 }
 #
+# Create a local include file with a running set of dates.
+#
+function local_include_file() {
+    local path=$1
+    local now=$(date +%s)
+    local include_file=${DESI_ROOT}/spectro/redux/daily_${path}.txt
+    truncate -s 0 ${include_file}
+    for _day in $(seq 30); do
+        _past=$(( now - (_day * 86400) ))
+        _night=$(date -d @${_past} +%Y%m%d)
+        echo "${_night}" >> ${include_file}
+        if [[ "${path}" != "calibnight" ]]; then
+            echo "${_night}/????????" >> ${include_file}
+        fi
+    done
+    if [[ "${path}" == "preproc" ]]; then
+        echo "fibermap-*.fits" >> ${include_file}
+        echo "preproc-*.fits.gz" >> ${include_file}
+        echo "tilepix-*.json" >> ${include_file}
+    else
+        echo "*.fits" >> ${include_file}
+        echo "*.fits.gz" >> ${include_file}
+        echo "*.csv" >> ${include_file}
+        if [[ "${path}" == "calibnight" ]]; then
+            echo "tmp" >> ${include_file}
+            echo "old" >> ${include_file}
+        fi
+    fi
+}
+#
 # Do not expand globs, pass them on to rsync.
 #
 set -o noglob
@@ -44,7 +74,7 @@ fi
 #
 # Configuration.
 #
-syn="/usr/bin/rsync --archive --verbose --delete --delete-after --no-motd --password-file ${HOME}/.desi"
+syn="/usr/bin/rsync --archive --verbose --no-motd --password-file ${HOME}/.desi --delete --delete-after"
 src=rsync://${DESISYNC_HOSTNAME}/desi
 dst=${DESI_ROOT}
 log_root=${HOME}/Documents/Logfiles
@@ -60,6 +90,14 @@ while getopts htv argname; do
 done
 shift $((OPTIND - 1))
 #
+# Check for running rsync process.
+#
+n_rsync=$(/usr/bin/ps -U ${USER} -u ${USER} -o args= 2>/dev/null | /usr/bin/grep /usr/bin/rsync | /usr/bin/grep -v grep | /usr/bin/wc -l)
+if (( n_rsync > 0 )); then
+    echo "ERROR: Some running rsync processes detected, exiting!"
+    exit 1
+fi
+#
 # Set user-write on some files.
 #
 ${verbose} && echo "chmod -R u+w ${dst}/spectro/redux/daily/tiles/cumulative"
@@ -67,7 +105,15 @@ ${test}    || chmod -R u+w ${dst}/spectro/redux/daily/tiles/cumulative
 #
 # Copy the daily/tiles/cumulative description file from NERSC.
 #
-wget --quiet --unlink --output-document=${DESI_ROOT}/spectro/redux/daily_tiles_cumulative.txt ${DAILY_TILES_CUMULATIVE_OUTPUT}
+${verbose} && echo "wget --quiet --unlink --output-document=${DESI_ROOT}/spectro/redux/daily_tiles_cumulative.txt ${DAILY_TILES_CUMULATIVE_OUTPUT}"
+${test}    || wget --quiet --unlink --output-document=${DESI_ROOT}/spectro/redux/daily_tiles_cumulative.txt ${DAILY_TILES_CUMULATIVE_OUTPUT}
+#
+# Prepare local include files.
+#
+for path in calibnight exposures preproc; do
+    ${verbose} && echo "local_include_file ${path}"
+    local_include_file ${path}
+done
 #
 # Execute rsync commands.
 #
@@ -78,14 +124,15 @@ for d in spectro/redux/daily spectro/redux/daily/calibnight \
     survey/GFA; do
     case ${d} in
         spectro/redux/daily) priority='nice'; exclude="--include-from ${DESITRANSFER}/py/desitransfer/data/desi_utah_daily.txt --exclude *" ;;
-        spectro/redux/daily/calibnight) priority='nice'; exclude='--include 202403?? --include *.fits --include *.fits.gz --include *.csv --include tmp --include old --exclude *' ;;
-        spectro/redux/daily/exposures) priority='nice'; exclude='--include 202403?? --include 202403??/???????? --include *.fits --include *.fits.gz --include *.csv --exclude *' ;;
-        spectro/redux/daily/preproc) priority='nice'; exclude='--include 202403?? --include 202403??/???????? --include fibermap-*.fits --include preproc-*.fits.gz --include tilepix-*.json --exclude *' ;;
-        spectro/redux/daily/tiles/cumulative) priority='nice'; exclude="--files-from ${DESI_ROOT}/spectro/redux/daily_tiles_cumulative.txt" ;;
+        spectro/redux/daily/calibnight) priority='nice'; exclude="--delete-excluded --include-from ${DESI_ROOT}/spectro/redux/daily_calibnight.txt --exclude *" ;;
+        spectro/redux/daily/exposures) priority='nice'; exclude="--delete-excluded --include-from ${DESI_ROOT}/spectro/redux/daily_exposures.txt --exclude *" ;;
+        spectro/redux/daily/preproc) priority='nice'; exclude="--delete-excluded --include-from ${DESI_ROOT}/spectro/redux/daily_preproc.txt --exclude *" ;;
+        spectro/redux/daily/tiles/cumulative) priority='nice'; exclude="--delete-excluded --files-from ${DESI_ROOT}/spectro/redux/daily_tiles_cumulative.txt" ;;
         *) priority=''; exclude='' ;;
     esac
     log=${log_root}/utah_$(tr '/' '_' <<<${d}).log
     [[ -f ${log} ]] || touch ${log}
-    ${verbose} && echo "${priority} ${syn} ${exclude} ${src}/${d}/ ${dst}/${d}/ &>> ${log} &"
-    ${test}    || ${priority} ${syn} ${exclude} ${src}/${d}/ ${dst}/${d}/ &>> ${log} &
+    ${verbose} && echo "${priority} time ${syn} ${exclude} ${src}/${d}/ ${dst}/${d}/ &>> ${log} &"
+    ${test}    || ${priority} time ${syn} ${exclude} ${src}/${d}/ ${dst}/${d}/ &>> ${log} &
 done
+

@@ -7,9 +7,11 @@ Change Log
 
 * Update ReadTheDocs theme configuration (PR `#64`_).
 * Update NERSC to Tucson transfers (PR `#65`_).
+* Exclude ``dark_preproc`` from daily transfers; update Utah transfer script (PR `#66`_).
 
 .. _`#64`: https://github.com/desihub/desitransfer/pull/64
 .. _`#65`: https://github.com/desihub/desitransfer/pull/65
+.. _`#66`: https://github.com/desihub/desitransfer/pull/66
 
 1.0.4 (2024-10-23)
 ------------------
