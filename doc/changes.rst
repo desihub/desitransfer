@@ -2,7 +2,7 @@
 Change Log
 ==========
 
-1.0.5 (unreleased)
+1.0.5 (2025-10-10)
 ------------------
 
 * Update ReadTheDocs theme configuration (PR `#64`_).
