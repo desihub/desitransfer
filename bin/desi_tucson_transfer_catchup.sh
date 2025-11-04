@@ -17,8 +17,14 @@ set -o noglob
 #
 # Configuration.
 #
-syn="/usr/bin/rsync --archive --verbose --delete --delete-after --no-motd --password-file ${HOME}/.desi"
-src=rsync://${DESISYNC_HOSTNAME}/desi
+Verbose=/usr/bin/true
+# Test=/usr/bin/true
+syn='/usr/bin/rsync --archive --verbose --delete --delete-after --no-motd'
+src=${DESISYNC_HOSTNAME}:/global/cfs/cdirs/desi
+if [[ -z "${RSYNC_RSH}" ]]; then
+    syn="${syn} --password-file ${HOME}/.desi"
+    src=rsync://${DESISYNC_HOSTNAME}/desi
+fi
 dst=${DESI_ROOT}
 log_root=${HOME}/Documents/Logfiles
 #
@@ -40,6 +46,6 @@ for d in engineering/focalplane \
     esac
     log=${log_root}/catchup_$(tr '/' '_' <<<${d}).log
     [[ -f ${log} ]] || touch ${log}
-    echo "${priority} ${syn} ${exclude} ${src}/${d}/ ${dst}/${d}/ &>> ${log} &"
+    ${Verbose} && echo "${priority} ${syn} ${exclude} ${src}/${d}/ ${dst}/${d}/ &>> ${log} &"
     ${priority} ${syn} ${exclude} ${src}/${d}/ ${dst}/${d}/ &>> ${log} &
 done
