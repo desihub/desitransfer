@@ -2,6 +2,44 @@
 #
 # Parallel copy DESI mirror data, to catch up after outages.
 #
+function usage() {
+    local execName=$(basename $0)
+    (
+    echo "${execName} [-h] [-t] [-v]"
+    echo ""
+    echo "Parallel copy DESI mirror data, to catch up after outages."
+    echo ""
+    echo "     -h = Print this message and exit."
+    echo "     -t = Test mode. Do not execute any commands. Implies -v."
+    echo "     -v = Verbose mode. Print extra information."
+    echo ""
+    echo "The following environment variables are required:"
+    echo ""
+    echo "    DESISYNC_HOSTNAME = defines the rsync server information."
+    echo "    DESI_ROOT = defines the local destination directory."
+    echo ""
+    ) >&2
+}
+#
+# Do not expand globs, pass them on to rsync.
+#
+set -o noglob
+#
+# Configuration.
+#
+Verbose=/usr/bin/false
+while getopts htv argname; do
+    case ${argname} in
+        h) usage; exit 0 ;;
+        t) Test=/usr/bin/true; Verbose=/usr/bin/true ;;
+        v) Verbose=/usr/bin/true ;;
+        *) usage; exit 1 ;;
+    esac
+done
+shift $((OPTIND - 1))
+#
+# Check for required environment variables.
+#
 if [[ -z "${DESISYNC_HOSTNAME}" ]]; then
     echo "ERROR: DESISYNC_HOSTNAME is undefined!"
     exit 1
@@ -11,14 +49,8 @@ if [[ -z "${DESI_ROOT}" ]]; then
     exit 1
 fi
 #
-# Do not expand globs, pass them on to rsync.
+# Set up rsync commands.
 #
-set -o noglob
-#
-# Configuration.
-#
-Verbose=/usr/bin/true
-# Test=/usr/bin/true
 syn='/usr/bin/rsync --archive --verbose --delete --delete-after --no-motd'
 src=${DESISYNC_HOSTNAME}:/global/cfs/cdirs/desi
 if [[ -z "${RSYNC_RSH}" ]]; then
@@ -28,7 +60,9 @@ fi
 dst=${DESI_ROOT}
 log_root=${HOME}/Documents/Logfiles
 #
-# Execute rsync commands. Do not exceed 10 commands!
+# Execute rsync commands.
+# Typically the rsync service is set to scale to 8 instances with two
+# connections allowed per instance.
 #
 for d in engineering/focalplane \
     spectro/data \
@@ -47,5 +81,14 @@ for d in engineering/focalplane \
     log=${log_root}/catchup_$(tr '/' '_' <<<${d}).log
     [[ -f ${log} ]] || touch ${log}
     ${Verbose} && echo "${priority} ${syn} ${exclude} ${src}/${d}/ ${dst}/${d}/ &>> ${log} &"
-    ${priority} ${syn} ${exclude} ${src}/${d}/ ${dst}/${d}/ &>> ${log} &
+    if ${Test}; then
+        #
+        # Do nothing, successfully.
+        :
+    else
+        #
+        # Don't do this as a one-liner because of redirects, etc.
+        #
+        ${priority} ${syn} ${exclude} ${src}/${d}/ ${dst}/${d}/ &>> ${log} &
+    fi
 done
