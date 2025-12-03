@@ -18,6 +18,10 @@ function usage() {
     echo "    DESISYNC_HOSTNAME = defines the rsync server information."
     echo "    DESI_ROOT = defines the local destination directory."
     echo ""
+    echo "The following environment variable(s) are optional:"
+    echo ""
+    echo "    RSYNC_RSH = if detected, use rsync+ssh."
+    echo ""
     ) >&2
 }
 #
@@ -27,6 +31,7 @@ set -o noglob
 #
 # Configuration.
 #
+Test=/usr/bin/false
 Verbose=/usr/bin/false
 while getopts htv argname; do
     case ${argname} in
