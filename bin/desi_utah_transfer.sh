@@ -68,11 +68,13 @@ set -o noglob
 #
 # Configuration.
 #
+Archive=/usr/bin/true
 Check=/usr/bin/true
 Test=/usr/bin/false
 Verbose=/usr/bin/false
-while getopts hRtv argname; do
+while getopts AhRtv argname; do
     case ${argname} in
+        A) Archive=/usr/bin/false ;;
         h) usage; exit 0 ;;
         R) Check=/usr/bin/false ;;
         t) Test=/usr/bin/true; Verbose=/usr/bin/true ;;
