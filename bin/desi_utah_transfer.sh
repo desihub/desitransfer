@@ -8,11 +8,13 @@
 function usage() {
     local execName=$(basename $0)
     (
-    echo "${execName} [-h] [-t] [-v]"
+    echo "${execName} [-A] [-h] [-R] [-t] [-v]"
     echo ""
     echo "Parallel copy DESI mirror data to Utah."
     echo ""
+    echo "     -A = Do NOT start a sync of daily/tiles/archive."
     echo "     -h = Print this message and exit."
+    echo "     -R = Do NOT check for running jobs before starting new ones."
     echo "     -t = Test mode.  Do not make any changes. Implies -v."
     echo "     -v = Verbose mode. Print extra information."
     echo ""
@@ -66,11 +68,13 @@ set -o noglob
 #
 # Configuration.
 #
+Check=/usr/bin/true
 Test=/usr/bin/false
 Verbose=/usr/bin/false
-while getopts htv argname; do
+while getopts hRtv argname; do
     case ${argname} in
         h) usage; exit 0 ;;
+        R) Check=/usr/bin/false ;;
         t) Test=/usr/bin/true; Verbose=/usr/bin/true ;;
         v) Verbose=/usr/bin/true ;;
         *) usage; exit 1 ;;
@@ -99,10 +103,12 @@ fi
 #
 # Check for running rsync process.
 #
-n_rsync=$(/usr/bin/ps -U ${USER} -u ${USER} -o args= 2>/dev/null | /usr/bin/grep /usr/bin/rsync | /usr/bin/grep -v grep | /usr/bin/wc -l)
-if (( n_rsync > 0 )); then
-    echo "ERROR: Some running rsync processes detected, exiting!"
-    exit 1
+if ${Check}; then
+    n_rsync=$(/usr/bin/ps -U ${USER} -u ${USER} -o args= 2>/dev/null | /usr/bin/grep /usr/bin/rsync | /usr/bin/grep -v grep | /usr/bin/wc -l)
+    if (( n_rsync > 0 )); then
+        echo "ERROR: Some running rsync processes detected, exiting!"
+        exit 1
+    fi
 fi
 #
 # Set up rsync commands.
@@ -135,11 +141,18 @@ done
 #
 # Execute rsync commands.
 #
-for d in spectro/redux/daily spectro/redux/daily/calibnight \
-    spectro/redux/daily/exposure_tables spectro/redux/daily/exposures \
-    spectro/redux/daily/preproc spectro/redux/daily/processing_tables \
-    spectro/redux/daily/tiles/archive spectro/redux/daily/tiles/cumulative \
-    survey/GFA; do
+directories=(spectro/redux/daily \
+             spectro/redux/daily/calibnight \
+             spectro/redux/daily/exposure_tables \
+             spectro/redux/daily/exposures \
+             spectro/redux/daily/preproc \
+             spectro/redux/daily/processing_tables \
+             spectro/redux/daily/tiles/cumulative \
+             survey/GFA)
+if ${Archive}; then
+    directories+=(spectro/redux/daily/tiles/archive)
+fi
+for d in ${directories[*]}; do
     case ${d} in
         spectro/redux/daily) priority='nice'; exclude="--include-from ${DESITRANSFER}/py/desitransfer/data/desi_utah_daily.txt --exclude *" ;;
         spectro/redux/daily/calibnight) priority='nice'; exclude="--delete-excluded --include-from ${DESI_ROOT}/spectro/redux/daily_calibnight.txt --exclude *" ;;
