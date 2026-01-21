@@ -8,13 +8,14 @@
 function usage() {
     local execName=$(basename $0)
     (
-    echo "${execName} [-A] [-h] [-R] [-t] [-v]"
+    echo "${execName} [-A] [-h] [-R] [-T] [-t] [-v]"
     echo ""
     echo "Parallel copy DESI mirror data to Utah."
     echo ""
     echo "     -A = Do NOT start a sync of daily/tiles/archive."
     echo "     -h = Print this message and exit."
     echo "     -R = Do NOT check for running jobs before starting new ones."
+    echo "     -T = Do NOT execute commands via the `time` command."
     echo "     -t = Test mode.  Do not make any changes. Implies -v."
     echo "     -v = Verbose mode. Print extra information."
     echo ""
@@ -70,6 +71,7 @@ set -o noglob
 #
 Archive=/usr/bin/true
 Check=/usr/bin/true
+Time='time'
 Test=/usr/bin/false
 Verbose=/usr/bin/false
 while getopts AhRtv argname; do
@@ -77,6 +79,7 @@ while getopts AhRtv argname; do
         A) Archive=/usr/bin/false ;;
         h) usage; exit 0 ;;
         R) Check=/usr/bin/false ;;
+        T) Time='' ;;
         t) Test=/usr/bin/true; Verbose=/usr/bin/true ;;
         v) Verbose=/usr/bin/true ;;
         *) usage; exit 1 ;;
@@ -165,7 +168,7 @@ for d in ${directories[*]}; do
     esac
     log=${log_root}/utah_$(tr '/' '_' <<<${d}).log
     [[ -f ${log} ]] || touch ${log}
-    ${Verbose} && echo "${priority} time ${syn} ${exclude} ${src}/${d}/ ${dst}/${d}/ &>> ${log} &"
-    ${Test}    || ${priority} time ${syn} ${exclude} ${src}/${d}/ ${dst}/${d}/ &>> ${log} &
+    ${Verbose} && echo "${priority} ${Time} ${syn} ${exclude} ${src}/${d}/ ${dst}/${d}/ &>> ${log} &"
+    ${Test}    || ${priority} ${Time} ${syn} ${exclude} ${src}/${d}/ ${dst}/${d}/ &>> ${log} &
 done
 
