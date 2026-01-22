@@ -74,7 +74,7 @@ Check=/usr/bin/true
 Time='time'
 Test=/usr/bin/false
 Verbose=/usr/bin/false
-while getopts AhRtv argname; do
+while getopts AhRTtv argname; do
     case ${argname} in
         A) Archive=/usr/bin/false ;;
         h) usage; exit 0 ;;
