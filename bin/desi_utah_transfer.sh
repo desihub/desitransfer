@@ -8,13 +8,27 @@
 function usage() {
     local execName=$(basename $0)
     (
-    echo "${execName} [-h] [-t] [-v]"
+    echo "${execName} [-A] [-h] [-R] [-T] [-t] [-v]"
     echo ""
     echo "Parallel copy DESI mirror data to Utah."
     echo ""
+    echo "     -A = Do NOT start a sync of daily/tiles/archive."
     echo "     -h = Print this message and exit."
+    echo "     -R = Do NOT check for running jobs before starting new ones."
+    echo "     -T = Do NOT execute commands via the `time` command."
     echo "     -t = Test mode.  Do not make any changes. Implies -v."
     echo "     -v = Verbose mode. Print extra information."
+    echo ""
+    echo "The following environment variables are required:"
+    echo ""
+    echo "    DESITRANSFER = location of configuration data."
+    echo "    DESISYNC_HOSTNAME = defines the rsync server information."
+    echo "    DESI_ROOT = defines the local destination directory."
+    echo "    DAILY_TILES_CUMULATIVE_OUTPUT = location of tiles data to transfer."
+    echo ""
+    echo "The following environment variable(s) are optional:"
+    echo ""
+    echo "    RSYNC_RSH = if detected, use rsync+ssh."
     echo ""
     ) >&2
 }
@@ -53,7 +67,27 @@ function local_include_file() {
 #
 set -o noglob
 #
-# Environment variables.
+# Configuration.
+#
+Archive=/usr/bin/true
+Check=/usr/bin/true
+Time='time'
+Test=/usr/bin/false
+Verbose=/usr/bin/false
+while getopts AhRTtv argname; do
+    case ${argname} in
+        A) Archive=/usr/bin/false ;;
+        h) usage; exit 0 ;;
+        R) Check=/usr/bin/false ;;
+        T) Time='' ;;
+        t) Test=/usr/bin/true; Verbose=/usr/bin/true ;;
+        v) Verbose=/usr/bin/true ;;
+        *) usage; exit 1 ;;
+    esac
+done
+shift $((OPTIND - 1))
+#
+# Check for required environment variables.
 #
 if [[ -z "${DESITRANSFER}" ]]; then
     echo "ERROR: DESITRANSFER is undefined!"
@@ -72,56 +106,58 @@ if [[ -z "${DAILY_TILES_CUMULATIVE_OUTPUT}" ]]; then
     exit 1
 fi
 #
-# Configuration.
-#
-syn="/usr/bin/rsync --archive --verbose --no-motd --password-file ${HOME}/.desi --delete --delete-after"
-src=rsync://${DESISYNC_HOSTNAME}/desi
-dst=${DESI_ROOT}
-log_root=${HOME}/Documents/Logfiles
-verbose=/usr/bin/false
-test=/usr/bin/false
-while getopts htv argname; do
-    case ${argname} in
-        h) usage; exit 0 ;;
-        t) test=/usr/bin/true; verbose=/usr/bin/true ;;
-        v) verbose=/usr/bin/true ;;
-        *) usage; exit 1 ;;
-    esac
-done
-shift $((OPTIND - 1))
-#
 # Check for running rsync process.
 #
-n_rsync=$(/usr/bin/ps -U ${USER} -u ${USER} -o args= 2>/dev/null | /usr/bin/grep /usr/bin/rsync | /usr/bin/grep -v grep | /usr/bin/wc -l)
-if (( n_rsync > 0 )); then
-    echo "ERROR: Some running rsync processes detected, exiting!"
-    exit 1
+if ${Check}; then
+    n_rsync=$(/usr/bin/ps -U ${USER} -u ${USER} -o args= 2>/dev/null | /usr/bin/grep /usr/bin/rsync | /usr/bin/grep -v grep | /usr/bin/wc -l)
+    if (( n_rsync > 0 )); then
+        echo "ERROR: Some running rsync processes detected, exiting!"
+        exit 1
+    fi
 fi
+#
+# Set up rsync commands.
+#
+syn="/usr/bin/rsync --archive --verbose --delete --delete-after --no-motd"
+src=${DESISYNC_HOSTNAME}:/global/cfs/cdirs/desi
+if [[ -z "${RSYNC_RSH}" ]]; then
+    syn="${syn} --password-file ${HOME}/.desi"
+    src=rsync://${DESISYNC_HOSTNAME}/desi
+fi
+dst=${DESI_ROOT}
+log_root=${HOME}/Documents/Logfiles
 #
 # Set user-write on some files.
 #
-${verbose} && echo "chmod -R u+w ${dst}/spectro/redux/daily/tiles/cumulative"
-${test}    || chmod -R u+w ${dst}/spectro/redux/daily/tiles/cumulative
+${Verbose} && echo "chmod -R u+w ${dst}/spectro/redux/daily/tiles/cumulative"
+${Test}    || chmod -R u+w ${dst}/spectro/redux/daily/tiles/cumulative
 #
 # Copy the daily/tiles/cumulative description file from NERSC.
 #
-${verbose} && echo "wget --quiet --unlink --output-document=${DESI_ROOT}/spectro/redux/daily_tiles_cumulative.txt ${DAILY_TILES_CUMULATIVE_OUTPUT}"
-${test}    || wget --quiet --unlink --output-document=${DESI_ROOT}/spectro/redux/daily_tiles_cumulative.txt ${DAILY_TILES_CUMULATIVE_OUTPUT}
+${Verbose} && echo "wget --quiet --unlink --output-document=${DESI_ROOT}/spectro/redux/daily_tiles_cumulative.txt ${DAILY_TILES_CUMULATIVE_OUTPUT}"
+${Test}    || wget --quiet --unlink --output-document=${DESI_ROOT}/spectro/redux/daily_tiles_cumulative.txt ${DAILY_TILES_CUMULATIVE_OUTPUT}
 #
 # Prepare local include files.
 #
 for path in calibnight exposures preproc; do
-    ${verbose} && echo "local_include_file ${path}"
+    ${Verbose} && echo "local_include_file ${path}"
     local_include_file ${path}
 done
 #
 # Execute rsync commands.
 #
-for d in spectro/redux/daily spectro/redux/daily/calibnight \
-    spectro/redux/daily/exposure_tables spectro/redux/daily/exposures \
-    spectro/redux/daily/preproc spectro/redux/daily/processing_tables \
-    spectro/redux/daily/tiles/archive spectro/redux/daily/tiles/cumulative \
-    survey/GFA; do
+directories=(spectro/redux/daily \
+             spectro/redux/daily/calibnight \
+             spectro/redux/daily/exposure_tables \
+             spectro/redux/daily/exposures \
+             spectro/redux/daily/preproc \
+             spectro/redux/daily/processing_tables \
+             spectro/redux/daily/tiles/cumulative \
+             survey/GFA)
+if ${Archive}; then
+    directories+=(spectro/redux/daily/tiles/archive)
+fi
+for d in ${directories[*]}; do
     case ${d} in
         spectro/redux/daily) priority='nice'; exclude="--include-from ${DESITRANSFER}/py/desitransfer/data/desi_utah_daily.txt --exclude *" ;;
         spectro/redux/daily/calibnight) priority='nice'; exclude="--delete-excluded --include-from ${DESI_ROOT}/spectro/redux/daily_calibnight.txt --exclude *" ;;
@@ -132,7 +168,7 @@ for d in spectro/redux/daily spectro/redux/daily/calibnight \
     esac
     log=${log_root}/utah_$(tr '/' '_' <<<${d}).log
     [[ -f ${log} ]] || touch ${log}
-    ${verbose} && echo "${priority} time ${syn} ${exclude} ${src}/${d}/ ${dst}/${d}/ &>> ${log} &"
-    ${test}    || ${priority} time ${syn} ${exclude} ${src}/${d}/ ${dst}/${d}/ &>> ${log} &
+    ${Verbose} && echo "${priority} ${Time} ${syn} ${exclude} ${src}/${d}/ ${dst}/${d}/ &>> ${log} &"
+    ${Test}    || ${priority} ${Time} ${syn} ${exclude} ${src}/${d}/ ${dst}/${d}/ &>> ${log} &
 done
 
