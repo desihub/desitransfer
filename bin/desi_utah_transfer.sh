@@ -163,7 +163,7 @@ for d in ${directories[*]}; do
         spectro/redux/daily/calibnight) priority='nice'; exclude="--delete-excluded --include-from ${DESI_ROOT}/spectro/redux/daily_calibnight.txt --exclude *" ;;
         spectro/redux/daily/exposures) priority='nice'; exclude="--delete-excluded --include-from ${DESI_ROOT}/spectro/redux/daily_exposures.txt --exclude *" ;;
         spectro/redux/daily/preproc) priority='nice'; exclude="--delete-excluded --include-from ${DESI_ROOT}/spectro/redux/daily_preproc.txt --exclude *" ;;
-        spectro/redux/daily/tiles/archive) priority=''; exclude="--delete-excluded --exclude rrdetails-*.h5" ;;
+        spectro/redux/daily/tiles/archive) priority=''; exclude="--exclude rrdetails-*.h5" ;;
         spectro/redux/daily/tiles/cumulative) priority='nice'; exclude="--delete-excluded --files-from ${DESI_ROOT}/spectro/redux/daily_tiles_cumulative.txt" ;;
         *) priority=''; exclude='' ;;
     esac
