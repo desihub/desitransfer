@@ -15,7 +15,7 @@ function usage() {
     echo "     -A = Do NOT start a sync of daily/tiles/archive."
     echo "     -h = Print this message and exit."
     echo "     -R = Do NOT check for running jobs before starting new ones."
-    echo "     -T = Do NOT execute commands via the `time` command."
+    echo "     -T = Do NOT execute commands via the 'time' command."
     echo "     -t = Test mode.  Do not make any changes. Implies -v."
     echo "     -v = Verbose mode. Print extra information."
     echo ""
