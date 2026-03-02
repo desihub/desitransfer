@@ -15,7 +15,7 @@ function usage() {
     echo "     -A = Do NOT start a sync of daily/tiles/archive."
     echo "     -h = Print this message and exit."
     echo "     -R = Do NOT check for running jobs before starting new ones."
-    echo "     -T = Do NOT execute commands via the `time` command."
+    echo "     -T = Do NOT execute commands via the 'time' command."
     echo "     -t = Test mode.  Do not make any changes. Implies -v."
     echo "     -v = Verbose mode. Print extra information."
     echo ""
@@ -163,6 +163,7 @@ for d in ${directories[*]}; do
         spectro/redux/daily/calibnight) priority='nice'; exclude="--delete-excluded --include-from ${DESI_ROOT}/spectro/redux/daily_calibnight.txt --exclude *" ;;
         spectro/redux/daily/exposures) priority='nice'; exclude="--delete-excluded --include-from ${DESI_ROOT}/spectro/redux/daily_exposures.txt --exclude *" ;;
         spectro/redux/daily/preproc) priority='nice'; exclude="--delete-excluded --include-from ${DESI_ROOT}/spectro/redux/daily_preproc.txt --exclude *" ;;
+        spectro/redux/daily/tiles/archive) priority=''; exclude="--exclude rrdetails-*.h5" ;;
         spectro/redux/daily/tiles/cumulative) priority='nice'; exclude="--delete-excluded --files-from ${DESI_ROOT}/spectro/redux/daily_tiles_cumulative.txt" ;;
         *) priority=''; exclude='' ;;
     esac

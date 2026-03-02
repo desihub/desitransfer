@@ -5,9 +5,11 @@ Change Log
 1.0.6 (unreleased)
 ------------------
 
+* Ignore ``rrdetails-*.h5`` files at Utah (PR `#70`_).
 * Add additional functionality to Tucson and Utah mirror scripts (PR `#69`_).
 
 .. _`#69`: https://github.com/desihub/desitransfer/pull/69
+.. _`#70`: https://github.com/desihub/desitransfer/pull/70
 
 1.0.5 (2025-10-10)
 ------------------
