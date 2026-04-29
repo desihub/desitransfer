@@ -75,11 +75,11 @@ for d in engineering/focalplane \
     spectro/nightwatch/kpno spectro/staging/lost+found; do
     case ${d} in
         engineering/focalplane) priority='nice'; exclude='--exclude archive --exclude hwtables --exclude *.ipynb --exclude .ipynb_checkpoints' ;;
-        spectro/data) priority=''; exclude='--exclude 2018* --exclude 2019* --exclude 2020* --exclude 2021* --exclude 2022* --exclude 2023* --exclude 2024*' ;;
-        spectro/nightwatch/kpno) priority='nice'; exclude='--exclude 2021* --exclude 2022* --exclude 2023* --exclude 2024*' ;;
+        spectro/data) priority=''; exclude='--exclude 2018* --exclude 2019* --exclude 2020* --exclude 2021* --exclude 2022* --exclude 2023* --exclude 2024* --exclude 2025*' ;;
+        spectro/nightwatch/kpno) priority='nice'; exclude='--exclude 2021* --exclude 2022* --exclude 2023* --exclude 2024* --exclude 2025*' ;;
         spectro/redux/daily) priority=''; exclude='--exclude *.tmp --exclude attic --exclude dark_preproc --exclude exposures --exclude preproc --exclude temp --exclude tiles' ;;
-        spectro/redux/daily/exposures) priority=''; exclude='--exclude 2019* --exclude 2020* --exclude 2021* --exclude 2022* --exclude 2023* --exclude 2024* --exclude *.tmp' ;;
-        spectro/redux/daily/preproc) priority=''; exclude='--exclude 2019* --exclude 2020* --exclude 2021* --exclude 2022* --exclude 2023* --exclude 2024* --exclude *.tmp --exclude preproc-*.fits --exclude preproc-*.fits.gz' ;;
+        spectro/redux/daily/exposures) priority=''; exclude='--exclude 2019* --exclude 2020* --exclude 2021* --exclude 2022* --exclude 2023* --exclude 2024* --exclude 2025* --exclude *.tmp' ;;
+        spectro/redux/daily/preproc) priority=''; exclude='--exclude 2019* --exclude 2020* --exclude 2021* --exclude 2022* --exclude 2023* --exclude 2024* --exclude 2025* --exclude *.tmp --exclude preproc-*.fits --exclude preproc-*.fits.gz' ;;
         spectro/redux/daily/tiles) priority=''; exclude='--exclude *.tmp --exclude temp' ;;
         *) priority='nice'; exclude='' ;;
     esac
