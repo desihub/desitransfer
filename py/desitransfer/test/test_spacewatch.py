@@ -2,7 +2,6 @@
 # -*- coding: utf-8 -*-
 """Test desitransfer.spacewatch.
 """
-import logging
 import os
 import sys
 import unittest
