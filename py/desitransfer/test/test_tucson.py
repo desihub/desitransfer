@@ -11,7 +11,6 @@ from tempfile import mkdtemp
 from shutil import rmtree
 from unittest.mock import patch, call, mock_open, MagicMock
 from ..tucson import _options, _rsync, _configure_log, running, _get_proc
-from .. import __version__ as dtVersion
 
 
 class TestTucson(unittest.TestCase):
@@ -118,14 +117,18 @@ class TestTucson(unittest.TestCase):
         with patch('desitransfer.tucson.open', m) as mo:
             r = running('foo.pid')
         self.assertFalse(r)
-        m.assert_has_calls([call('foo.pid'),
+        mock_open_calls = [call('foo.pid'),
                             call().__enter__(),
                             call().read(),
                             call().__exit__(None, None, None),
                             call('foo.pid', 'w'),
                             call().__enter__(),
                             call().write(pid),
-                            call().__exit__(None, None, None)])
+                            call().__exit__(None, None, None)]
+        if sys.version_info.minor > 12:
+            mock_open_calls.insert(3, call.close())
+            mock_open_calls.append(call.close())
+        m.assert_has_calls(mock_open_calls)
         # handle = m()
         # handle.read.assert_called()
         mock_log.debug.assert_has_calls([call('/usr/bin/ps -q 12345 -o comm='),

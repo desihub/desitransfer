@@ -12,4 +12,4 @@ DESI_ data transfer infrastructure.
 #
 # Set version string.
 #
-from ._version import __version__
+from ._version import __version__  # noqa: F401
