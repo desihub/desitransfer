@@ -118,15 +118,15 @@ class TestTucson(unittest.TestCase):
             r = running('foo.pid')
         self.assertFalse(r)
         mock_open_calls = [call('foo.pid'),
-                            call().__enter__(),
-                            call().read(),
-                            call().__exit__(None, None, None),
-                            call('foo.pid', 'w'),
-                            call().__enter__(),
-                            call().write(pid),
-                            call().__exit__(None, None, None)]
+                           call().__enter__(),
+                           call().read(),
+                           call().__exit__(None, None, None),
+                           call('foo.pid', 'w'),
+                           call().__enter__(),
+                           call().write(pid),
+                           call().__exit__(None, None, None)]
         if sys.version_info.minor > 12:
-            mock_open_calls.insert(3, call().close())
+            mock_open_calls.insert(4, call().close())
             mock_open_calls.append(call().close())
         m.assert_has_calls(mock_open_calls)
         # handle = m()
