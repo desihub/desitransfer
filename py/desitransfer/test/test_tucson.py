@@ -126,8 +126,8 @@ class TestTucson(unittest.TestCase):
                             call().write(pid),
                             call().__exit__(None, None, None)]
         if sys.version_info.minor > 12:
-            mock_open_calls.insert(3, call.close())
-            mock_open_calls.append(call.close())
+            mock_open_calls.insert(3, call().close())
+            mock_open_calls.append(call().close())
         m.assert_has_calls(mock_open_calls)
         # handle = m()
         # handle.read.assert_called()
