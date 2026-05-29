@@ -67,7 +67,7 @@ class DailyDirectory(object):
         if status == 0:
             self.lock()
             if permission:
-                s = self.permission()
+                s = self.permission()  # noqa: F841
         return status
 
     def lock(self):

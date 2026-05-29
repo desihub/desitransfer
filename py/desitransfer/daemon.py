@@ -82,7 +82,7 @@ class TransferDaemon(object):
                                  interpolation=ExtendedInterpolation(),
                                  converters={'list': lambda x: x.split(','),
                                              'dict': lambda x: dict([tuple(i.split(':')) for i in x.split(',')])})
-        files = self.conf.read(self._ini)
+        files = self.conf.read(self._ini)  # noqa: F841
         # assert files[0] == self._ini
         self.sections = [s for s in self.conf.sections()
                          if s not in ('common', 'logging')]
