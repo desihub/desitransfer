@@ -133,7 +133,12 @@ def main():
         idle_wait = idle_time()
         if idle_wait > 0:
             log.info('Idle time detected. Sleeping until approximately 12:00 MST.')
-            time.sleep(idle_wait)
+            for w in range(idle_wait // wait):
+                time.sleep(wait)
+                if os.path.exists(options.kill):
+                    log.info("%s detected, shutting down nightwatch daemon.",
+                            options.kill)
+                    return 0
         log.info('Starting nightwatch transfer loop; desitransfer version = %s.',
                  dtVersion)
         if os.path.exists(options.kill):
