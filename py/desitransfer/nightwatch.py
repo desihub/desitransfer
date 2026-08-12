@@ -137,7 +137,7 @@ def main():
                 time.sleep(wait)
                 if os.path.exists(options.kill):
                     log.info("%s detected, shutting down nightwatch daemon.",
-                            options.kill)
+                             options.kill)
                     return 0
         log.info('Starting nightwatch transfer loop; desitransfer version = %s.',
                  dtVersion)
