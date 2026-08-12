@@ -18,6 +18,9 @@ jobs:
             matrix:
                 include:
                    - os: ubuntu-latest
+                     coverage: test
+                     python-version: "3.14"
+                   - os: ubuntu-latest
                      coverage: coverage
                      python-version: "3.13"
                    - os: ubuntu-latest
