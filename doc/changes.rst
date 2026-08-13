@@ -2,7 +2,7 @@
 Change Log
 ==========
 
-1.0.6 (unreleased)
+1.0.6 (2026-08-13)
 ------------------
 
 * Update test infrastructure for Python 3.13 (PR `#71`_).
