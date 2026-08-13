@@ -13,9 +13,8 @@ import unittest
 import requests
 from tempfile import TemporaryDirectory
 from unittest.mock import call, patch, MagicMock
-from ..daemon import (_options, TransferDaemon, _popen, log,
-                      verify_checksum, lock_directory, unlock_directory,
-                      rsync_night)
+from ..daemon import (_options, TransferDaemon, _popen, verify_checksum,
+                      lock_directory, unlock_directory, rsync_night)
 
 
 class TestDaemon(unittest.TestCase):

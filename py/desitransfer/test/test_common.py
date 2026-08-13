@@ -6,7 +6,7 @@ from datetime import datetime, timedelta
 import unittest
 from unittest.mock import patch
 from tempfile import TemporaryDirectory
-from ..common import (dt, MST, dir_perm, file_perm, empty_rsync, new_exposures, rsync,
+from ..common import (dir_perm, file_perm, empty_rsync, new_exposures, rsync,
                       stamp, ensure_scratch, yesterday, today, idle_time, exclude_years)
 
 

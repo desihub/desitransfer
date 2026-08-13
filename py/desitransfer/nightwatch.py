@@ -11,7 +11,8 @@ A cronjob running as desi@dtn01.nersc.gov ensures that this daemon is running.
 
 Catchup on a specific night::
 
-    NIGHT=20200124 && rsync -rlvt --exclude-from ${DESITRANSFER}/py/desitransfer/data/desi_nightwatch_transfer_exclude.txt \
+    NIGHT=20200124 && rsync -rlvt --exclude-from \
+        ${DESITRANSFER}/py/desitransfer/data/desi_nightwatch_transfer_exclude.txt \
         dts:/exposures/nightwatch/${NIGHT}/ /global/cfs/cdirs/desi/spectro/nightwatch/kpno/${NIGHT}/
 
 By-hand startup sequence (bash shell)::
@@ -132,7 +133,12 @@ def main():
         idle_wait = idle_time()
         if idle_wait > 0:
             log.info('Idle time detected. Sleeping until approximately 12:00 MST.')
-            time.sleep(idle_wait)
+            for w in range(idle_wait // wait):
+                time.sleep(wait)
+                if os.path.exists(options.kill):
+                    log.info("%s detected, shutting down nightwatch daemon.",
+                             options.kill)
+                    return 0
         log.info('Starting nightwatch transfer loop; desitransfer version = %s.',
                  dtVersion)
         if os.path.exists(options.kill):

@@ -126,7 +126,7 @@ def ensure_scratch(directories):
     """
     for d in directories:
         try:
-            dir_list = os.listdir(d)
+            dir_list = os.listdir(d)  # noqa: F841
         except FileNotFoundError:
             continue
         return d

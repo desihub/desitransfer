@@ -8,8 +8,8 @@ desitransfer
     :target: https://github.com/desihub/desitransfer/actions
     :alt: GitHub Actions CI Status
 
-.. |Coveralls Status| image:: https://coveralls.io/repos/github/desihub/desitransfer/badge.svg?branch=master
-    :target: https://coveralls.io/github/desihub/desitransfer?branch=master
+.. |Coveralls Status| image:: https://coveralls.io/repos/github/desihub/desitransfer/badge.svg?branch=main
+    :target: https://coveralls.io/github/desihub/desitransfer?branch=main
     :alt: Test Coverage Status
 
 .. |Documentation Status| image:: https://readthedocs.org/projects/desitransfer/badge/?version=latest

@@ -7,7 +7,7 @@ import os
 import sys
 import unittest
 from tempfile import TemporaryDirectory
-from unittest.mock import call, patch
+from unittest.mock import patch
 from ..nightwatch import (_options, _configure_log)
 
 

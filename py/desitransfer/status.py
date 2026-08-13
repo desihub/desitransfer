@@ -249,7 +249,6 @@ def main():
     :class:`int`
         An integer suitable for passing to :func:`sys.exit`.
     """
-    global log
     options = _options()
     if options.verbose:
         log.setLevel(DEBUG)

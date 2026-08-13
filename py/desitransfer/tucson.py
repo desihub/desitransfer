@@ -201,8 +201,6 @@ def _get_proc(directories, exclude, src, dst, options, nice=5):
     :class:`tuple`
         A tuple containing information about the process.
     """
-    global log
-
     def preexec_nice():  # pragma: no cover
         os.nice(nice)
 
