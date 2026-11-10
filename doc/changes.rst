@@ -5,7 +5,10 @@ Change Log
 1.0.7 (unreleased)
 ------------------
 
-* No changes yet.
+* Allow ``desi_nightwatch_transfer`` to transfer files in the morning if
+  necessary (PR `#73`_).
+
+.. _`#73`: https://github.com/desihub/desitransfer/pull/73
 
 1.0.6 (2026-08-13)
 ------------------
