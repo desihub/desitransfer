@@ -57,7 +57,8 @@ script-files = ["bin/desi_checksum_audit.sh",
                 "bin/desi_transfer_status_restore",
                 "bin/desi_tucson_hwtables.sh",
                 "bin/desi_tucson_transfer",
-                "bin/desi_tucson_transfer_catchup.sh"]
+                "bin/desi_tucson_transfer_catchup.sh",
+                "bin/desi_utah_transfer.sh"]
 
 [tool.setuptools.package-data]
 "desitransfer" = ["data/*"]

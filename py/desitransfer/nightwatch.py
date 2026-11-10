@@ -22,6 +22,13 @@ By-hand startup sequence (bash shell)::
     nohup nice -19 ${DESITRANSFER}/bin/desi_nightwatch_transfer &> /dev/null &
     tail -f ${DESI_ROOT}/spectro/nightwatch/desi_nightwatch_transfer.log
 
+Notes
+-----
+* Normally ``desi_nightwatch_transfer`` pauses operations during the "morning",
+  defined as 08:00 - 12:00 MST. This can be overriden by creating the file
+  ``~/nightwatch_daytime_transfer``. See also the ``--daytime`` option of
+  ``desi_nightwatch_transfer``. *Please remember to remove this file when
+  it is not needed.*
 """
 import importlib.resources as ir
 import logging
