@@ -1,4 +1,98 @@
 [build-system]
-requires = ["setuptools",
-            "wheel"]
+requires = ["setuptools"]
 build-backend = 'setuptools.build_meta'
+
+[project]
+name = "desitransfer"
+dynamic = ["version"]
+authors = [ { name = "DESI Collaboration", email = "desi-data@desi.lbl.gov" } ]
+license = "BSD-3-Clause"
+license-files = ["LICENSE.rst"]
+description = "DESI data transfer infrastructure."
+readme = "README.rst"
+requires-python = ">=3.12"
+dependencies = ["requests", "pytz", "desiutil"]
+keywords = ["DESI", "data transfer"]
+classifiers = [ "Development Status :: 5 - Production/Stable",
+                "Environment :: Console",
+                "Intended Audience :: Science/Research",
+                "Operating System :: OS Independent",
+                "Programming Language :: Python :: 3",
+                "Topic :: Scientific/Engineering :: Astronomy",
+                "Topic :: Utilities" ]
+
+[project.optional-dependencies]
+test = ["pytest"]
+coverage = ["pytest-cov", "coveralls"]
+doc = ["Sphinx", "sphinx-rtd-theme"]
+
+[project.urls]
+Documentation = "https://desitransfer.readthedocs.io/en/latest/"
+Repository = "https://github.com/desihub/desitransfer"
+Issues = "https://github.com/desihub/desitransfer/issues"
+Changelog = "https://github.com/desihub/desitransfer/blob/main/doc/changes.rst"
+
+# [project.scripts]
+# desi_daily_transfer = "desitransfer.daily:main"
+# desi_nightwatch_transfer = "desitransfer.nightwatch:main"
+# desi_spacewatch_transfer = "desitransfer.spacewatch:main"
+# desi_transfer_daemon = "desitransfer.daemon:main"
+# desi_transfer_status = "desitransfer.status:main"
+# desi_tucson_transfer = "desitransfer.tucson:main"
+
+[tool.setuptools]
+package-dir = {"" = "py"}
+script-files = ["bin/desi_checksum_audit.sh",
+                "bin/desi_common_init.sh",
+                "bin/desi_daily_transfer",
+                "bin/desi_nightwatch_init.sh",
+                "bin/desi_nightwatch_transfer",
+                "bin/desi_recover_lost+found.sh",
+                "bin/desi_spacewatch_transfer",
+                "bin/desi_spectro_data_unpack.sh",
+                "bin/desi_transfer_daemon",
+                "bin/desi_transfer_init.sh",
+                "bin/desi_transfer_statistics.sh",
+                "bin/desi_transfer_status",
+                "bin/desi_transfer_status_restore",
+                "bin/desi_tucson_hwtables.sh",
+                "bin/desi_tucson_transfer",
+                "bin/desi_tucson_transfer_catchup.sh"]
+
+[tool.setuptools.package-data]
+"desitransfer" = ["data/*"]
+"desitransfer.test" = ["t/*"]
+
+[tool.setuptools.packages.find]
+where = ["py"]
+exclude = [".github/*"]
+
+[tool.setuptools.dynamic]
+version = {attr = "desitransfer.__version__"}  # any module attribute compatible with ast.literal_eval
+
+[tool.coverage.run]
+relative_files = true
+source = ["py/desitransfer"]
+omit = ["py/desitransfer/_version.py",
+        "py/desitransfer/conftest*",
+        "py/desitransfer/test/*",
+        "*/desitransfer/_version.py",
+        "*/desitransfer/conftest*",
+        "*/desitransfer/test/*"]
+
+[tool.coverage.report]
+exclude_lines = [
+                # Have to re-enable the standard pragma
+                "pragma: no cover",
+                # Don't complain about packages we have installed
+                "except ImportError",
+                # Don't complain if tests don't hit assertions
+                "raise AssertionError",
+                "raise NotImplementedError",
+                # Don't complain about script hooks
+                "def main\\(.*\\):",
+                # Ignore branches that don't pertain to this version of Python
+                "pragma: py{ignore_python_version}",
+                # Don't complain about IPython completion helper
+                "def _ipython_key_completions_",
+                ]

@@ -54,6 +54,9 @@ def _options():
     prsr = ArgumentParser(description=desc)
     prsr.add_argument('-d', '--debug', action='store_true',
                       help='Set log level to DEBUG.')
+    prsr.add_argument('-D', '--daytime', metavar='FILE',
+                      default=os.path.join(os.environ['HOME'], 'nightwatch_daytime_transfer'),
+                      help="If FILE exists, transfer files all morning (default %(default)s).")
     prsr.add_argument('-e', '--alert-after-errors', dest='maxerrors', metavar='N', type=int, default=10,
                       help='Send an alert after N serious transfer errors (default %(default)s).')
     prsr.add_argument('-k', '--kill', metavar='FILE',
@@ -131,7 +134,7 @@ def main():
         # See if we are in the idle period: 08:00 - 12:00 MST
         #
         idle_wait = idle_time()
-        if idle_wait > 0:
+        if idle_wait > 0 and not os.path.exists(options.daytime):
             log.info('Idle time detected. Sleeping until approximately 12:00 MST.')
             for w in range(idle_wait // wait):
                 time.sleep(wait)
